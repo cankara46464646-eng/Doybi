@@ -1,0 +1,70 @@
+name: Web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+          cache: true
+
+      - name: Web sürümünü derle
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            set -e
+            REPO="${GITHUB_REPOSITORY#*/}"
+            OWNER="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+            flutter --version
+            flutter pub get
+            flutter build web --release \
+              --base-href "/${REPO}/app/" \
+              --dart-define=WEB_URL="https://${OWNER}.github.io/${REPO}/app/" \
+              --dart-define=DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/doybi.apk"
+            rm -rf public && mkdir -p public/app
+            cp -r build/web/. public/app/
+            cp -r site/. public/
+            touch public/.nojekyll
+          } 2>&1 | tee build.log
+
+      - name: Derleme kaydını sakla
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build.log ]; then tail -n 3000 build.log > /tmp/build.log; else echo "kayıt yok" > /tmp/build.log; fi
+          echo "run=${{ github.run_number }} sha=${{ github.sha }} status=${{ steps.build.outcome }}" > /tmp/status.txt
+          rm -rf /tmp/logrepo && mkdir /tmp/logrepo && cd /tmp/logrepo
+          git init -q -b ci-log-web
+          cp /tmp/build.log /tmp/status.txt .
+          git add build.log status.txt
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "web ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-log-web
+
+      - name: gh-pages dalına yayınla
+        if: success()
+        shell: bash
+        run: |
+          cd public
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "web ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages

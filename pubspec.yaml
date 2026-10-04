@@ -1,0 +1,22 @@
+name: doybi
+description: "Doybi - mahallenin lezzeti, dükkân fiyatına."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: '>=2.3.0 <3.0.0'
+  google_fonts: '>=6.2.0 <7.0.0'
+  qr_flutter: '>=4.1.0 <5.0.0'
+
+dev_dependencies:
+  flutter_lints: '>=5.0.0 <6.0.0'
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/brand/

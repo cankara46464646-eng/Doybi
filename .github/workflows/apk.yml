@@ -1,0 +1,74 @@
+name: APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+          cache: true
+
+      - name: APK'yı derle
+        id: build
+        shell: bash
+        run: |
+          set -o pipefail
+          {
+            set -e
+            flutter --version
+            flutter create --org app.doybi --project-name doybi --platforms android --no-pub .
+            python3 tool/patch_android.py
+            flutter pub get
+            flutter analyze --no-fatal-infos --no-fatal-warnings lib || true
+            flutter build apk --release \
+              --target-platform android-arm,android-arm64 \
+              --dart-define=DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/doybi.apk"
+          } 2>&1 | tee build.log
+
+      - name: Derleme kaydını sakla
+        if: always()
+        shell: bash
+        run: |
+          if [ -f build.log ]; then tail -n 3000 build.log > /tmp/build.log; else echo "kayıt yok" > /tmp/build.log; fi
+          echo "run=${{ github.run_number }} sha=${{ github.sha }} status=${{ steps.build.outcome }}" > /tmp/status.txt
+          rm -rf /tmp/logrepo && mkdir /tmp/logrepo && cd /tmp/logrepo
+          git init -q -b ci-log
+          cp /tmp/build.log /tmp/status.txt .
+          git add build.log status.txt
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "build ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-log
+
+      - name: Sürüm yayınla
+        if: success()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk doybi.apk
+          gh release create "v0.1.${{ github.run_number }}" doybi.apk \
+            --repo "${{ github.repository }}" \
+            --title "Doybi 0.1.${{ github.run_number }}" \
+            --notes "Telefonuna indir ve kur. Eski sürüm varsa üstüne kurulur, bilgilerin kaybolmaz." \
+            --latest
