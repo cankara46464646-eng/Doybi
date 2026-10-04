@@ -4,68 +4,139 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import 'business_shell.dart';
+import 'complaints.dart';
+import 'courier.dart';
 
-/// Restoran paneli: gelen siparişler ve durum düğmeleri.
-class PanelScreen extends StatelessWidget {
+const cancelReasons = ['Ürün tükendi', 'Mutfak çok yoğun', 'Adres teslimat bölgesi dışında', 'Müşteri iptal istedi', 'Diğer'];
+const failReasons = ['Adreste kimse yoktu', 'Adres bulunamadı', 'Müşteriye ulaşılamadı', 'Müşteri ödemeyi yapmadı', 'Diğer'];
+
+class PanelScreen extends StatefulWidget {
   const PanelScreen({super.key});
+
+  @override
+  State<PanelScreen> createState() => _PanelScreenState();
+}
+
+class _PanelScreenState extends State<PanelScreen> {
+  final Set<String> _muted = {};
 
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
-    final open = s.orders.where((o) => !o.status.closed || (o.status == OrderStatus.teslim && !o.collected)).toList();
-    final done = s.orders.where((o) => !open.contains(o)).toList();
+    final r = s.panelRestaurant;
+    final all = s.ordersOf(r.id);
+    final open = all.where((o) => !o.status.closed || (o.status == OrderStatus.teslim && !o.collected)).toList();
+    final done = all.where((o) => !open.contains(o)).toList();
+    final ringing = all.where((o) => o.status == OrderStatus.bekliyor && !_muted.contains(o.id)).toList();
+    final complaints = s.complaints.where((c) => c.restaurantId == r.id && c.status == 'bekliyor').length;
+    final isOpen = !r.manualClosed;
+
     return Scaffold(
       backgroundColor: C.bg,
-      appBar: AppBar(
-        backgroundColor: C.ink,
-        foregroundColor: Colors.white,
-        title: Text('Restoran paneli', style: display(22, color: Colors.white)),
-      ),
-      body: s.orders.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text('Henüz sipariş yok. Müşteri tarafından bir sipariş ver, burada görünsün.', textAlign: TextAlign.center, style: body(15, color: C.muted)),
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [
-                for (final o in open) ...[_PanelCard(o), const SizedBox(height: 12)],
-                if (done.isNotEmpty) ...[
-                  Padding(padding: const EdgeInsets.fromLTRB(4, 8, 4, 8), child: Text('Kapananlar', style: body(15, weight: FontWeight.w800))),
-                  for (final o in done)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Box(
-                        child: Row(children: [
-                          Expanded(child: Text('${o.id} · ${o.itemsText}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w700))),
-                          Pill(o.status.label, bg: statusBg(o.status), fg: statusFg(o.status)),
-                        ]),
-                      ),
-                    ),
-                ],
-              ],
+      appBar: businessBar(context, 'Siparişler', actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ActionChip(
+            onPressed: () => s.setManualClosed(r, isOpen),
+            backgroundColor: isOpen ? C.green : C.redDeep,
+            side: BorderSide.none,
+            label: Text(isOpen ? 'Açık' : 'Kapalı', style: body(13, color: Colors.white, weight: FontWeight.w800)),
+            avatar: Icon(isOpen ? Icons.toggle_on : Icons.toggle_off, color: Colors.white, size: 20),
+          ),
+        ),
+      ]),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        children: [
+          Row(children: [
+            Expanded(
+              child: BigButton('Kurye modu', height: 46, color: C.ink, icon: Icons.delivery_dining,
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CourierScreen()))),
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: BigButton(complaints > 0 ? 'Sorun bildirimi · $complaints' : 'Sorun bildirimleri', height: 46, outlined: true, icon: Icons.report_outlined,
+                  textColor: complaints > 0 ? C.redDeep : C.ink, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PanelComplaintsScreen()))),
+            ),
+          ]),
+          if (!isOpen) ...[
+            const SizedBox(height: 10),
+            const NoteBox('Restoran kapalı görünüyor; müşteriler sipariş veremez. Açmak için üstteki düğmeye bas.', icon: Icons.storefront, color: C.tint, ink: C.redDeep),
+          ],
+          if (s.onBreak(r)) ...[
+            const SizedBox(height: 10),
+            NoteBox('Kısa moladasın · ${hm(r.breakUntil!)}\'e kadar yeni sipariş gelmez.', icon: Icons.coffee_outlined),
+          ],
+          if (ringing.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: C.saffron, borderRadius: BorderRadius.circular(18)),
+              child: Row(children: [
+                const Icon(Icons.notifications_active, color: C.ink, size: 30),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Yeni sipariş! Zil çalıyor', style: body(16, weight: FontWeight.w800)),
+                    Text('Onaylanmazsa 2 dk sonra SMS atıp ararız', style: body(13, color: C.noteInk)),
+                  ]),
+                ),
+                TextButton(onPressed: () => setState(() => _muted.addAll(ringing.map((o) => o.id))), child: Text('Sesi kapat', style: body(13, weight: FontWeight.w800))),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 12),
+          if (all.isEmpty)
+            const EmptyState(
+              icon: Icons.receipt_long_outlined,
+              title: 'Henüz sipariş yok',
+              text: 'Müşteri tarafından bu restorana bir sipariş ver, burada görünsün.',
+            ),
+          for (final o in open) ...[PanelOrderCard(o), const SizedBox(height: 12)],
+          if (done.isNotEmpty) ...[
+            const SectionLabel('Kapananlar'),
+            for (final o in done)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Box(
+                  child: Row(children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('${o.id} · ${hm(o.createdAt)} · ${tl(o.total)}', style: body(14, weight: FontWeight.w800)),
+                        Text(o.status == OrderStatus.teslim ? '${o.itemsText} · ${o.collectedVia == 'pos' ? 'POS' : 'nakit'}' : 'Neden: ${o.reason ?? '-'}',
+                            maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: C.muted)),
+                      ]),
+                    ),
+                    Pill(o.fullRefund ? 'İade edildi' : o.status.label, bg: statusBg(o.status), fg: statusFg(o.status)),
+                  ]),
+                ),
+              ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-class _PanelCard extends StatelessWidget {
+class PanelOrderCard extends StatelessWidget {
   final Order o;
-  const _PanelCard(this.o);
+  const PanelOrderCard(this.o, {super.key});
 
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
-    final phone = o.phone.length == 10 ? '0${o.phone.substring(0, 3)} *** ** ${o.phone.substring(8)}' : o.phone;
+    final prevDelivered = s.orders.where((x) => x.phone == o.phone && x.status == OrderStatus.teslim && x.id != o.id).length;
+    final prevFailed = s.orders.where((x) => x.phone == o.phone && x.status == OrderStatus.edilemedi && x.id != o.id).length;
+    final name = o.customerName.isEmpty ? 'Müşteri' : o.customerName;
+    final border = o.status == OrderStatus.bekliyor ? C.saffron : (o.status == OrderStatus.teslim ? C.green : C.border);
+    final collectLabel = o.status == OrderStatus.teslim
+        ? (o.collected ? 'Tahsil edildi · ${o.collectedVia == 'pos' ? 'POS' : 'nakit'}' : 'Tahsilat bekliyor · onayla')
+        : 'Tahsilat: teslimatta ${o.payment == 'kart' ? 'POS ile' : 'nakit'}';
+
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: o.status == OrderStatus.bekliyor ? C.saffron : C.border, width: 2),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: border, width: 2)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -74,6 +145,14 @@ class _PanelCard extends StatelessWidget {
             const Spacer(),
             Text('${o.id} · ${hm(o.createdAt)}', style: body(12, color: C.muted, weight: FontWeight.w700)),
           ]),
+          if (o.status == OrderStatus.bekliyor)
+            EverySecond(builder: (_) {
+              final left = const Duration(minutes: 5) - DateTime.now().difference(o.createdAt);
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text('${mmss(left)} içinde onayla · yoksa otomatik iptal', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
+              );
+            }),
           const SizedBox(height: 10),
           if (o.payment == 'kart')
             Container(
@@ -83,7 +162,10 @@ class _PanelCard extends StatelessWidget {
                 const Icon(Icons.point_of_sale, color: C.saffron),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text('POS cihazı götürülmeli · ${tl(o.total)} çekilecek', style: body(14, color: C.saffron, weight: FontWeight.w800)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('POS cihazı götürülmeli', style: body(14, color: C.saffron, weight: FontWeight.w800)),
+                    Text('Kapıda kredi / banka kartı · ${tl(o.total)} çekilecek', style: body(12, color: Colors.white)),
+                  ]),
                 ),
               ]),
             )
@@ -91,13 +173,40 @@ class _PanelCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: C.note, borderRadius: BorderRadius.circular(14)),
-              child: Text('Kapıda nakit · ${tl(o.total)}', style: body(14, color: C.noteInk, weight: FontWeight.w800)),
+              child: Text(
+                'Kapıda nakit · ${tl(o.total)}${o.change != null && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ' · tam para'}',
+                style: body(14, color: C.noteInk, weight: FontWeight.w800),
+              ),
             ),
           const SizedBox(height: 10),
-          Text('$phone · telefon doğrulandı', style: body(14, weight: FontWeight.w800)),
+          Text.rich(TextSpan(children: [
+            TextSpan(text: name, style: body(15, weight: FontWeight.w800)),
+            TextSpan(text: ' · ${maskTr(o.phone)} · doğrulandı · $prevDelivered teslim aldı', style: body(13, color: C.muted)),
+          ])),
+          if (prevFailed > 0) Text('Daha önce $prevFailed kez teslim edilemedi', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
           Text(o.address, style: body(13, color: C.muted)),
           const SizedBox(height: 8),
-          for (final l in o.lines) Text('${l.qty}× ${l.item.name}', style: body(14)),
+          for (final l in o.lines)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                SizedBox(width: 30, child: Text('${l.qty}×', style: body(14, weight: FontWeight.w800))),
+                Expanded(
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: l.name, style: body(14, weight: FontWeight.w700)),
+                    if (l.opts.isNotEmpty) TextSpan(text: ' · ${l.opts}', style: body(13, color: C.muted)),
+                    if (l.note.isNotEmpty) TextSpan(text: ' · "${l.note}"', style: body(13, color: C.muted)),
+                  ])),
+                ),
+                Text(tl(l.total), style: body(14)),
+              ]),
+            ),
+          if (o.deliveryFee > 0) Row(children: [Expanded(child: Text('Teslimat', style: body(13, color: C.muted))), Text(tl(o.deliveryFee), style: body(13))]),
+          if (o.discount > 0)
+            Row(children: [
+              Expanded(child: Text('${o.couponPayer == 'doybi' ? 'Doybi kuponu' : 'Restoran kuponu'} ${o.coupon}', style: body(13, color: C.greenInk, weight: FontWeight.w700))),
+              Text('−${tl(o.discount)}', style: body(13, color: C.greenInk, weight: FontWeight.w700)),
+            ]),
           if (o.note.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
@@ -106,6 +215,13 @@ class _PanelCard extends StatelessWidget {
               child: Text('Not: ${o.note}', style: body(13, color: C.noteInk)),
             ),
           ],
+          const Divider(color: C.line, height: 20),
+          Row(children: [
+            Expanded(child: Text(collectLabel, style: body(13, color: C.muted, weight: FontWeight.w700))),
+            Text(tl(o.total), style: body(17, weight: FontWeight.w800)),
+          ]),
+          if (o.discount > 0 && o.couponPayer == 'doybi')
+            Text('Doybi kuponu: ${tl(o.discount)} abonelik faturandan düşülür.', style: body(12, color: C.muted)),
           const SizedBox(height: 12),
           ..._actions(context, s),
         ],
@@ -117,37 +233,48 @@ class _PanelCard extends StatelessWidget {
     switch (o.status) {
       case OrderStatus.bekliyor:
         return [
-          Wrap(spacing: 6, children: [
-            for (final m in const [15, 20, 30])
-              ChoiceChip(
-                label: Text('$m dk'),
-                selected: o.prepMin == m,
-                onSelected: (_) => s.setPrep(o, m),
-                selectedColor: C.tint,
-                showCheckmark: false,
-              ),
+          Wrap(spacing: 6, runSpacing: 6, children: [
+            for (final m in const [15, 20, 25, 30]) SelChip('$m dk', selected: o.prepMin == m, onTap: () => s.setPrep(o, m)),
           ]),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(children: [
             Expanded(
               child: BigButton('Reddet', outlined: true, onPressed: () async {
-                final r = await pickReason(context, 'Neden reddediyorsun?', const ['Ürün tükendi', 'Mutfak çok yoğun', 'Adres bölge dışında', 'Diğer']);
-                if (r != null) s.reject(o, r);
+                final r = await reasonSheet(context, title: 'Neden reddediyorsun?', subtitle: 'Neden kaydedilir, müşteriye de kısaca bildirilir.', reasons: cancelReasons);
+                if (r != null) s.restaurantCancel(o, r.reason);
               }),
             ),
             const SizedBox(width: 8),
-            Expanded(flex: 2, child: BigButton('Onayla · ${o.prepMin} dk', onPressed: () => s.accept(o, o.prepMin))),
+            Expanded(flex: 2, child: BigButton('Onayla · ${o.prepMin} dk', color: C.green, onPressed: () => s.accept(o, o.prepMin))),
           ]),
         ];
       case OrderStatus.hazirlaniyor:
-        return [BigButton('Yola çıkar', color: C.ink, onPressed: () => s.toRoad(o))];
+        return [
+          Row(children: [
+            Expanded(
+              child: BigButton('İptal et', outlined: true, onPressed: () async {
+                final r = await reasonSheet(context, title: 'Neden iptal ediyorsun?', subtitle: 'Neden kaydedilir, müşteriye de kısaca bildirilir.', reasons: cancelReasons);
+                if (r != null) s.restaurantCancel(o, r.reason);
+              }),
+            ),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: BigButton('Yola çıkar', color: C.ink, onPressed: () => s.toRoad(o))),
+          ]),
+        ];
       case OrderStatus.yolda:
         return [
           Row(children: [
             Expanded(
               child: BigButton('Teslim edilemedi', outlined: true, onPressed: () async {
-                final r = await pickReason(context, 'Neden teslim edilemedi?', const ['Adreste kimse yoktu', 'Adres bulunamadı', 'Müşteriye ulaşılamadı', 'Müşteri ödemeyi yapmadı']);
-                if (r != null) s.fail(o, r);
+                final r = await reasonSheet(
+                  context,
+                  title: 'Neden teslim edilemedi?',
+                  subtitle: 'Neden kaydedilir, müşteriye de kısaca bildirilir.',
+                  reasons: failReasons,
+                  checkLabel: 'Bu numarayı engelle',
+                  checkSub: 'Sana bir daha sipariş veremez. 2 kez teslim edilemeyen numarayı Doybi tüm restoranlara kapatır.',
+                );
+                if (r != null) s.fail(o, r.reason, block: r.checked);
               }),
             ),
             const SizedBox(width: 8),
@@ -157,13 +284,17 @@ class _PanelCard extends StatelessWidget {
       case OrderStatus.teslim:
         return [
           if (!o.collected)
-            BigButton(o.payment == 'kart' ? 'POS ile tahsil edildi, onayla' : 'Nakit tahsil edildi, onayla', color: C.ink, onPressed: () => s.collect(o))
+            Row(children: [
+              Expanded(child: BigButton('POS ile tahsil edildi', color: o.payment == 'kart' ? C.ink : C.ring, onPressed: () => s.collect(o, 'pos'))),
+              const SizedBox(width: 8),
+              Expanded(child: BigButton('Nakit tahsil edildi', color: o.payment == 'nakit' ? C.ink : C.ring, onPressed: () => s.collect(o, 'nakit'))),
+            ])
           else
             Text('Tahsil edildi', style: body(14, color: C.greenInk, weight: FontWeight.w800)),
         ];
       case OrderStatus.iptal:
       case OrderStatus.edilemedi:
-        return [Text('Neden: ${o.reason ?? '-'}', style: body(14, color: C.muted))];
+        return [Text('${o.status == OrderStatus.iptal ? 'İptal edildi' : 'Teslim edilemedi'} · Neden: ${o.reason ?? '-'}', style: body(14, color: C.muted))];
     }
   }
 }

@@ -257,6 +257,7 @@ Map<String, Subscription> demoSubscriptions(DateTime now) {
       social: 'aktif',
       socialStart: '1 Ekim',
       bills: [
+        Bill(id: 'UD-cur', kind: 'abonelik', net: 1000000, gross: false, title: 'Bu dönem · 451–600 paketi', detail: '15 Eyl – 14 Eki · 850 TL kupon mahsubu', state: 'unpaid'),
         Bill(id: 'UD-1', kind: 'abonelik', net: 0, gross: false, title: '1. dönem · İlk ay ücretsiz', detail: '15 Ağu – 14 Eyl · giriş paketi', state: 'free'),
         Bill(id: 'UD-s1', kind: 'sosyal', net: 500000, gross: true, title: 'Sosyal Medya Desteği · Ekim', detail: '1 – 30 Ekim', state: 'paid', paidAt: '1 Eki'),
       ],

@@ -144,7 +144,7 @@ class SectionLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
       child: Row(children: [
-        Expanded(child: Text(text.toUpperCase(), style: body(12, color: C.muted, weight: FontWeight.w800).copyWith(letterSpacing: 0.6))),
+        Expanded(child: Text(trUpper(text), style: body(12, color: C.muted, weight: FontWeight.w800).copyWith(letterSpacing: 0.6))),
         if (trailing != null) trailing!,
       ]),
     );

@@ -4,23 +4,35 @@ import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'rate.dart';
+import 'report.dart';
+import 'shell.dart';
 
-class TrackingScreen extends StatelessWidget {
-  final Order o;
-  const TrackingScreen(this.o, {super.key});
+class TrackingScreen extends StatefulWidget {
+  final String orderId;
+  const TrackingScreen(this.orderId, {super.key});
+
+  @override
+  State<TrackingScreen> createState() => _TrackingScreenState();
+}
+
+class _TrackingScreenState extends State<TrackingScreen> {
+  bool _details = false;
 
   @override
   Widget build(BuildContext context) {
-    final s = AppScope.of(context); // durum değişince yeniden çizilir
-    final closedBad = o.status == OrderStatus.iptal || o.status == OrderStatus.edilemedi;
-    final steps = [OrderStatus.bekliyor, OrderStatus.hazirlaniyor, OrderStatus.yolda, OrderStatus.teslim];
-    final cur = steps.indexOf(o.status);
-    final eta = o.createdAt.add(Duration(minutes: o.prepMin + 15));
+    final s = AppScope.of(context);
+    final o = s.order(widget.orderId);
+    if (o == null) {
+      return Scaffold(appBar: AppBar(), body: const Center(child: Text('Sipariş bulunamadı')));
+    }
+    final bad = o.status == OrderStatus.iptal || o.status == OrderStatus.edilemedi;
+    final band = bad ? C.ink : C.red;
 
     return Scaffold(
       backgroundColor: C.bg,
       appBar: AppBar(
-        backgroundColor: closedBad ? C.ink : C.red,
+        backgroundColor: band,
         foregroundColor: Colors.white,
         title: Text('Sipariş ${o.id}', style: body(16, color: Colors.white, weight: FontWeight.w700)),
       ),
@@ -28,12 +40,12 @@ class TrackingScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            color: closedBad ? C.ink : C.red,
+            color: band,
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_headline(o.status), style: display(32, color: Colors.white)),
+                Text(_headline(o), style: display(32, color: Colors.white)),
                 const SizedBox(height: 6),
                 Text(_sub(o), style: body(15, color: Colors.white, weight: FontWeight.w600)),
               ],
@@ -42,108 +54,51 @@ class TrackingScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (!closedBad && o.status != OrderStatus.teslim)
+                if (o.status == OrderStatus.bekliyor) ..._waiting(context, s, o),
+                if (bad) ...[
                   Box(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Tahmini varış', style: body(13, color: C.muted, weight: FontWeight.w700)),
-                              Text(o.status == OrderStatus.bekliyor ? '—' : hm(eta), style: display(40)),
-                            ],
-                          ),
-                        ),
-                        if (o.status == OrderStatus.bekliyor) Text('Restoran\nbakıyor', textAlign: TextAlign.right, style: body(14, color: C.redDeep, weight: FontWeight.w800)),
-                      ],
-                    ),
-                  ),
-                if (!closedBad) ...[
-                  const SizedBox(height: 12),
-                  Box(
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < steps.length; i++)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  i < cur || o.status == OrderStatus.teslim ? Icons.check_circle : (i == cur ? Icons.radio_button_checked : Icons.radio_button_unchecked),
-                                  color: i <= cur ? (i == cur && o.status != OrderStatus.teslim ? C.red : C.ink) : C.ring,
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  steps[i] == OrderStatus.hazirlaniyor && i <= cur ? 'Hazırlanıyor · ${o.prepMin} dk' : steps[i].label,
-                                  style: body(15, weight: i == cur ? FontWeight.w800 : FontWeight.w600, color: i <= cur ? C.ink : C.muted),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                Box(
-                  child: Row(
-                    children: [
-                      Icon(o.payment == 'kart' ? Icons.credit_card : Icons.payments_outlined, color: C.ink),
+                    child: Row(children: [
+                      const Icon(Icons.check_circle, color: C.green),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(o.payment == 'kart' ? 'Kapıda kredi / banka kartı' : 'Kapıda nakit', style: body(15, weight: FontWeight.w800)),
-                            Text(o.payment == 'kart' ? 'Kurye POS cihazıyla gelecek' : 'Kuryeye nakit ödeyeceksin', style: body(13, color: C.muted)),
-                          ],
-                        ),
-                      ),
-                      Text(tl(o.total), style: body(16, weight: FontWeight.w800)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Box(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(o.restaurant.name, style: body(15, weight: FontWeight.w800)),
-                      const SizedBox(height: 6),
-                      for (final l in o.lines)
-                        Row(children: [
-                          Expanded(child: Text('${l.qty}× ${l.item.name}', style: body(14))),
-                          Text(tl(l.total), style: body(14)),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Senden ödeme alınmadı', style: body(15, weight: FontWeight.w800)),
+                          Text('Neden: ${o.reason ?? '-'}${o.reasonBy == 'musteri' ? ' · Restorana bildirildi.' : ''}', style: body(13, color: C.muted)),
                         ]),
-                      if (o.deliveryFee > 0)
-                        Row(children: [Expanded(child: Text('Teslimat', style: body(14))), Text(tl(o.deliveryFee), style: body(14))]),
-                      if (o.note.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text('Not: ${o.note}', style: body(13, color: C.muted)),
-                      ],
-                      const SizedBox(height: 6),
-                      Text(o.address, style: body(13, color: C.muted)),
-                    ],
-                  ),
-                ),
-                if (o.status == OrderStatus.bekliyor) ...[
-                  const SizedBox(height: 16),
-                  BigButton('Siparişi iptal et', outlined: true, onPressed: () async {
-                    final ok = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text('Siparişi iptal edelim mi?', style: display(20)),
-                        content: Text('Restoran onaylamadan iptal ücretsiz. Senden ödeme alınmaz.', style: body(15)),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgeç')),
-                          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('İptal et')),
-                        ],
                       ),
-                    );
-                    if (ok == true) s.customerCancel(o);
-                  }),
+                    ]),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (!bad && o.status != OrderStatus.bekliyor) ..._progress(context, o),
+                _payCard(o),
+                const SizedBox(height: 12),
+                if (!bad && o.status != OrderStatus.bekliyor && o.status != OrderStatus.teslim) ...[
+                  Row(children: [
+                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda ? () => snack(context, 'Deneme sürümü: arama yapılmaz.') : null)),
+                    const SizedBox(width: 10),
+                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: () => snack(context, 'Deneme sürümü: arama yapılmaz.'))),
+                  ]),
+                  const SizedBox(height: 12),
+                ],
+                _detailsCard(o),
+                const SizedBox(height: 16),
+                if (o.status == OrderStatus.teslim && o.rating == null) ...[
+                  BigButton('Siparişi değerlendir', icon: Icons.star_outline, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RateScreen(o.id)))),
+                  const SizedBox(height: 10),
+                ],
+                if (bad)
+                  BigButton('Keşfet\'e dön', onPressed: () => goTab(context, 0))
+                else
+                  BigButton('Tüm siparişlerim', outlined: true, onPressed: () => goTab(context, 3)),
+                if (!bad && o.status != OrderStatus.bekliyor) ...[
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReportScreen(o.id))),
+                    child: Text(s.complaintFor(o.id) == null ? 'Sorun mu var?' : 'Sorun bildirimini gör', style: body(14, color: C.redDeep, weight: FontWeight.w800)),
+                  ),
                 ],
               ],
             ),
@@ -153,8 +108,178 @@ class TrackingScreen extends StatelessWidget {
     );
   }
 
-  String _headline(OrderStatus st) {
-    switch (st) {
+  List<Widget> _waiting(BuildContext context, AppState s, Order o) => [
+        Box(
+          child: EverySecond(
+            builder: (_) => Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Restoran bakıyor', style: body(15, weight: FontWeight.w800)),
+                  Text('genelde 2 dk içinde onaylar', style: body(13, color: C.muted)),
+                ]),
+              ),
+              Text(mmss(DateTime.now().difference(o.createdAt)), style: display(30)),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Box(
+          color: C.line,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Fikrini mi değiştirdin?', style: body(15, weight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('Restoran onaylayana kadar ücretsiz iptal edebilirsin. Onaydan sonra iptal için restoranı araman gerekir.', style: body(13, color: C.muted)),
+            const SizedBox(height: 10),
+            BigButton('Siparişi iptal et', outlined: true, onPressed: () async {
+              final r = await reasonSheet(
+                context,
+                title: 'Neden iptal ediyorsun?',
+                reasons: const ['Yanlışlıkla verdim', 'Adresi yanlış girdim', 'Çok uzun sürüyor', 'Fikrimi değiştirdim', 'Diğer'],
+                confirm: 'İptal et',
+              );
+              if (r != null) s.customerCancel(o, r.reason);
+            }),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        Text('Restoran onaylayınca takip ekranı açılır', textAlign: TextAlign.center, style: body(12, color: C.muted)),
+        const SizedBox(height: 12),
+      ];
+
+  List<Widget> _progress(BuildContext context, Order o) {
+    final start = o.acceptedAt ?? o.createdAt;
+    final eta = start.add(Duration(minutes: o.prepMin + 15));
+    final steps = <(String, DateTime?, bool)>[
+      ('Restoran onayı bekleniyor', o.createdAt, true),
+      ('Hazırlanıyor · ${o.prepMin} dk', o.acceptedAt, o.acceptedAt != null),
+      ('Yolda', o.roadAt, o.roadAt != null),
+      ('Teslim edildi', o.doneAt, o.status == OrderStatus.teslim),
+    ];
+    final cur = o.status == OrderStatus.hazirlaniyor ? 1 : (o.status == OrderStatus.yolda ? 2 : 3);
+    return [
+      if (o.status != OrderStatus.teslim) ...[
+        Box(
+          child: EverySecond(builder: (_) {
+            final left = eta.difference(DateTime.now());
+            return Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Tahmini varış', style: body(13, color: C.muted, weight: FontWeight.w700)),
+                  Text(hm(eta), style: display(40)),
+                ]),
+              ),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('yaklaşık', style: body(12, color: C.muted)),
+                Text(left.inMinutes <= 0 ? 'birazdan' : '${left.inMinutes} dk', style: display(22, color: C.redDeep)),
+              ]),
+            ]);
+          }),
+        ),
+        const SizedBox(height: 12),
+      ],
+      Box(
+        child: Column(
+          children: [
+            for (var i = 0; i < steps.length; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(children: [
+                  Icon(
+                    steps[i].$3 && (i < cur || o.status == OrderStatus.teslim) ? Icons.check_circle : (i == cur ? Icons.radio_button_checked : Icons.radio_button_unchecked),
+                    color: i < cur || o.status == OrderStatus.teslim ? C.green : (i == cur ? C.red : C.ring),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(steps[i].$1, style: body(15, weight: i == cur ? FontWeight.w800 : FontWeight.w600, color: i <= cur ? C.ink : C.muted)),
+                  ),
+                  Text(
+                    steps[i].$2 != null && steps[i].$3 ? hm(steps[i].$2!) : (i == 3 ? 'tahmini ${hm(eta)}' : ''),
+                    style: body(13, color: C.muted, weight: FontWeight.w700),
+                  ),
+                ]),
+              ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+    ];
+  }
+
+  Widget _payCard(Order o) {
+    final bad = o.status == OrderStatus.iptal || o.status == OrderStatus.edilemedi;
+    return Box(
+      child: Row(
+        children: [
+          Icon(o.payment == 'kart' ? Icons.credit_card : Icons.payments_outlined, color: C.ink),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(o.payment == 'kart' ? 'Kapıda kredi / banka kartı' : 'Kapıda nakit', style: body(15, weight: FontWeight.w800)),
+                Text(
+                  o.status == OrderStatus.teslim
+                      ? (o.collected ? 'Ödendi · ${o.collectedVia == 'pos' ? 'POS ile' : 'nakit'}' : 'Kuryeye ödendi')
+                      : '${o.restaurantName} · ${o.count} ürün · ${tl(o.total)}${o.change != null && o.payment == 'nakit' && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ''}',
+                  style: body(13, color: C.muted),
+                ),
+              ],
+            ),
+          ),
+          Pill(bad ? 'Ödeme yok' : (o.status == OrderStatus.teslim ? 'Ödendi' : 'Teslimatta'),
+              bg: bad ? C.line : (o.status == OrderStatus.teslim ? C.greenTint : C.note), fg: bad ? C.ink : (o.status == OrderStatus.teslim ? C.greenInk : C.noteInk)),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailsCard(Order o) {
+    return Box(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _details = !_details),
+            child: Row(children: [
+              Expanded(child: Text('Sipariş detayı · ${o.count} ürün', style: body(15, weight: FontWeight.w800))),
+              Text(_details ? 'Gizle' : 'Göster', style: body(13, color: C.muted, weight: FontWeight.w700)),
+              Icon(_details ? Icons.expand_less : Icons.expand_more, color: C.muted),
+            ]),
+          ),
+          if (_details) ...[
+            const SizedBox(height: 8),
+            for (final l in o.lines)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${l.qty}× ${l.name}', style: body(14)),
+                      if (l.opts.isNotEmpty) Text(l.opts, style: body(12, color: C.muted)),
+                    ]),
+                  ),
+                  Text(tl(l.total), style: body(14)),
+                ]),
+              ),
+            if (o.deliveryFee > 0) Row(children: [Expanded(child: Text('Teslimat', style: body(14))), Text(tl(o.deliveryFee), style: body(14))]),
+            if (o.discount > 0)
+              Row(children: [Expanded(child: Text('Kupon ${o.coupon}', style: body(14, color: C.greenInk))), Text('−${tl(o.discount)}', style: body(14, color: C.greenInk))]),
+            const Divider(color: C.line),
+            Row(children: [
+              Expanded(child: Text('Kapıda ödenecek', style: body(15, weight: FontWeight.w800))),
+              Text(tl(o.total), style: body(15, weight: FontWeight.w800)),
+            ]),
+            if (o.note.isNotEmpty) ...[const SizedBox(height: 6), Text('Not: ${o.note}', style: body(13, color: C.muted))],
+            const SizedBox(height: 6),
+            Text(o.address, style: body(13, color: C.muted)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _headline(Order o) {
+    switch (o.status) {
       case OrderStatus.bekliyor:
         return 'Siparişin restoranda';
       case OrderStatus.hazirlaniyor:
@@ -164,7 +289,7 @@ class TrackingScreen extends StatelessWidget {
       case OrderStatus.teslim:
         return 'Afiyet olsun!';
       case OrderStatus.iptal:
-        return 'Sipariş iptal edildi';
+        return 'Siparişin iptal edildi';
       case OrderStatus.edilemedi:
         return 'Teslim edilemedi';
     }
@@ -173,16 +298,17 @@ class TrackingScreen extends StatelessWidget {
   String _sub(Order o) {
     switch (o.status) {
       case OrderStatus.bekliyor:
-        return '${o.restaurant.name} onaylayınca hazırlamaya başlayacak.';
+        return '${o.restaurantName} onaylayınca hazırlamaya başlayacak.';
       case OrderStatus.hazirlaniyor:
-        return '${o.restaurant.name} siparişini hazırlıyor.';
+        return '${o.restaurantName} siparişini hazırlıyor.';
       case OrderStatus.yolda:
-        return 'Restoranın kuryesi paketini aldı.';
+        return 'Restoranın kuryesi paketini aldı, yola çıktı.';
       case OrderStatus.teslim:
-        return 'Siparişin teslim edildi.';
+        return 'Siparişin ${o.doneAt == null ? '' : '${hm(o.doneAt!)}\'de '}teslim edildi.';
       case OrderStatus.iptal:
+        return o.reasonBy == 'musteri' ? 'Restorana haber verdik.' : (o.reasonBy == 'sistem' ? 'Restoran zamanında onaylamadı.' : 'Restoran siparişi iptal etti.');
       case OrderStatus.edilemedi:
-        return 'Neden: ${o.reason ?? '-'} · Senden ödeme alınmadı.';
+        return 'Restoranın kuryesi siparişi teslim edemedi.';
     }
   }
 }

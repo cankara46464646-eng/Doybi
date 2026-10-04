@@ -83,3 +83,9 @@ String tl(num v) {
 }
 
 String hm(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+/// Türkçe büyük harf (i → İ, ı → I).
+String trUpper(String s) => s.replaceAll('i', 'İ').replaceAll('ı', 'I').toUpperCase();
+
+/// Türkçe küçük harf (İ → i, I → ı).
+String trLower(String s) => s.replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();
