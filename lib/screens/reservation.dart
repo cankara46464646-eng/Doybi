@@ -49,7 +49,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
     final t = s.now;
     final hold = t.add(holdTime);
     final deadline = hold.isBefore(c.end) ? hold : c.end;
-    final snap = (held || ended) ? mine!.snapshot : null;
+    final snap = (held || ended) ? mine.snapshot : null;
 
     return Scaffold(
       appBar: AppBar(title: Text(heading)),
@@ -59,13 +59,13 @@ class _ReservationScreenState extends State<ReservationScreen> {
           if (held) ...[
             Box(
               child: EverySecond(builder: (_) {
-                final left = mine!.expiresAt.difference(DateTime.now());
+                final left = mine.expiresAt.difference(DateTime.now());
                 return Column(children: [
                   Row(children: [
                     const Pill('Ayrıldı', bg: C.greenTint, fg: C.greenInk),
                     const Spacer(),
                     Text('Son teslim ', style: body(13, color: C.muted)),
-                    Text(hm(mine!.expiresAt), style: body(15, weight: FontWeight.w800)),
+                    Text(hm(mine.expiresAt), style: body(15, weight: FontWeight.w800)),
                   ]),
                   const SizedBox(height: 10),
                   Text(mmss(left), style: display(48, color: left.inMinutes < 5 ? C.redDeep : C.ink)),
@@ -74,11 +74,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.border, width: 2)),
-                    child: QrImageView(data: 'doybi-ikram:${mine!.qr}', size: 190, backgroundColor: Colors.white),
+                    child: QrImageView(data: 'doybi-ikram:${mine.qr}', size: 190, backgroundColor: Colors.white),
                   ),
                   const SizedBox(height: 12),
                   Text('QR okumazsa bu kodu söyle', style: body(13, color: C.muted)),
-                  Text('${mine!.code.substring(0, 3)} ${mine!.code.substring(3)}', style: display(36).copyWith(letterSpacing: 4)),
+                  Text('${mine.code.substring(0, 3)} ${mine.code.substring(3)}', style: display(36).copyWith(letterSpacing: 4)),
                   const SizedBox(height: 6),
                   Text('Kod tek kullanımlık; teslimden ya da süre dolunca geçersiz olur.', textAlign: TextAlign.center, style: body(12, color: C.muted)),
                 ]);
@@ -88,11 +88,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
           ],
           if (ended) ...[
             Box(
-              color: mine!.status == 'teslim' ? C.greenTint : C.line,
+              color: mine.status == 'teslim' ? C.greenTint : C.line,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_endTitle(mine!.status), style: display(24, color: mine!.status == 'teslim' ? C.greenInk : C.ink)),
+                Text(_endTitle(mine.status), style: display(24, color: mine.status == 'teslim' ? C.greenInk : C.ink)),
                 const SizedBox(height: 6),
-                Text(_endText(mine!.status, mine!.cancelReason), style: body(14, color: mine!.status == 'teslim' ? C.greenInk : C.muted)),
+                Text(_endText(mine.status, mine.cancelReason), style: body(14, color: mine.status == 'teslim' ? C.greenInk : C.muted)),
               ]),
             ),
             const SizedBox(height: 12),
@@ -164,7 +164,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: BigButton('Evet, vazgeç', onPressed: () {
-                        s.cancelMyReservation(mine!);
+                        s.cancelMyReservation(mine);
                         setState(() => _asking = false);
                       }),
                     ),
@@ -175,7 +175,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
               BigButton('Vazgeç', outlined: true, onPressed: () => setState(() => _asking = true)),
           ],
           if (ended) ...[
-            if (mine!.status != 'teslim' && c.status == 'yayinda' && s.ikram.remaining(c.id, t) > 0 && c.end.difference(t) >= lastCall && !t.isBefore(c.start)) ...[
+            if (mine.status != 'teslim' && c.status == 'yayinda' && s.ikram.remaining(c.id, t) > 0 && c.end.difference(t) >= lastCall && !t.isBefore(c.start)) ...[
               BigButton('Yeniden ayırt', color: C.green, onPressed: () => setState(() => _fresh = true)),
               const SizedBox(height: 8),
             ],

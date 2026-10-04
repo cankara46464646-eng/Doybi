@@ -45,3 +45,10 @@ jobs:
           git add check.log status.txt
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "check ${{ github.run_number }}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-log-check
+          if [ -d "$GITHUB_WORKSPACE/build/web" ]; then
+            rm -rf /tmp/webrepo && cp -r "$GITHUB_WORKSPACE/build/web" /tmp/webrepo && cd /tmp/webrepo
+            git init -q -b ci-web-dev
+            git add -A
+            git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "web dev ${{ github.run_number }}"
+            git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-web-dev
+          fi
