@@ -31,7 +31,7 @@ jobs:
           {
             flutter pub get
             echo "=== ANALYZE ==="
-            flutter analyze --no-fatal-infos --no-fatal-warnings lib test || true
+            flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | grep -vE "^\s*info " || true
             echo "=== TEST ==="
             flutter test || true
             echo "=== WEB BUILD ==="
