@@ -1,0 +1,47 @@
+name: Check
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+          cache: true
+
+      - name: Analiz ve testler
+        shell: bash
+        run: |
+          {
+            flutter pub get
+            echo "=== ANALYZE ==="
+            flutter analyze --no-fatal-infos --no-fatal-warnings lib test || true
+            echo "=== TEST ==="
+            flutter test || true
+            echo "=== WEB BUILD ==="
+            flutter build web --release --base-href "/Doybi/app/" 2>&1 | tail -n 60 || true
+          } > check.log 2>&1
+          echo "run=${{ github.run_number }} sha=${{ github.sha }}" > status.txt
+          rm -rf /tmp/logrepo && mkdir /tmp/logrepo
+          cp check.log status.txt /tmp/logrepo/
+          cd /tmp/logrepo
+          git init -q -b ci-log-check
+          git add check.log status.txt
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "check ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-log-check

@@ -1,154 +1,623 @@
-import 'dart:async';
+import 'dart:async' show Timer;
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/demo.dart';
 import '../data/models.dart';
+import '../logic/ikram.dart';
+import '../logic/pricing.dart';
 
-/// Uygulamanın tüm durumu. İlk sürümde telefonda tutulur; sunucu bağlanınca
-/// siparişler oradan gelecek.
+const _dataVersion = 3;
+const _key = 'doybi_state';
+
+/// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
 class AppState extends ChangeNotifier {
+  // ---------- müşteri ----------
   String? mahalle;
   String addressLine = '';
   String? phone; // SMS ile doğrulanmış numara
-
-  Restaurant? cartRestaurant;
+  String name = '';
+  bool notifPush = true;
+  bool notifSms = false;
+  bool ikramNotify = false;
+  List<String> recentSearches = ['lahmacun', 'adana dürüm', 'künefe'];
+  List<String> wallet = []; // eklenmiş kupon kodları
+  String? chosenCoupon;
+  String? cartRestaurantId;
   final List<CartLine> cart = [];
-  final List<Order> orders = [];
 
-  /// Deneme: restoran siparişi kendisi ilerletsin (tek telefonla denerken).
+  // ---------- platform verisi ----------
+  List<Restaurant> restaurants = [];
+  List<Order> orders = [];
+  List<Coupon> coupons = [];
+  List<Complaint> complaints = [];
+  List<Application> applications = [];
+  List<ShareReq> shares = [];
+  Map<String, Subscription> subs = {};
+  List<LogEntry> logs = [];
+  List<BlockedNumber> blockedNumbers = [];
+  List<PromoBanner> banners = [];
+  List<String> featured = [];
+  String monthRestaurant = 'UD';
+  IkramStore ikram = IkramStore();
+  String ikramDay = '';
+  Map<String, int> failCount = {};
+
+  // fiyatlar: devam eden dönemler [fees]/[vat] ile, yeni dönemler [futureFees]/[futureVat] ile hesaplanır
+  List<int> fees = List.of(defaultFees);
+  int vat = 20;
+  List<int> futureFees = List.of(defaultFees);
+  int futureVat = 20;
+  int socialQuota = 10;
+  String socialHandle = '';
+  final socialGross = 500000; // 5.000 TL KDV dahil
+
+  // ---------- deneme ayarları ----------
   bool autoRestaurant = true;
-  final Map<String, Timer> _timers = {};
-  int _seq = 1042;
+  bool enforceHours = false;
+  String panelRestaurantId = 'UD';
 
+  final Map<String, Timer> _timers = {};
+  Timer? _saveTimer;
+  Timer? _tick;
+  int _seq = 1042;
+  bool _loading = true;
+
+  DateTime get now => DateTime.now();
+
+  // =====================================================================
+  // kayıt / yükleme
+  // =====================================================================
   Future<void> load() async {
     try {
       final p = await SharedPreferences.getInstance();
-      mahalle = p.getString('mahalle');
-      addressLine = p.getString('address') ?? '';
-      phone = p.getString('phone');
-      autoRestaurant = p.getBool('auto') ?? true;
-    } catch (_) {}
+      final raw = p.getString(_key);
+      if (raw != null) {
+        final j = jsonDecode(raw) as Map<String, dynamic>;
+        if (j['v'] == _dataVersion) {
+          _fromJson(j);
+        } else {
+          _seed();
+          mahalle = j['mahalle'];
+          addressLine = j['address'] ?? '';
+          phone = j['phone'];
+        }
+      } else {
+        _seed();
+        // 0.1 sürümünden kalan adres ve telefon
+        mahalle = p.getString('mahalle');
+        addressLine = p.getString('address') ?? '';
+        phone = p.getString('phone');
+      }
+    } catch (_) {
+      _seed();
+    }
+    _refreshDemoIkram();
+    _loading = false;
+    _tick = Timer.periodic(const Duration(seconds: 10), (_) => _housekeeping());
+  }
+
+  void _seed() {
+    final t = now;
+    restaurants = demoRestaurants();
+    orders = [];
+    coupons = demoCoupons();
+    wallet = ['HOSGELDIN', 'USTA15', 'TESLIMAT0', 'EYLUL25'];
+    complaints = [];
+    applications = demoApplications(t);
+    shares = demoShares(t);
+    subs = demoSubscriptions(t);
+    logs = [
+      LogEntry('Usta Dürüm Evi · Sosyal Medya Desteği ödemesi onaylandı (5.000,00 TL)', DateTime(2026, 10, 1, 10, 14), 'yonetici'),
+      LogEntry('Usta Dürüm Evi · story yayın kaydı eklendi: Adana Dürüm menüsü', DateTime(2026, 10, 2, 19, 6), 'yonetici'),
+      LogEntry('Fırın Pide Salonu · abonelik ödemesi gecikti olarak işaretlendi', DateTime(2026, 10, 4, 9, 0), 'sistem'),
+    ];
+    blockedNumbers = demoBlocked(t);
+    banners = demoBanners();
+    featured = ['UD', 'FP', 'LD'];
+    monthRestaurant = 'UD';
+    ikram = IkramStore();
+    ikramDay = '';
+    failCount = {};
+    fees = List.of(defaultFees);
+    vat = 20;
+    futureFees = List.of(defaultFees);
+    futureVat = 20;
+  }
+
+  /// Gün değişince deneme ikramlarını bugüne göre yeniden kur.
+  void _refreshDemoIkram() {
+    final today = trDay(now);
+    if (ikramDay == today) return;
+    ikram.campaigns.removeWhere((c) => c.id.startsWith('demo-'));
+    ikram.reservations.removeWhere((r) => r.campaignId.startsWith('demo-'));
+    for (final c in demoCampaigns(now)) {
+      ikram.createCampaign(c);
+    }
+    seedOtherReservations(ikram, now);
+    ikramDay = today;
+  }
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    if (_loading) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), _save);
   }
 
   Future<void> _save() async {
     try {
       final p = await SharedPreferences.getInstance();
-      if (mahalle != null) p.setString('mahalle', mahalle!);
-      p.setString('address', addressLine);
-      if (phone != null) {
-        p.setString('phone', phone!);
-      } else {
-        p.remove('phone');
-      }
-      p.setBool('auto', autoRestaurant);
+      await p.setString(_key, jsonEncode(_toJson()));
     } catch (_) {}
   }
 
-  // ---------- adres ve hesap ----------
+  Map<String, dynamic> _toJson() => {
+        'v': _dataVersion,
+        'mahalle': mahalle,
+        'address': addressLine,
+        'phone': phone,
+        'name': name,
+        'np': notifPush,
+        'ns': notifSms,
+        'in': ikramNotify,
+        'recent': recentSearches,
+        'wallet': wallet,
+        'chosen': chosenCoupon,
+        'cartR': cartRestaurantId,
+        'cart': cart.map((l) => l.toJson()).toList(),
+        'restaurants': restaurants.map((r) => r.toJson()).toList(),
+        'orders': orders.map((o) => o.toJson()).toList(),
+        'coupons': coupons.map((c) => c.toJson()).toList(),
+        'complaints': complaints.map((c) => c.toJson()).toList(),
+        'apps': applications.map((a) => a.toJson()).toList(),
+        'shares': shares.map((s) => s.toJson()).toList(),
+        'subs': subs.map((k, v) => MapEntry(k, v.toJson())),
+        'logs': logs.map((l) => l.toJson()).toList(),
+        'blockedN': blockedNumbers.map((b) => b.toJson()).toList(),
+        'banners': banners.map((b) => b.toJson()).toList(),
+        'featured': featured,
+        'month': monthRestaurant,
+        'ikram': ikram.toJson(),
+        'ikramDay': ikramDay,
+        'fail': failCount,
+        'fees': fees,
+        'vat': vat,
+        'ffees': futureFees,
+        'fvat': futureVat,
+        'squota': socialQuota,
+        'shandle': socialHandle,
+        'auto': autoRestaurant,
+        'hours': enforceHours,
+        'panel': panelRestaurantId,
+        'seq': _seq,
+      };
+
+  void _fromJson(Map<String, dynamic> j) {
+    Map<String, dynamic> m(dynamic v) => Map<String, dynamic>.from(v as Map);
+    mahalle = j['mahalle'];
+    addressLine = j['address'] ?? '';
+    phone = j['phone'];
+    name = j['name'] ?? '';
+    notifPush = j['np'] ?? true;
+    notifSms = j['ns'] ?? false;
+    ikramNotify = j['in'] ?? false;
+    recentSearches = List<String>.from(j['recent'] ?? const []);
+    wallet = List<String>.from(j['wallet'] ?? const []);
+    chosenCoupon = j['chosen'];
+    cartRestaurantId = j['cartR'];
+    cart
+      ..clear()
+      ..addAll((j['cart'] as List).map((e) => CartLine.fromJson(m(e))));
+    restaurants = (j['restaurants'] as List).map((e) => Restaurant.fromJson(m(e))).toList();
+    orders = (j['orders'] as List).map((e) => Order.fromJson(m(e))).toList();
+    coupons = (j['coupons'] as List).map((e) => Coupon.fromJson(m(e))).toList();
+    complaints = (j['complaints'] as List).map((e) => Complaint.fromJson(m(e))).toList();
+    applications = (j['apps'] as List).map((e) => Application.fromJson(m(e))).toList();
+    shares = (j['shares'] as List).map((e) => ShareReq.fromJson(m(e))).toList();
+    subs = m(j['subs']).map((k, v) => MapEntry(k, Subscription.fromJson(m(v))));
+    logs = (j['logs'] as List).map((e) => LogEntry.fromJson(m(e))).toList();
+    blockedNumbers = (j['blockedN'] as List).map((e) => BlockedNumber.fromJson(m(e))).toList();
+    banners = (j['banners'] as List).map((e) => PromoBanner.fromJson(m(e))).toList();
+    featured = List<String>.from(j['featured'] ?? const []);
+    monthRestaurant = j['month'] ?? 'UD';
+    ikram = IkramStore()..loadJson(m(j['ikram']));
+    ikramDay = j['ikramDay'] ?? '';
+    failCount = Map<String, int>.from(j['fail'] ?? const {});
+    fees = List<int>.from(j['fees'] ?? defaultFees);
+    vat = j['vat'] ?? 20;
+    futureFees = List<int>.from(j['ffees'] ?? defaultFees);
+    futureVat = j['fvat'] ?? 20;
+    socialQuota = j['squota'] ?? 10;
+    socialHandle = j['shandle'] ?? '';
+    autoRestaurant = j['auto'] ?? true;
+    enforceHours = j['hours'] ?? false;
+    panelRestaurantId = j['panel'] ?? 'UD';
+    _seq = j['seq'] ?? 1042;
+    // yarım kalmış otomatik ilerletmeleri yeniden kur
+    if (autoRestaurant) {
+      for (final o in orders.where((o) => !o.status.closed)) {
+        _autoStep(o, 4);
+      }
+    }
+  }
+
+  /// Her 10 saniyede: süresi dolan ayırtmalar, onaylanmayan siparişler, biten molalar.
+  void _housekeeping() {
+    final t = now;
+    var changed = ikram.expire(t);
+    for (final o in orders) {
+      if (o.status == OrderStatus.bekliyor && t.difference(o.createdAt) >= const Duration(minutes: 5)) {
+        o.status = OrderStatus.iptal;
+        o.reason = 'Restoran 5 dakika içinde onaylamadı';
+        o.reasonBy = 'sistem';
+        changed = true;
+      }
+    }
+    for (final r in restaurants) {
+      if (r.breakUntil != null && !t.isBefore(r.breakUntil!)) {
+        r.breakUntil = null;
+        changed = true;
+      }
+    }
+    final before = ikramDay;
+    _refreshDemoIkram();
+    if (before != ikramDay) changed = true;
+    if (changed) notifyListeners();
+  }
+
+  void addLog(String text, {String actor = 'yonetici'}) => logs.insert(0, LogEntry(text, now, actor));
+
+  /// Her şeyi sıfırla (hesap silme ya da deneme verisini baştan kurma).
+  void resetAll({bool keepAddress = false}) {
+    for (final t in _timers.values) {
+      t.cancel();
+    }
+    _timers.clear();
+    final m = mahalle, a = addressLine;
+    _seed();
+    cart.clear();
+    cartRestaurantId = null;
+    chosenCoupon = null;
+    phone = null;
+    name = '';
+    mahalle = keepAddress ? m : null;
+    addressLine = keepAddress ? a : '';
+    _refreshDemoIkram();
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // adres ve hesap
+  // =====================================================================
   void setAddress(String m, String line) {
     mahalle = m;
     addressLine = line.trim();
-    if (cartRestaurant != null && zoneFor(cartRestaurant!) == null) clearCart();
-    _save();
+    final r = cartRestaurant;
+    if (r != null && zoneFor(r) == null) clearCart();
     notifyListeners();
   }
 
   void verifyPhone(String p) {
     phone = p;
-    _save();
+    notifyListeners();
+  }
+
+  void setName(String n) {
+    name = n.trim();
     notifyListeners();
   }
 
   void signOut() {
     phone = null;
-    _save();
+    notifyListeners();
+  }
+
+  void setNotif({bool? push, bool? sms, bool? ikramNew}) {
+    if (push != null) notifPush = push;
+    if (sms != null) notifSms = sms;
+    if (ikramNew != null) ikramNotify = ikramNew;
     notifyListeners();
   }
 
   void setAuto(bool v) {
     autoRestaurant = v;
-    _save();
+    if (v) {
+      for (final o in orders.where((o) => !o.status.closed)) {
+        _autoStep(o, 3);
+      }
+    } else {
+      for (final t in _timers.values) {
+        t.cancel();
+      }
+    }
+    notifyListeners();
+  }
+
+  void setEnforceHours(bool v) {
+    enforceHours = v;
+    notifyListeners();
+  }
+
+  void setPanelRestaurant(String id) {
+    panelRestaurantId = id;
     notifyListeners();
   }
 
   String get fullAddress => [if (mahalle != null) '$mahalle Mah.', if (addressLine.isNotEmpty) addressLine].join(' ');
 
-  // ---------- restoranlar ----------
-  Zone? zoneFor(Restaurant r) => mahalle == null ? null : r.zones[mahalle];
-  List<Restaurant> get nearby => restaurants.where((r) => zoneFor(r) != null).toList();
-
-  // ---------- sepet ----------
-  int qtyOf(MenuItem i) {
-    for (final l in cart) {
-      if (l.item.id == i.id) return l.qty;
-    }
-    return 0;
+  String maskPhone(String? p) {
+    if (p == null || p.isEmpty) return '';
+    if (p.length == 10) return '0${p.substring(0, 3)} *** ** ${p.substring(8)}';
+    return p;
   }
 
+  String get displayName => name.isEmpty ? 'Doybi kullanıcısı' : name;
+
+  void addRecent(String q) {
+    final t = q.trim().toLowerCase();
+    if (t.isEmpty) return;
+    recentSearches.remove(t);
+    recentSearches.insert(0, t);
+    if (recentSearches.length > 6) recentSearches = recentSearches.sublist(0, 6);
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // restoranlar
+  // =====================================================================
+  Restaurant? restaurant(String? id) {
+    for (final r in restaurants) {
+      if (r.id == id) return r;
+    }
+    return null;
+  }
+
+  Restaurant get panelRestaurant => restaurant(panelRestaurantId) ?? restaurants.first;
+
+  DeliveryZone? zoneFor(Restaurant r) {
+    if (mahalle == null) return null;
+    final z = r.zones[mahalle];
+    return z != null && z.on ? z : null;
+  }
+
+  bool onBreak(Restaurant r) => r.breakUntil != null && now.isBefore(r.breakUntil!);
+
+  bool isOpen(Restaurant r) => !r.manualClosed && !onBreak(r) && (!enforceHours || r.openAt(now));
+
+  String closedText(Restaurant r) {
+    if (onBreak(r)) return 'Kısa molada · ${hhmm(r.breakUntil!.hour * 60 + r.breakUntil!.minute)}\'de döner';
+    return 'Kapalı · ${r.nextOpenText(now)}';
+  }
+
+  /// Keşfet sırası: öne çıkanlar önce, sonra açık olanlar, sonra puan.
+  List<Restaurant> get nearby {
+    final list = restaurants.where((r) => zoneFor(r) != null).toList();
+    int rank(Restaurant r) {
+      final i = featured.indexOf(r.id);
+      return i < 0 ? 100 : i;
+    }
+
+    list.sort((a, b) {
+      final o = (isOpen(a) ? 0 : 1).compareTo(isOpen(b) ? 0 : 1);
+      if (o != 0) return o;
+      final f = rank(a).compareTo(rank(b));
+      if (f != 0) return f;
+      return b.rating.compareTo(a.rating);
+    });
+    return list;
+  }
+
+  bool phoneBlockedBy(Restaurant r) {
+    final p = phone;
+    if (p == null) return false;
+    if (r.blocked.contains(p)) return true;
+    return blockedNumbers.any((b) => b.phone == maskPhone(p) && !b.open);
+  }
+
+  // =====================================================================
+  // sepet
+  // =====================================================================
+  Restaurant? get cartRestaurant => restaurant(cartRestaurantId);
+
+  int qtyOf(String itemId) => cart.where((l) => l.itemId == itemId).fold(0, (a, l) => a + l.qty);
   int get cartCount => cart.fold(0, (a, l) => a + l.qty);
   int get subtotal => cart.fold(0, (a, l) => a + l.total);
-  Zone? get cartZone => cartRestaurant == null ? null : zoneFor(cartRestaurant!);
+  DeliveryZone? get cartZone => cartRestaurant == null ? null : zoneFor(cartRestaurant!);
   int get deliveryFee => cartZone?.fee ?? 0;
   int get minCart => cartZone?.min ?? 0;
   bool get minOk => subtotal >= minCart;
-  int get total => subtotal + deliveryFee;
 
   /// Başka restoranın sepeti doluysa false döner.
-  bool add(Restaurant r, MenuItem i) {
-    if (cartRestaurant != null && cartRestaurant!.id != r.id && cart.isNotEmpty) return false;
-    cartRestaurant = r;
+  bool addLine(Restaurant r, CartLine line) {
+    if (cartRestaurantId != null && cartRestaurantId != r.id && cart.isNotEmpty) return false;
+    cartRestaurantId = r.id;
     for (final l in cart) {
-      if (l.item.id == i.id) {
-        l.qty++;
+      if (l.key == line.key) {
+        l.qty += line.qty;
         notifyListeners();
         return true;
       }
     }
-    cart.add(CartLine(i, 1));
+    cart.add(line);
     notifyListeners();
     return true;
   }
 
-  void remove(MenuItem i) {
-    for (final l in cart) {
-      if (l.item.id == i.id) {
-        l.qty--;
-        if (l.qty <= 0) cart.remove(l);
-        break;
+  /// Seçeneksiz hızlı ekleme (varsayılan seçeneklerle).
+  bool addQuick(Restaurant r, MenuItem i) {
+    final opts = <String>[];
+    var add = 0;
+    for (final g in i.groups.where((g) => g.required)) {
+      opts.add(g.opts.first.label);
+      add += g.opts.first.add;
+    }
+    return addLine(r, CartLine(itemId: i.id, name: i.name, unit: i.price + add, optAdd: add, qty: 1, opts: opts.join(' · ')));
+  }
+
+  void incLine(CartLine l) {
+    l.qty++;
+    notifyListeners();
+  }
+
+  void decLine(CartLine l) {
+    l.qty--;
+    if (l.qty <= 0) cart.remove(l);
+    if (cart.isEmpty) cartRestaurantId = null;
+    notifyListeners();
+  }
+
+  /// Ürün listesindeki "−": o ürünün son eklenen satırını azaltır.
+  void removeOne(String itemId) {
+    for (final l in cart.reversed) {
+      if (l.itemId == itemId) {
+        decLine(l);
+        return;
       }
     }
-    if (cart.isEmpty) cartRestaurant = null;
-    notifyListeners();
   }
 
   void clearCart() {
     cart.clear();
-    cartRestaurant = null;
+    cartRestaurantId = null;
     notifyListeners();
   }
 
-  // ---------- sipariş ----------
-  Order placeOrder({required String payment, required String note}) {
+  /// "Tekrar sipariş ver": güncel fiyatlarla, satıştaki ürünleri sepete koyar. Eklenmeyenlerin sayısını döner.
+  int reorder(Order o) {
+    final r = restaurant(o.restaurantId);
+    if (r == null) return o.lines.length;
+    cart.clear();
+    cartRestaurantId = r.id;
+    var missing = 0;
+    for (final l in o.lines) {
+      final i = r.item(l.itemId);
+      if (i == null || !i.available) {
+        missing++;
+        continue;
+      }
+      cart.add(CartLine(itemId: i.id, name: i.name, unit: i.price + l.optAdd, optAdd: l.optAdd, qty: l.qty, opts: l.opts, note: l.note));
+    }
+    if (cart.isEmpty) cartRestaurantId = null;
+    notifyListeners();
+    return missing;
+  }
+
+  // =====================================================================
+  // kuponlar
+  // =====================================================================
+  Coupon? coupon(String? code) {
+    for (final c in coupons) {
+      if (c.code == code) return c;
+    }
+    return null;
+  }
+
+  List<Coupon> get walletCoupons => wallet.map(coupon).whereType<Coupon>().toList();
+
+  bool couponUsed(String code) => orders.any((o) => o.coupon == code && o.status != OrderStatus.iptal && o.status != OrderStatus.edilemedi);
+
+  bool get hasOrdered => orders.any((o) => o.status != OrderStatus.iptal && o.status != OrderStatus.edilemedi);
+
+  /// Kupon bu sepete uygulanabilir mi? Uygulanamazsa nedenini döner.
+  ({bool ok, String why, int discount}) couponCheck(Coupon c, {Restaurant? r, int? sub, int? fee}) {
+    r ??= cartRestaurant;
+    sub ??= subtotal;
+    fee ??= deliveryFee;
+    if (c.expired || !c.active) return (ok: false, why: 'Süresi doldu', discount: 0);
+    if (couponUsed(c.code)) return (ok: false, why: 'Bu kuponu kullandın', discount: 0);
+    if (c.firstOrder && hasOrdered) return (ok: false, why: 'Sadece ilk siparişte geçerli', discount: 0);
+    if (r == null) return (ok: true, why: '', discount: 0);
+    if (c.restaurantId != null && c.restaurantId != r.id) {
+      return (ok: false, why: 'Sadece ${restaurant(c.restaurantId)?.name ?? 'bir restoranda'} geçerli', discount: 0);
+    }
+    if (sub < c.min) return (ok: false, why: 'Min. sepet ₺${c.min} · ₺${c.min - sub} daha ekle', discount: 0);
+    int d;
+    switch (c.kind) {
+      case 'yuzde':
+        d = sub * c.amount ~/ 100;
+        if (c.maxOff > 0 && d > c.maxOff) d = c.maxOff;
+      case 'teslimat':
+        d = fee;
+        if (d == 0) return (ok: false, why: 'Bu adreste teslimat zaten ücretsiz', discount: 0);
+      default:
+        d = c.amount > sub ? sub : c.amount;
+    }
+    return (ok: true, why: '', discount: d);
+  }
+
+  int get discount {
+    final c = coupon(chosenCoupon);
+    if (c == null) return 0;
+    final chk = couponCheck(c);
+    return chk.ok ? chk.discount : 0;
+  }
+
+  int get total => subtotal + deliveryFee - discount;
+
+  void chooseCoupon(String? code) {
+    chosenCoupon = code;
+    notifyListeners();
+  }
+
+  /// Kupon kodu ekle. Hata metni ya da null döner.
+  String? addCouponCode(String raw) {
+    final code = raw.trim().toUpperCase().replaceAll('İ', 'I');
+    if (code.isEmpty) return 'Önce kodu yaz.';
+    final c = coupon(code);
+    if (c == null || !c.active) return 'Bu kod geçerli değil.';
+    if (c.expired) return 'Bu kuponun süresi dolmuş.';
+    if (wallet.contains(code)) return 'Bu kupon zaten ekli.';
+    wallet.insert(0, code);
+    notifyListeners();
+    return null;
+  }
+
+  // =====================================================================
+  // sipariş (müşteri)
+  // =====================================================================
+  int deliveredCountFor(String p) => orders.where((o) => o.phone == p && o.status == OrderStatus.teslim).length;
+
+  Order placeOrder({required String payment, String? change, required String note}) {
     final r = cartRestaurant!;
+    final c = coupon(chosenCoupon);
+    final d = discount;
     final o = Order(
       id: '#D-${_seq++}',
-      restaurant: r,
-      lines: cart.map((l) => CartLine(l.item, l.qty)).toList(),
+      restaurantId: r.id,
+      restaurantName: r.name,
+      lines: cart.map((l) => CartLine(itemId: l.itemId, name: l.name, unit: l.unit, optAdd: l.optAdd, qty: l.qty, opts: l.opts, note: l.note)).toList(),
       subtotal: subtotal,
       deliveryFee: deliveryFee,
+      coupon: d > 0 ? c?.code : null,
+      discount: d,
+      couponPayer: c?.payer ?? 'doybi',
       payment: payment,
+      change: payment == 'nakit' ? change : null,
       note: note.trim(),
       address: fullAddress,
       phone: phone ?? '',
-      createdAt: DateTime.now(),
+      customerName: name.isEmpty ? '' : name,
+      createdAt: now,
     );
     orders.insert(0, o);
-    clearCart();
+    cart.clear();
+    cartRestaurantId = null;
+    chosenCoupon = null;
     if (autoRestaurant) _autoStep(o, 6);
     notifyListeners();
     return o;
+  }
+
+  Order? order(String id) {
+    for (final o in orders) {
+      if (o.id == id) return o;
+    }
+    return null;
   }
 
   List<Order> get activeOrders => orders.where((o) => !o.status.closed).toList();
@@ -160,28 +629,41 @@ class AppState extends ChangeNotifier {
       switch (o.status) {
         case OrderStatus.bekliyor:
           accept(o, 20);
-          break;
         case OrderStatus.hazirlaniyor:
           toRoad(o);
-          break;
         case OrderStatus.yolda:
           deliver(o);
-          break;
+          collect(o, o.payment == 'kart' ? 'pos' : 'nakit');
         default:
           break;
       }
     });
   }
 
-  void customerCancel(Order o) {
+  void customerCancel(Order o, String reason) {
     if (o.status != OrderStatus.bekliyor) return;
     o.status = OrderStatus.iptal;
-    o.reason = 'Müşteri vazgeçti';
+    o.reason = reason;
+    o.reasonBy = 'musteri';
     _timers[o.id]?.cancel();
     notifyListeners();
   }
 
-  // ---------- restoran tarafı ----------
+  void rate(Order o, Rating rating) {
+    o.rating = rating;
+    final r = restaurant(o.restaurantId);
+    if (r != null) {
+      r.rating = ((r.rating * r.ratingCount) + rating.taste) / (r.ratingCount + 1);
+      r.ratingCount++;
+    }
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // sipariş (restoran)
+  // =====================================================================
+  List<Order> ordersOf(String rid) => orders.where((o) => o.restaurantId == rid).toList();
+
   void setPrep(Order o, int m) {
     o.prepMin = m;
     notifyListeners();
@@ -191,14 +673,16 @@ class AppState extends ChangeNotifier {
     if (o.status != OrderStatus.bekliyor) return;
     o.status = OrderStatus.hazirlaniyor;
     o.prepMin = prep;
+    o.acceptedAt = now;
     if (autoRestaurant) _autoStep(o, 10);
     notifyListeners();
   }
 
-  void reject(Order o, String reason) {
-    if (o.status.closed) return;
+  void restaurantCancel(Order o, String reason) {
+    if (o.status.closed || o.status == OrderStatus.yolda) return;
     o.status = OrderStatus.iptal;
     o.reason = reason;
+    o.reasonBy = 'restoran';
     _timers[o.id]?.cancel();
     notifyListeners();
   }
@@ -206,6 +690,7 @@ class AppState extends ChangeNotifier {
   void toRoad(Order o) {
     if (o.status != OrderStatus.hazirlaniyor) return;
     o.status = OrderStatus.yolda;
+    o.roadAt = now;
     if (autoRestaurant) _autoStep(o, 10);
     notifyListeners();
   }
@@ -213,29 +698,537 @@ class AppState extends ChangeNotifier {
   void deliver(Order o) {
     if (o.status != OrderStatus.yolda) return;
     o.status = OrderStatus.teslim;
+    o.doneAt = now;
     _timers[o.id]?.cancel();
     notifyListeners();
   }
 
-  void fail(Order o, String reason) {
+  void fail(Order o, String reason, {bool block = false}) {
     if (o.status != OrderStatus.yolda) return;
     o.status = OrderStatus.edilemedi;
     o.reason = reason;
+    o.reasonBy = 'restoran';
+    o.doneAt = now;
     _timers[o.id]?.cancel();
+    final r = restaurant(o.restaurantId);
+    if (block && r != null && o.phone.isNotEmpty && !r.blocked.contains(o.phone)) r.blocked.add(o.phone);
+    if (o.phone.isNotEmpty) {
+      final n = (failCount[o.phone] ?? 0) + 1;
+      failCount[o.phone] = n;
+      final masked = maskPhone(o.phone);
+      if (n >= 2 && !blockedNumbers.any((b) => b.phone == masked && !b.open)) {
+        blockedNumbers.insert(0, BlockedNumber(masked, '$n siparişi teslim edilemedi: "$reason"', now));
+        addLog('$masked numarası 2 teslim edilemeyen sipariş nedeniyle Doybi genelinde durduruldu', actor: 'sistem');
+      }
+    }
     notifyListeners();
   }
 
-  void collect(Order o) {
-    if (o.status != OrderStatus.teslim) return;
+  void collect(Order o, String via) {
+    if (o.status != OrderStatus.teslim || o.collected) return;
     o.collected = true;
+    o.collectedVia = via;
     notifyListeners();
   }
+
+  void unblock(Restaurant r, String p) {
+    r.blocked.remove(p);
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // sorun bildirimi
+  // =====================================================================
+  Complaint? complaintFor(String orderId) {
+    for (final c in complaints) {
+      if (c.orderId == orderId) return c;
+    }
+    return null;
+  }
+
+  Complaint addComplaint(Order o, {required String type, required String typeLabel, required List<String> items, required String want, required String text}) {
+    final c = Complaint(
+      id: 'S-${complaints.length + 1}',
+      orderId: o.id,
+      restaurantId: o.restaurantId,
+      type: type,
+      typeLabel: typeLabel,
+      items: items,
+      want: want,
+      text: text.trim(),
+      at: now,
+    );
+    complaints.insert(0, c);
+    notifyListeners();
+    return c;
+  }
+
+  /// Restoranın çözümü: getir | kismi | tam | itiraz
+  void resolveComplaint(Complaint c, String way, {int amount = 0, String how = 'nakit'}) {
+    final o = order(c.orderId);
+    final howLabel = how == 'nakit' ? 'nakit' : 'POS iadesi ile karta';
+    switch (way) {
+      case 'getir':
+        c.status = 'cozuldu';
+        c.resolution = 'Eksik ürün götürüldü.';
+      case 'kismi':
+        c.status = 'cozuldu';
+        c.refund = amount;
+        c.how = how;
+        c.resolution = '₺$amount $howLabel iade edildi.';
+      case 'tam':
+        c.status = 'cozuldu';
+        c.refund = o?.total ?? amount;
+        c.how = how;
+        c.resolution = '₺${c.refund} $howLabel iade edildi. Sipariş paket sayısından düşüldü.';
+        o?.fullRefund = true;
+      case 'itiraz':
+        c.status = 'itiraz';
+        c.resolution = 'Restoran itiraz etti; Doybi ekibi iki tarafı da arayacak.';
+    }
+    notifyListeners();
+  }
+
+  void adminCloseComplaint(Complaint c) {
+    c.status = 'doybi';
+    c.resolution = 'Doybi ekibi tarafından kapatıldı.${c.gift ? ' Müşteriye ₺50 Doybi kuponu verildi.' : ''}';
+    addLog('${restaurant(c.restaurantId)?.name ?? ''} · ${c.orderId} sorun bildirimi kapatıldı');
+    notifyListeners();
+  }
+
+  /// Doybi müşteriye özür kuponu verir (Doybi karşılar).
+  void giftCoupon(Complaint c) {
+    if (c.gift) return;
+    c.gift = true;
+    final code = 'OZUR50${(c.id.hashCode % 900 + 100).abs()}';
+    coupons.add(Coupon(code: code, kind: 'tl', amount: 50, min: 0, payer: 'doybi', until: '30 gün geçerli'));
+    final o = order(c.orderId);
+    if (o != null && o.phone == phone && !wallet.contains(code)) wallet.insert(0, code);
+    addLog('${c.orderId} için müşteriye ₺50 Doybi kuponu verildi ($code)');
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // menü ve restoran ayarları
+  // =====================================================================
+  void touch() => notifyListeners();
+
+  void toggleAvailable(MenuItem i) {
+    i.available = !i.available;
+    notifyListeners();
+  }
+
+  void saveItem(Restaurant r, MenuItem i) {
+    if (!r.menu.contains(i)) r.menu.add(i);
+    notifyListeners();
+  }
+
+  void deleteItem(Restaurant r, MenuItem i) {
+    r.menu.remove(i);
+    notifyListeners();
+  }
+
+  void setBreak(Restaurant r, int? minutes) {
+    r.breakUntil = minutes == null ? null : now.add(Duration(minutes: minutes));
+    notifyListeners();
+  }
+
+  void setManualClosed(Restaurant r, bool closed) {
+    r.manualClosed = closed;
+    notifyListeners();
+  }
+
+  // =====================================================================
+  // abonelik
+  // =====================================================================
+  Subscription? sub(String rid) => subs[rid];
+
+  /// Bu dönem teslim edilen ve pakete sayılan siparişler (iptal, teslim edilemeyen, tamamen iade ve ikramlar hariç).
+  int billableNow(String rid) {
+    final s = subs[rid];
+    final app = orders.where((o) => o.restaurantId == rid && o.status == OrderStatus.teslim && !o.fullRefund).length;
+    return (s?.baseNow ?? 0) + app;
+  }
+
+  ({int cancelled, int failed, int refunded, int ikram}) excludedNow(String rid) => (
+        cancelled: orders.where((o) => o.restaurantId == rid && o.status == OrderStatus.iptal).length,
+        failed: orders.where((o) => o.restaurantId == rid && o.status == OrderStatus.edilemedi).length,
+        refunded: orders.where((o) => o.restaurantId == rid && o.fullRefund).length,
+        ikram: ikram.reservations.where((r) => r.snapshot.branchId == rid && r.status == 'teslim').length,
+      );
+
+  /// Doybi'nin karşıladığı kuponlardan doğan mahsup (kuruş).
+  int creditNow(String rid) {
+    final s = subs[rid];
+    final app = orders
+        .where((o) => o.restaurantId == rid && o.status == OrderStatus.teslim && o.couponPayer == 'doybi' && o.discount > 0)
+        .fold(0, (a, o) => a + o.discount * 100);
+    return (s?.creditBase ?? 0) + app;
+  }
+
+  /// Bu dönemin abonelik faturası.
+  ({int fee, int credit, Money money}) invoiceNow(String rid) {
+    final s = subs[rid]!;
+    var credit = creditNow(rid);
+    if (credit > s.fee) credit = s.fee;
+    return (fee: s.fee, credit: credit, money: fromNet(s.fee - credit, vat));
+  }
+
+  Bill? currentBill(String rid) {
+    final s = subs[rid];
+    if (s == null) return null;
+    for (final b in s.bills) {
+      if (b.kind == 'abonelik' && (b.id.endsWith('-cur'))) return b;
+    }
+    return null;
+  }
+
+  /// UD için mevcut dönemin faturasını (yoksa) oluşturur.
+  Bill ensureCurrentBill(String rid) {
+    final existing = currentBill(rid);
+    if (existing != null) return existing;
+    final s = subs[rid]!;
+    final b = Bill(id: '$rid-cur', kind: 'abonelik', net: s.fee, gross: false, title: 'Bu dönem', state: s.fee == 0 ? 'free' : 'unpaid');
+    s.bills.insert(0, b);
+    return b;
+  }
+
+  NextPackage nextFor(String rid, int simulatedCount) {
+    final s = subs[rid]!;
+    return nextPackage([...s.history, simulatedCount], s.fee, fees: futureFees, acceptedOffer: s.offerState == 'onaylandi' ? s.offer : null);
+  }
+
+  void notifyPayment(String rid) {
+    final b = ensureCurrentBill(rid);
+    if (b.state == 'unpaid' || b.state == 'late') b.state = 'notified';
+    addLog('${restaurant(rid)?.name ?? rid} · abonelik havalesi bildirildi', actor: 'restoran:$rid');
+    notifyListeners();
+  }
+
+  void confirmBill(String rid, Bill b) {
+    if (b.state == 'paid' || b.state == 'free') return;
+    b.state = 'paid';
+    b.paidAt = _shortDate(now);
+    final s = subs[rid];
+    if (b.kind == 'sosyal' && s != null) {
+      s.social = 'aktif';
+      s.socialStart = _shortDate(now);
+    }
+    final amount = b.gross ? b.net : (b.kind == 'abonelik' && b.id.endsWith('-cur') ? invoiceNow(rid).money.total : fromNet(b.net, vat).total);
+    addLog('${restaurant(rid)?.name ?? rid} · ${b.kind == 'sosyal' ? 'Sosyal Medya Desteği' : 'abonelik'} ödemesi onaylandı (${money(amount)})');
+    notifyListeners();
+  }
+
+  void savePrices(List<int> newFees, int newVat) {
+    final changes = <String>[];
+    for (var i = 0; i < newFees.length; i++) {
+      if (newFees[i] != futureFees[i]) changes.add('${tiers[i].label}: ${shortMoney(futureFees[i])} → ${shortMoney(newFees[i])}');
+    }
+    if (newVat != futureVat) changes.add('KDV %$futureVat → %$newVat');
+    if (changes.isEmpty) return;
+    futureFees = List.of(newFees);
+    futureVat = newVat;
+    addLog('Gelecek dönem fiyatları güncellendi: ${changes.join(', ')}');
+    notifyListeners();
+  }
+
+  void sendOffer(String rid, int amount) {
+    final s = subs[rid];
+    if (s == null) return;
+    s.offer = amount;
+    s.offerState = 'gonderildi';
+    addLog('${restaurant(rid)?.name ?? rid} · özel teklif gönderildi: ${shortMoney(amount)} + KDV');
+    notifyListeners();
+  }
+
+  void answerOffer(String rid, bool accept) {
+    final s = subs[rid];
+    if (s == null || s.offerState != 'gonderildi') return;
+    s.offerState = accept ? 'onaylandi' : 'reddedildi';
+    addLog('${restaurant(rid)?.name ?? rid} · özel teklifi ${accept ? 'onayladı' : 'reddetti'}', actor: 'restoran:$rid');
+    notifyListeners();
+  }
+
+  // ---------- sosyal medya paketi ----------
+  int get socialTaken => subs.values.where((s) => s.social != 'yok').length;
+
+  void requestSocial(String rid) {
+    final s = subs[rid];
+    if (s == null || s.social != 'yok') return;
+    s.social = 'talep';
+    s.bills.insert(0, Bill(id: '$rid-s${s.bills.length + 1}', kind: 'sosyal', net: socialGross, gross: true, title: 'Sosyal Medya Desteği', state: 'unpaid'));
+    addLog('${restaurant(rid)?.name ?? rid} · Sosyal Medya Desteği talebi', actor: 'restoran:$rid');
+    notifyListeners();
+  }
+
+  void withdrawSocial(String rid) {
+    final s = subs[rid];
+    if (s == null || s.social != 'talep') return;
+    s.social = 'yok';
+    s.bills.removeWhere((b) => b.kind == 'sosyal' && b.state != 'paid');
+    notifyListeners();
+  }
+
+  List<ShareReq> sharesOf(String rid) => shares.where((s) => s.restaurantId == rid).toList();
+
+  ShareCounts shareCountsOf(String rid) => shareCounts([for (final s in sharesOf(rid)) (id: s.id, status: s.status)], 4);
+
+  /// Yeni paylaşım talebi. [submit] false ise taslak. Hak kalmadıysa hata metni döner.
+  String? addShare(String rid, {required String title, required String price, required String date, required String note, required bool submit}) {
+    if (submit && shareCountsOf(rid).left <= 0) return 'Bu ayki 4 hakkını kullandın.';
+    shares.insert(0, ShareReq(
+      id: 'sh${now.millisecondsSinceEpoch}',
+      restaurantId: rid,
+      title: title.trim().isEmpty ? 'Yeni paylaşım' : title.trim(),
+      priceText: price.trim(),
+      datePref: date,
+      note: note.trim(),
+      status: submit ? 'alindi' : 'taslak',
+      at: now,
+    ));
+    notifyListeners();
+    return null;
+  }
+
+  String? setShareStatus(ShareReq s, String status, {String? revision, String? planned, String? reach, String? clicks}) {
+    if (s.status == 'taslak' && status == 'alindi' && shareCountsOf(s.restaurantId).left <= 0) return 'Bu ayki 4 hakkını kullandın.';
+    s.status = status;
+    if (revision != null) s.revision = revision;
+    if (planned != null) s.planned = planned;
+    if (reach != null) s.reach = reach;
+    if (clicks != null) s.clicks = clicks;
+    if (status == 'yayinlandi') s.proof = true;
+    final rn = restaurant(s.restaurantId)?.name ?? '';
+    switch (status) {
+      case 'onay':
+        addLog('$rn · ${s.title} tasarımı restoran onayına gönderildi');
+      case 'planlandi':
+        addLog('$rn · ${s.title} planlandı: ${s.planned}');
+      case 'yayinlandi':
+        addLog('$rn · story yayın kaydı eklendi: ${s.title}');
+    }
+    notifyListeners();
+    return null;
+  }
+
+  // =====================================================================
+  // başvurular
+  // =====================================================================
+  void submitApplication(Application a) {
+    applications.insert(0, a);
+    notifyListeners();
+  }
+
+  void toggleAppCheck(Application a, String check) {
+    if (!a.checks.remove(check)) a.checks.add(check);
+    notifyListeners();
+  }
+
+  void approveApplication(Application a) {
+    a.status = 'onay';
+    subs[a.id] = Subscription(
+      restaurantId: a.id,
+      history: [],
+      baseNow: 0,
+      fee: 0,
+      periodStart: '${_shortDate(now)} · 00:00',
+      periodEnd: '${_shortDate(now.add(const Duration(days: 30)))} · 23:59',
+      daysLeft: 30,
+      bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: '1. dönem · İlk ay ücretsiz', state: 'free')],
+    );
+    addLog('${a.name} · başvuru onaylandı, ilk ücretsiz ayı giriş paketiyle açıldı');
+    notifyListeners();
+  }
+
+  void rejectApplication(Application a, String reason) {
+    a.status = 'red';
+    a.reason = reason;
+    addLog('${a.name} · başvuru reddedildi: $reason');
+    notifyListeners();
+  }
+
+  String appName(String rid) => restaurant(rid)?.name ?? applications.where((a) => a.id == rid).map((a) => a.name).firstOrNull ?? rid;
+
+  // =====================================================================
+  // Esnaftan Öğrenciye
+  // =====================================================================
+  String get _uid => phone ?? 'anon';
+
+  /// Müşterinin göreceği bugünkü ikramlar (durdurulan ve kapatılanlar hariç).
+  List<Campaign> get todaysCampaigns {
+    final t = now;
+    final list = ikram.campaigns.where((c) => c.status == 'yayinda' && c.end.isAfter(t) && trDay(c.start) == trDay(t)).toList();
+    list.sort((a, b) {
+      int st(Campaign c) => ikram.remaining(c.id, t) <= 0 ? 2 : (t.isBefore(c.start) ? 1 : 0);
+      return st(a).compareTo(st(b));
+    });
+    return list;
+  }
+
+  Reservation? get myReservation => phone == null ? null : ikram.activeFor(_uid);
+
+  Reservation? lastReservationOf(String campId) {
+    Reservation? out;
+    for (final r in ikram.reservations) {
+      if (r.campaignId == campId && r.userId == _uid) out = r;
+    }
+    return out;
+  }
+
+  IkramResult reserveIkram(Campaign c) {
+    final r = ikram.reserve(userId: _uid, phoneVerified: phone != null, campaignId: c.id, now: now, idemKey: '${_uid}_${c.id}_${now.millisecondsSinceEpoch ~/ 5000}');
+    notifyListeners();
+    return r;
+  }
+
+  IkramResult cancelMyReservation(Reservation r) {
+    final out = ikram.studentCancel(r.id, _uid, now);
+    notifyListeners();
+    return out;
+  }
+
+  /// Restoranın bugünkü (ya da en yakın) ikramı.
+  Campaign? campaignOf(String rid) {
+    final t = now;
+    Campaign? best;
+    for (final c in ikram.campaigns.where((c) => c.branchId == rid && c.end.isAfter(t))) {
+      if (best == null || c.start.isBefore(best.start)) best = c;
+    }
+    return best;
+  }
+
+  int givenTotal(String rid) => (ikramGivenBase[rid] ?? 0) + ikram.reservations.where((r) => r.snapshot.branchId == rid && r.status == 'teslim').length;
+
+  Campaign publishCampaign(String rid, {required String title, required String content, required List<String> allergens, required int quota, required DateTime start, required DateTime end}) {
+    final r = restaurant(rid)!;
+    final c = ikram.createCampaign(Campaign(
+      id: 'C${now.millisecondsSinceEpoch}',
+      branchId: rid,
+      title: title,
+      content: content,
+      allergens: allergens,
+      address: r.address,
+      quota: quota,
+      start: start,
+      end: end,
+    ));
+    notifyListeners();
+    return c;
+  }
+
+  IkramResult checkCode(String rid, String code) {
+    final out = ikram.redeem(staffBranchId: rid, code: code, now: now);
+    notifyListeners();
+    return out;
+  }
+
+  IkramResult deliverIkram(String rid, Reservation r) {
+    final out = ikram.deliver(staffBranchId: rid, resId: r.id, now: now, idemKey: 'd_${r.id}');
+    notifyListeners();
+    return out;
+  }
+
+  IkramResult cancelIkramReservation(String rid, Reservation r, String reason) {
+    final out = ikram.restaurantCancel(r.id, rid, reason, now);
+    notifyListeners();
+    return out;
+  }
+
+  IkramResult setIkramQuota(String rid, Campaign c, int q) {
+    final out = ikram.setQuota(c.id, rid, q, now);
+    notifyListeners();
+    return out;
+  }
+
+  void setIkramOpen(String rid, Campaign c, bool open) {
+    ikram.setOpen(c.id, rid, open);
+    notifyListeners();
+  }
+
+  void setIkramShowGiven(Campaign c, bool v) {
+    c.showGiven = v;
+    notifyListeners();
+  }
+
+  IkramResult adminStopIkram(Campaign c, String reason) {
+    final out = ikram.adminStop(c.id, reason);
+    if (out.ok) addLog('${restaurant(c.branchId)?.name ?? ''} · "${c.title}" durduruldu. Gerekçe: $reason. Mevcut ayırtmalar teslim alınabilir.');
+    notifyListeners();
+    return out;
+  }
+
+  // =====================================================================
+  // yönetim: vitrin, kupon, numaralar
+  // =====================================================================
+  void toggleBanner(PromoBanner b) {
+    b.on = !b.on;
+    notifyListeners();
+  }
+
+  void moveFeatured(int i, int d) {
+    final j = i + d;
+    if (j < 0 || j >= featured.length) return;
+    final t = featured[i];
+    featured[i] = featured[j];
+    featured[j] = t;
+    notifyListeners();
+  }
+
+  void removeFeatured(String id) {
+    featured.remove(id);
+    notifyListeners();
+  }
+
+  void addFeatured(String id) {
+    if (!featured.contains(id)) featured.add(id);
+    notifyListeners();
+  }
+
+  void setMonthRestaurant(String id) {
+    monthRestaurant = id;
+    addLog('Ayın restoranı: ${restaurant(id)?.name ?? id}');
+    notifyListeners();
+  }
+
+  String? createCoupon({required String code, required String kind, required int amount, required int min, required String payer, String? restaurantId}) {
+    final c = code.trim().toUpperCase().replaceAll('İ', 'I').replaceAll(' ', '');
+    if (c.isEmpty) return 'Kod boş olamaz.';
+    if (coupon(c) != null) return 'Bu kod zaten var.';
+    coupons.insert(0, Coupon(code: c, kind: kind, amount: amount, min: min, payer: payer, restaurantId: restaurantId, until: '31 Ekim\'e kadar'));
+    addLog('Yeni kupon: $c (${payer == 'doybi' ? 'Doybi karşılar' : 'restoran karşılar'})');
+    notifyListeners();
+    return null;
+  }
+
+  void toggleCouponActive(Coupon c) {
+    c.active = !c.active;
+    notifyListeners();
+  }
+
+  int couponUses(String code) => (couponBaseUses[code] ?? 0) + orders.where((o) => o.coupon == code && o.status == OrderStatus.teslim).length;
+
+  void openNumber(BlockedNumber b) {
+    b.open = true;
+    failCount.removeWhere((k, v) => maskPhone(k) == b.phone);
+    addLog('${b.phone} numarası destekle konuşuldu ve yeniden açıldı');
+    notifyListeners();
+  }
+
+  // =====================================================================
+  String _shortDate(DateTime d) {
+    const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    return '${d.day} ${months[d.month - 1]}';
+  }
+
+  String newId() => '${now.millisecondsSinceEpoch}${Random().nextInt(999)}';
 
   @override
   void dispose() {
     for (final t in _timers.values) {
       t.cancel();
     }
+    _saveTimer?.cancel();
+    _tick?.cancel();
     super.dispose();
   }
 }
@@ -244,4 +1237,5 @@ class AppScope extends InheritedNotifier<AppState> {
   const AppScope({super.key, required AppState state, required super.child}) : super(notifier: state);
 
   static AppState of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppScope>()!.notifier!;
+  static AppState read(BuildContext context) => context.getInheritedWidgetOfExactType<AppScope>()!.notifier!;
 }
