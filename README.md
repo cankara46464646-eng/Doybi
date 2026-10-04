@@ -6,14 +6,20 @@ Mahallenin lezzeti, dükkân fiyatına. Komisyonsuz, kapıda ödemeli yerel yeme
 - **Uygulama (iPhone / tarayıcı):** https://cankara46464646-eng.github.io/Doybi/app/ — Safari'de aç, Paylaş → Ana Ekrana Ekle.
 - **Android APK:** https://github.com/cankara46464646-eng/Doybi/releases/latest/download/doybi.apk
 
-## Sürüm 0.1 (deneme)
+## Sürüm 0.2 (deneme)
 
-- Müşteri: mahalle seçimi, restoranlar, menü, sepet, kapıda nakit/kart, SMS doğrulama (denemede kod gönderilmez), sipariş takibi, müşteri iptali.
-- Restoran paneli: siparişi onayla/reddet, yola çıkar, teslim edildi/edilemedi, tahsilat onayı. Kartlı siparişte "POS cihazı götürülmeli" uyarısı.
-- Veriler şimdilik telefonda tutulur; sunucu (Firebase) ve gerçek SMS sonraki sürümde.
+**Müşteri:** Keşfet (kategoriler, afişler, filtreler, ayın restoranı), arama, restoran sayfası (çalışma saatleri, öne çıkanlar, tükendi), ürün seçenekleri, sepet (kapıda nakit/kart, para üstü, kupon, sözleşme onayı), SMS doğrulama (denemede kod gönderilmez), sipariş takibi ve iptal, Siparişlerim, sorun bildirme, değerlendirme, tekrar sipariş, kuponlar, davet, hesap silme.
+
+**Esnaftan Öğrenciye:** bugünün ikramları, ayırtma (30 dk, QR + 6 haneli kod), vazgeçme, günlük hak ve kötüye kullanım kuralları.
+
+**Restoran paneli:** siparişler (zil, 5 dk otomatik iptal, POS uyarısı, tahsilat onayı, numara engelleme), kurye modu, sorun bildirimleri ve iade, menü ve ürün düzenleme, öğrenciye ikram (kontenjan, kod ile teslim), Aboneliğim (paket, sonraki dönem, fatura, havale bildirimi), Sosyal Medya Desteği ve paylaşımlar, ayarlar (mola, ödeme yöntemleri, saatler, kuryeler, teslimat bölgeleri).
+
+**Yönetim:** özet, başvurular, şikayetler ve durdurulan numaralar, ikram denetimi, vitrin, kuponlar, abonelikler ve ödeme onayı, fiyat/KDV/özel teklif, sosyal medya talepleri.
+
+Veriler şimdilik telefonda tutulur; tek telefonla her tarafı denemek için Hesabım > Deneme bölümünden restoran ve yönetim paneline girilir. Sunucu (Firebase) ve gerçek SMS sonraki sürümde.
 
 ## Derleme
 
-Her `main` push'unda GitHub Actions:
+Her `main` push'unda GitHub Actions (`dev` dalında `check.yml` analiz + test + derleme yapar):
 - `web.yml`: Flutter web → `gh-pages` dalı (`/` site, `/app/` uygulama)
 - `apk.yml`: Android APK → Releases
