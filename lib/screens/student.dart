@@ -104,6 +104,8 @@ class _CampaignCard extends StatelessWidget {
     final canReserve = !sold && !later && !lastCallPassed;
     final pct = c.quota == 0 ? 0.0 : left / c.quota;
     final given = s.givenTotal(c.branchId);
+    final mineHere = s.lastReservationOf(c.id);
+    final held = mineHere != null && mineHere.status == 'ayrildi';
     return Opacity(
       opacity: sold ? 0.75 : 1,
       child: Box(
@@ -152,7 +154,9 @@ class _CampaignCard extends StatelessWidget {
                 if (c.showGiven && given > 0) Text('$given öğrenciye ısmarladı', style: body(12, color: C.muted)),
               ]),
               const SizedBox(height: 12),
-              if (canReserve)
+              if (held)
+                BigButton('Ayırttın · kodu göster', color: C.ink, icon: Icons.qr_code_2, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReservationScreen(campaignId: c.id))))
+              else if (canReserve)
                 BigButton('İkramı Ayırt', color: C.green, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReservationScreen(campaignId: c.id))))
               else
                 Container(

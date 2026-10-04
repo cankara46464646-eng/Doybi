@@ -533,7 +533,7 @@ class AppState extends ChangeNotifier {
     if (c.firstOrder && hasOrdered) return (ok: false, why: 'Sadece ilk siparişte geçerli', discount: 0);
     if (r == null) return (ok: true, why: '', discount: 0);
     if (c.restaurantId != null && c.restaurantId != r.id) {
-      return (ok: false, why: 'Sadece ${restaurant(c.restaurantId)?.name ?? 'bir restoranda'} geçerli', discount: 0);
+      return (ok: false, why: 'Sadece ${restaurant(c.restaurantId)?.name ?? 'bir restoran'} için geçerli', discount: 0);
     }
     if (sub < c.min) return (ok: false, why: 'Min. sepet ₺${c.min} · ₺${c.min - sub} daha ekle', discount: 0);
     int d;

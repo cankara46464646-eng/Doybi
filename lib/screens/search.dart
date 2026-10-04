@@ -61,9 +61,11 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 72,
-        title: TextField(
+      body: SafeArea(
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: TextField(
           controller: _c,
           onChanged: (_) => setState(() {}),
           onSubmitted: s.addRecent,
@@ -80,9 +82,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     icon: const Icon(Icons.close),
                   ),
           ),
-        ),
-      ),
-      body: q.isEmpty
+            ),
+          ),
+          Expanded(child: q.isEmpty
           ? ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               children: [
@@ -139,7 +141,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: RestaurantCard(r),
                     ),
               ],
-            ),
+            )),
+        ]),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: s.cart.isEmpty ? null : const CartFab(),
     );

@@ -75,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 const Icon(Icons.home_rounded, color: C.saffron, size: 18),
                                 const SizedBox(width: 6),
-                                Flexible(child: Text('Ev · ${s.mahalle ?? ''} Mah.', overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white, weight: FontWeight.w700))),
+                                Flexible(child: Text('${s.mahalle ?? ''} Mah.', overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white, weight: FontWeight.w700))),
                                 const Icon(Icons.expand_more, color: Colors.white, size: 18),
                               ],
                             ),
@@ -173,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('Esnaftan Öğrenciye', style: body(15, weight: FontWeight.w800, color: C.greenInk)),
                           Text(
-                            ikramRests > 0 ? 'Bugün $ikramRests restorandan ücretsiz ikram · gel-al' : 'Esnaf ikram açınca burada görürsün',
+                            ikramRests > 0 ? 'Bugün $ikramRests restorandan ücretsiz ikram' : 'Esnaf ikram açınca burada görürsün',
                             style: body(13, color: C.greenInk),
                           ),
                         ]),
@@ -347,7 +347,7 @@ class RestaurantCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 ' · ${z.eta} dk · Min. ${tl(z.min)} · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}',
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                                 style: body(13, color: C.muted),
                               ),
                             ),

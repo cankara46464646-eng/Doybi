@@ -293,7 +293,10 @@ class SwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return InkWell(
+      onTap: onChanged == null ? null : () => onChanged!(!value),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(children: [
         if (leading != null) ...[leading!, const SizedBox(width: 12)],
@@ -306,6 +309,7 @@ class SwitchRow extends StatelessWidget {
         const SizedBox(width: 8),
         Switch(value: value, onChanged: onChanged, activeColor: Colors.white, activeTrackColor: C.green),
       ]),
+      ),
     );
   }
 }

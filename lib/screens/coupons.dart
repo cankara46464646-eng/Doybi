@@ -89,7 +89,7 @@ class _CouponCard extends StatelessWidget {
         ? C.ring
         : (c.kind == 'yuzde' ? C.saffron : (c.kind == 'teslimat' ? C.ink : C.red));
     final ink = color == C.saffron || color == C.ring ? C.ink : Colors.white;
-    final rest = c.restaurantId == null ? 'Tüm restoranlarda' : '${s.restaurant(c.restaurantId)?.name ?? ''}\'nde';
+    final rest = c.restaurantId == null ? 'Tüm restoranlarda' : '${s.restaurant(c.restaurantId)?.name ?? ''} için';
     final rule = [
       if (c.firstOrder) 'İlk siparişine',
       if (c.restaurantId != null || !c.firstOrder) rest,

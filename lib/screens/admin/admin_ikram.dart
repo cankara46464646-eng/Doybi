@@ -83,7 +83,7 @@ class _AdminIkramState extends State<AdminIkram> {
                   child: Row(children: [
                     Expanded(child: Text(r.name, style: body(14))),
                     Text(
-                      '${s.ikram.reservations.where((x) => x.snapshot.branchId == r.id).length} / ${s.ikram.reservations.where((x) => x.snapshot.branchId == r.id && x.status == 'teslim').length} / ${s.ikram.reservations.where((x) => x.snapshot.branchId == r.id && x.status == 'restoran_iptal').length}',
+                      '${s.ikram.reservations.where((x) => x.snapshot.branchId == r.id).length} / ${s.ikram.campaigns.where((c) => c.branchId == r.id).fold(0, (a, c) => a + c.delivered)} / ${s.ikram.campaigns.where((c) => c.branchId == r.id).fold(0, (a, c) => a + c.restCancelled)}',
                       style: body(14, weight: FontWeight.w800),
                     ),
                   ]),
