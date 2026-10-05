@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -85,7 +86,7 @@ class PhotoBox extends StatelessWidget {
         height: height,
         fit: fit,
         gaplessPlayback: true,
-        cacheWidth: width == null ? null : (width! * dpr).round(),
+        cacheWidth: math.min(1000, ((width != null && width!.isFinite ? width! : MediaQuery.of(context).size.width) * dpr * 1.8).round()),
       ),
     );
   }

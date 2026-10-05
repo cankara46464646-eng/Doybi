@@ -71,7 +71,7 @@ class AdminVitrin extends StatelessWidget {
       if (photo != null) s.removePhoto(photo);
       return;
     }
-    s.banners.add(PromoBanner('n${DateTime.now().millisecondsSinceEpoch}', title.text.trim(), owner.text.trim(), color, photo: photo));
+    s.banners.insert(0, PromoBanner('n${DateTime.now().millisecondsSinceEpoch}', title.text.trim(), owner.text.trim(), color, photo: photo));
     s.addLog('Yeni kampanya afişi: ${title.text.trim()}');
     s.touch();
   }

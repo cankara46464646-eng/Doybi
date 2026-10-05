@@ -356,18 +356,20 @@ class RestaurantCard extends StatelessWidget {
                       if (!open)
                         Text(s.closedText(r), style: body(13, color: C.redDeep, weight: FontWeight.w800))
                       else
-                        Row(
-                          children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 16),
-                            Text(' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(13, weight: FontWeight.w800)),
-                            Flexible(
-                              child: Text(
-                                ' · ${z.eta} dk${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'} · Min. ${tl(z.min)} · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}',
-                                maxLines: 2,
-                                style: body(13, color: C.muted),
-                              ),
+                        Text.rich(
+                          TextSpan(children: [
+                            const WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 16),
                             ),
-                          ],
+                            TextSpan(text: ' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(13, weight: FontWeight.w800)),
+                            TextSpan(
+                              text: ' · ${z.eta} dk${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'} · Min. ${tl(z.min)} · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}',
+                              style: body(13, color: C.muted),
+                            ),
+                          ]),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       if (r.promo != null && open) ...[
                         const SizedBox(height: 6),

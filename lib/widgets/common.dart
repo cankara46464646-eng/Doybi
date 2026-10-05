@@ -730,3 +730,13 @@ class LinkRow extends StatelessWidget {
 
 /// Telefon numarası biçimi: 0532 *** ** 47
 String maskTr(String p) => p.length == 10 ? '0${p.substring(0, 3)} *** ** ${p.substring(8)}' : p;
+
+
+/// "05321234567" → "0532 123 45 67". Tanınmazsa olduğu gibi döner.
+String formatPhone(String raw) {
+  var d = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  if (d.startsWith('90') && d.length == 12) d = d.substring(2);
+  if (d.length == 10 && !d.startsWith('0')) d = '0$d';
+  if (d.length != 11) return raw.trim();
+  return '${d.substring(0, 4)} ${d.substring(4, 7)} ${d.substring(7, 9)} ${d.substring(9)}';
+}

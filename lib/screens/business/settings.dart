@@ -128,7 +128,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (v != null) {
-      r.phone = v.trim();
+      final d = v.replaceAll(RegExp(r'[^0-9]'), '');
+      if (d.isNotEmpty && d.length < 10) {
+        if (mounted) snack(context, 'Numara eksik görünüyor.');
+        return;
+      }
+      r.phone = d.isEmpty ? '' : formatPhone(v);
       s.touch();
     }
   }
@@ -147,7 +152,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (v != null) {
-      r.backupPhone = v.trim();
+      final d = v.replaceAll(RegExp(r'[^0-9]'), '');
+      if (d.length < 10) {
+        if (mounted) snack(context, 'Numara eksik görünüyor.');
+        return;
+      }
+      r.backupPhone = formatPhone(v);
       s.touch();
     }
   }

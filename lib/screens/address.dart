@@ -168,7 +168,11 @@ class _AddressScreenState extends State<AddressScreen> {
             if (_info != null) ...[const SizedBox(height: 8), NoteBox(_info!, icon: Icons.place_outlined)],
             if (_lat != null) ...[
               const SizedBox(height: 6),
-              Text('Haritada işaretlendi ✓', style: body(12, color: C.greenInk, weight: FontWeight.w800)),
+              Row(children: [
+                const Icon(Icons.check_circle, size: 16, color: C.greenInk),
+                const SizedBox(width: 6),
+                Text('Konum haritada işaretlendi', style: body(12, color: C.greenInk, weight: FontWeight.w800)),
+              ]),
             ],
             const SizedBox(height: 14),
             Box(
