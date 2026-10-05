@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo.dart';
+import 'firsat.dart';
 import 'restaurant.dart';
 
 /// Ürün seçenekleri: porsiyon, acı tercihi, ekstralar, not, adet.
@@ -67,7 +68,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Future<void> _add() async {
     final s = AppScope.read(context);
-    final unit = m.price + _optAdd;
+    final unit = s.priceOf(m) + _optAdd;
     final ok = await addWithCheck(
       context,
       widget.r,
@@ -81,7 +82,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final total = (m.price + _optAdd) * _qty;
+    final total = (AppScope.of(context).priceOf(m) + _optAdd) * _qty;
     return Scaffold(
       appBar: AppBar(leading: IconButton(tooltip: 'Kapat', onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)), title: const Text('')),
       body: ListView(
@@ -94,7 +95,11 @@ class _ProductScreenState extends State<ProductScreen> {
           Text(m.name, style: display(28)),
           if (m.desc.isNotEmpty) ...[const SizedBox(height: 6), Text(m.desc, style: body(15, color: C.muted))],
           const SizedBox(height: 6),
-          Text(tl(m.price), style: body(18, weight: FontWeight.w800)),
+          PriceText(m, size: 18),
+          if (AppScope.of(context).onDeal(m)) ...[
+            const SizedBox(height: 4),
+            Text('Fırsat Saati fiyatı · bugün ${hhmm(AppScope.of(context).firsatEndMin)}${dativeTime(AppScope.of(context).firsatEndMin)} kadar', style: body(13, color: C.red, weight: FontWeight.w700)),
+          ],
           for (var g = 0; g < m.groups.length; g++) ...[
             const SizedBox(height: 16),
             Row(children: [

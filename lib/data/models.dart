@@ -49,7 +49,8 @@ class MenuItem {
   bool featured; // restoran sayfasında öne çıkar
   List<OptGroup> groups;
   String? photo; // fotoğraf kimliği (PhotoStore)
-  MenuItem(this.id, this.name, this.price, this.category, {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups, this.photo})
+  int? deal; // Fırsat Saati fiyatı (restoran belirler), null = fırsatta değil
+  MenuItem(this.id, this.name, this.price, this.category, {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups, this.photo, this.deal})
       : groups = groups ?? [];
 
   Map<String, dynamic> toJson() => {
@@ -62,6 +63,7 @@ class MenuItem {
         'ft': featured,
         'g': groups.map((g) => g.toJson()).toList(),
         'ph': photo,
+        'deal': deal,
       };
   factory MenuItem.fromJson(Map<String, dynamic> j) => MenuItem(
         j['id'],
@@ -73,6 +75,7 @@ class MenuItem {
         featured: j['ft'] ?? false,
         groups: (j['g'] as List? ?? const []).map((e) => OptGroup.fromJson(_m(e))).toList(),
         photo: j['ph'],
+        deal: j['deal'],
       );
 }
 

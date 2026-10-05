@@ -740,3 +740,30 @@ String formatPhone(String raw) {
   if (d.length != 11) return raw.trim();
   return '${d.substring(0, 4)} ${d.substring(4, 7)} ${d.substring(7, 9)} ${d.substring(9)}';
 }
+
+
+/// Ürün fiyatı; fırsattaysa yeni fiyat kırmızı, eski fiyat üstü çizili ve yüzde etiketi.
+class PriceText extends StatelessWidget {
+  final MenuItem m;
+  final double size;
+  final int add;
+  final bool badge;
+  const PriceText(this.m, {super.key, this.size = 15, this.add = 0, this.badge = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final now = s.priceOf(m) + add;
+    if (!s.onDeal(m)) return Text(tl(now), style: body(size, weight: FontWeight.w800));
+    return Wrap(spacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      Text(tl(now), style: body(size, color: C.red, weight: FontWeight.w800)),
+      Text(tl(m.price + add), style: body(size * 0.85, color: C.muted, weight: FontWeight.w600).copyWith(decoration: TextDecoration.lineThrough)),
+      if (badge)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.circular(6)),
+          child: Text('%${s.dealPct(m)}', style: body(11, color: Colors.white, weight: FontWeight.w800, height: 1.2)),
+        ),
+    ]);
+  }
+}
