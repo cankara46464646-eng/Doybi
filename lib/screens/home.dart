@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ('Kebap', Icons.kebab_dining_outlined),
     ('Lahmacun', Icons.local_pizza_outlined),
     ('Pide', Icons.bakery_dining_outlined),
-    ('Dürüm', Icons.lunch_dining_outlined),
+    ('Dürüm', Icons.takeout_dining_outlined),
     ('Çiğ köfte', Icons.ramen_dining_outlined),
     ('Dondurma', Icons.icecream_outlined),
     ('Tatlı', Icons.cake_outlined),
@@ -360,21 +360,21 @@ class _QuickTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: Icon(icon, color: ink, size: 21),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14.5, color: ink, weight: FontWeight.w800)),
-                Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: ink.withValues(alpha: 0.85))),
-              ]),
-            ),
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: Icon(icon, color: ink, size: 19),
+              ),
+              const Spacer(),
+              Icon(Icons.chevron_right_rounded, color: ink),
+            ]),
+            const SizedBox(height: 8),
+            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, color: ink, weight: FontWeight.w800)),
+            Text(sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12.5, color: ink.withValues(alpha: 0.85))),
           ]),
         ),
       ),

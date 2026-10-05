@@ -53,13 +53,12 @@ class FirsatTimer extends StatelessWidget {
 
 /// Safran zeminli süre kapsülü.
 class _TimerChip extends StatelessWidget {
-  final bool dark;
-  const _TimerChip({this.dark = true});
+  const _TimerChip();
 
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-        decoration: BoxDecoration(color: dark ? Colors.white.withValues(alpha: 0.12) : C.ink, borderRadius: BorderRadius.circular(99)),
+        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(99)),
         child: const Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.timer_outlined, size: 15, color: C.saffron),
           SizedBox(width: 4),
@@ -103,11 +102,15 @@ class FirsatBar extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                Text('FIRSAT SAATİ', style: body(10.5, color: C.saffron, weight: FontWeight.w800).copyWith(letterSpacing: 0.8)),
                 Text(firsatTitle(s), maxLines: 1, overflow: TextOverflow.ellipsis, style: display(17, color: Colors.white)),
+                const SizedBox(height: 2),
+                Row(children: [
+                  Text('Fırsat Saati · ', style: body(12.5, color: C.saffron, weight: FontWeight.w800)),
+                  const FirsatTimer(size: 12.5, color: C.saffron),
+                  Text(' kaldı', style: body(12.5, color: C.saffron, weight: FontWeight.w800)),
+                ]),
               ]),
             ),
-            const _TimerChip(),
             const Icon(Icons.keyboard_arrow_up_rounded, color: Colors.white70),
             IconButton(
               tooltip: 'Bugünlük gizle',
