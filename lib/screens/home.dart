@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 110)),
           ],
         ),
-        if (s.firsatCardVisible && s.cart.isEmpty)
+        if (s.firsatCardVisible && s.cart.isEmpty && !dbgFlag('nobar'))
           const Positioned(left: 12, right: 12, bottom: 10, child: FirsatBar()),
       ]),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,

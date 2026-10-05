@@ -77,6 +77,9 @@ ImageProvider? photoImage(BuildContext context, String? id, {double? width}) {
   return ResizeImage.resizeIfNeeded(math.min(1000, (px * 1.5).round()), null, MemoryImage(bytes));
 }
 
+/// Hız ölçümü için geçici bayrak (?noimg, ?noclip).
+bool dbgFlag(String k) => kIsWeb && Uri.base.queryParameters.containsKey(k);
+
 /// Kayıtlı fotoğrafı gösterir; yoksa [placeholder].
 class PhotoBox extends StatelessWidget {
   final String? id;
@@ -91,6 +94,7 @@ class PhotoBox extends StatelessWidget {
   Widget build(BuildContext context) {
     // Kullanıcının eklediği fotoğraflar değişince yenilensin diye bağımlılık kur.
     final s = AppScope.of(context);
+    if (dbgFlag('noimg')) return Container(width: width, height: height, color: C.line);
     final img = s.hasPhoto(id) ? photoImage(context, id, width: width) : null;
     if (img == null) return placeholder ?? SizedBox(width: width, height: height);
     final pic = Image(
@@ -102,7 +106,7 @@ class PhotoBox extends StatelessWidget {
       filterQuality: FilterQuality.low,
       frameBuilder: (context, child, frame, sync) => sync || frame != null ? child : Container(width: width, height: height, color: C.line),
     );
-    if (radius == 0) return pic;
+    if (radius == 0 || dbgFlag('noclip')) return pic;
     return ClipRRect(borderRadius: BorderRadius.circular(radius), child: pic);
   }
 }
