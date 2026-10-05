@@ -1,0 +1,24 @@
+name: Photos
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fotoğrafları indir
+        run: |
+          pip install pillow
+          python3 tool/fetch_photos.py 2>&1 | tee out.log || true
+          mkdir -p out && cp out.log out/
+          cd out
+          git init -q -b ci-photos
+          git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "photos ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-photos
