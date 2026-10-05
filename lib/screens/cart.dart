@@ -163,16 +163,14 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ]),
           ),
-          const SectionLabel('Ödeme · teslimatta'),
-          Text('Restoranın kabul ettikleri', style: body(13, color: C.muted)),
-          const SizedBox(height: 8),
+          const SectionLabel('Kapıda ödeme'),
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final m in methods)
-              SelChip(m == 'kart' ? 'Kapıda kredi / banka kartı' : 'Kapıda nakit', selected: _payment == m, onTap: () => setState(() => _payment = m)),
+              SelChip(m == 'kart' ? 'Kredi / banka kartı' : 'Nakit', selected: _payment == m, onTap: () => setState(() => _payment = m)),
           ]),
           const SizedBox(height: 10),
           if (_payment == 'kart')
-            const NoteBox('Restoranın kuryesi POS cihazı getirecek. Doybi ödeme almaz, kart bilgisi istemez.', icon: Icons.point_of_sale)
+            Text('Kurye POS cihazı getirir. Kart bilgin istenmez.', style: body(13, color: C.muted))
           else ...[
             Text('Para üstü:', style: body(14, weight: FontWeight.w800)),
             const SizedBox(height: 6),

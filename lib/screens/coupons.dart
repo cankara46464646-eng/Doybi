@@ -44,25 +44,37 @@ class _CouponsScreenState extends State<CouponsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _code,
-                textCapitalization: TextCapitalization.characters,
-                onSubmitted: (_) => _add(),
-                decoration: const InputDecoration(hintText: 'Kupon kodunu yaz'),
+          Box(
+            padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+            child: Row(children: [
+              const Icon(Icons.confirmation_number_outlined, color: C.red),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _code,
+                  textCapitalization: TextCapitalization.characters,
+                  onSubmitted: (_) => _add(),
+                  style: body(16, weight: FontWeight.w800).copyWith(letterSpacing: 0.8),
+                  decoration: const InputDecoration(
+                    hintText: 'Kupon kodu yaz',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    isDense: true,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(width: 90, child: BigButton('Ekle', color: C.ink, onPressed: _add)),
-          ]),
+              SizedBox(width: 84, child: BigButton('Ekle', color: C.ink, height: 44, onPressed: _add)),
+            ]),
+          ),
           if (_msg != null) ...[
             const SizedBox(height: 8),
             Text(_msg!, style: body(13, color: _ok ? C.greenInk : C.redDeep, weight: FontWeight.w800)),
           ],
           const SizedBox(height: 12),
           if (list.isEmpty) const EmptyState(icon: Icons.confirmation_number_outlined, title: 'Kuponun yok', text: 'Bir kupon kodun varsa yukarıya yazıp ekleyebilirsin.'),
-          for (final c in list) Padding(padding: const EdgeInsets.only(bottom: 10), child: _CouponCard(c, hasCart: hasCart, selecting: widget.selecting)),
+          for (final c in list) Padding(padding: const EdgeInsets.only(bottom: 12), child: _CouponCard(c, hasCart: hasCart, selecting: widget.selecting)),
           if (widget.selecting) ...[
             const SizedBox(height: 8),
             BigButton('Sepete dön', outlined: true, onPressed: () => Navigator.pop(context)),
@@ -95,59 +107,67 @@ class _CouponCard extends StatelessWidget {
       if (c.restaurantId != null || !c.firstOrder) rest,
       if (c.min > 0) 'min. sepet ₺${c.min}',
     ].join(' · ');
+    final stub = c.kind == 'teslimat'
+        ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.delivery_dining_rounded, size: 34, color: ink),
+            Text('Ücretsiz\nteslimat', textAlign: TextAlign.center, style: body(12, color: ink, weight: FontWeight.w800, height: 1.15)),
+          ])
+        : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            FittedBox(child: Text(c.big, style: display(28, color: ink))),
+            Text(c.kind == 'yuzde' && c.maxOff > 0 ? 'en fazla ₺${c.maxOff}' : 'indirim',
+                textAlign: TextAlign.center, style: body(12, color: ink, weight: FontWeight.w800)),
+          ]);
+    final shape = TicketBorder(radius: 18, notch: 10, at: 100, side: chosen ? C.red : null);
     return Dim(
       dim: !(usable || chosen),
-      child: Container(
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: chosen ? C.red : Colors.white, width: 2)),
+      radius: 18,
+      child: Material(
+        color: Colors.white,
+        shape: shape,
         clipBehavior: Clip.antiAlias,
-        child: IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Container(
-              width: 92,
-              color: color,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.all(8),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(c.big, style: display(26, color: ink)),
-                Text(c.small, textAlign: TextAlign.center, style: body(10, color: ink, weight: FontWeight.w800)),
-              ]),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Expanded(child: Text(c.code, style: body(15, weight: FontWeight.w800).copyWith(letterSpacing: 0.5))),
-                    Text(c.from, style: body(11, color: C.muted, weight: FontWeight.w700)),
+        child: CustomPaint(
+          foregroundPainter: const DashLinePainter(at: 100, color: C.border),
+          child: IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Container(width: 100, color: color, padding: const EdgeInsets.all(8), child: stub),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Expanded(child: Text(c.code, style: display(18).copyWith(letterSpacing: 0.8))),
+                      Text(c.from, style: body(11.5, color: C.muted, weight: FontWeight.w700)),
+                    ]),
+                    const SizedBox(height: 4),
+                    Text(rule, style: body(13, color: C.muted)),
+                    Text(c.until, style: body(12, color: c.expired ? C.redDeep : C.muted, weight: FontWeight.w700)),
+                    if (hasCart && !chk.ok && !c.expired) Text(chk.why, style: body(12, color: C.redDeep, weight: FontWeight.w700)),
+                    if (hasCart && (usable || chosen)) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 38,
+                        child: chosen
+                            ? FilledButton.icon(
+                                onPressed: () => s.chooseCoupon(null),
+                                style: FilledButton.styleFrom(backgroundColor: C.red),
+                                icon: const Icon(Icons.check_rounded, size: 18),
+                                label: const Text('Seçildi · kaldır'),
+                              )
+                            : FilledButton(
+                                onPressed: () {
+                                  s.chooseCoupon(c.code);
+                                  if (selecting) Navigator.pop(context);
+                                },
+                                style: FilledButton.styleFrom(backgroundColor: C.ink),
+                                child: const Text('Kullan'),
+                              ),
+                      ),
+                    ],
                   ]),
-                  const SizedBox(height: 2),
-                  Text(rule, style: body(13, color: C.muted)),
-                  Text(c.until, style: body(12, color: c.expired ? C.redDeep : C.muted, weight: FontWeight.w700)),
-                  if (hasCart && !chk.ok && !c.expired) Text(chk.why, style: body(12, color: C.redDeep, weight: FontWeight.w700)),
-                  if (hasCart && (usable || chosen)) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: 36,
-                      child: chosen
-                          ? FilledButton(
-                              onPressed: () => s.chooseCoupon(null),
-                              style: FilledButton.styleFrom(backgroundColor: C.red),
-                              child: const Text('Seçildi · kaldır'),
-                            )
-                          : OutlinedButton(
-                              onPressed: () {
-                                s.chooseCoupon(c.code);
-                                if (selecting) Navigator.pop(context);
-                              },
-                              style: OutlinedButton.styleFrom(foregroundColor: C.red, side: const BorderSide(color: C.red, width: 1.5)),
-                              child: const Text('Kullan'),
-                            ),
-                    ),
-                  ],
-                ]),
+                ),
               ),
-            ),
-          ]),
+            ]),
+          ),
         ),
       ),
     );

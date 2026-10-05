@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'apply.dart';
 import 'cart.dart';
 
 /// Siparişten (ya da ikram ayırtmadan) önce telefon doğrulama.
@@ -109,22 +108,6 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 ),
                 Text('\'ni okumuş olursun.', style: body(12, color: C.muted)),
               ]),
-              const SizedBox(height: 24),
-              Box(
-                color: C.line,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplyScreen())),
-                child: Row(children: [
-                  const Icon(Icons.storefront_outlined, color: C.ink),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('İşletme misin?', style: body(14, weight: FontWeight.w800)),
-                      Text('Restoranını ekle, ilk ay ücretsiz', style: body(13, color: C.muted)),
-                    ]),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ]),
-              ),
             ] else ...[
               Text('${maskTr(_digits)} numarasına 6 haneli bir kod gönderdik.', style: body(15, color: C.muted)),
               const SizedBox(height: 12),

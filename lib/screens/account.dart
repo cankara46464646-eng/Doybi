@@ -4,12 +4,11 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'address.dart';
-import 'admin/admin_shell.dart';
 import 'apply.dart';
-import 'business/business_shell.dart';
 import 'coupons.dart';
 import 'home.dart';
 import 'invite.dart';
+import 'partner.dart';
 import 'shell.dart';
 import 'verify.dart';
 
@@ -85,109 +84,142 @@ class AccountScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _openPanel(BuildContext context, AppState s) async {
-    final id = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Hangi restoran olarak gir?', style: display(22)),
-            const SizedBox(height: 4),
-            Text('Her restoran yalnızca kendi siparişlerini ve ikramlarını görür.', style: body(14, color: C.muted)),
-            const SizedBox(height: 8),
-            for (final r in s.restaurants)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Avatar(r, size: 40),
-                title: Text(r.name, style: body(15, weight: FontWeight.w800)),
-                subtitle: Text('${r.branch} şubesi', style: body(13, color: C.muted)),
-                trailing: s.panelRestaurantId == r.id ? const Icon(Icons.check, color: C.green) : null,
-                onTap: () => Navigator.pop(ctx, r.id),
-              ),
-          ]),
-        ),
-      ),
-    );
-    if (id == null || !context.mounted) return;
-    s.setPanelRestaurant(id);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessShell()));
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final usable = s.walletCoupons.where((c) => !c.expired && !s.couponUsed(c.code)).length;
+    final top = MediaQuery.of(context).padding.top;
+    Widget group(List<Widget> rows) => Box(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+          child: Column(children: [
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) const Divider(color: C.line, height: 1),
+              rows[i],
+            ],
+          ]),
+        );
     return Scaffold(
-      appBar: AppBar(title: const Text('Hesabım')),
+      backgroundColor: C.bg,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: EdgeInsets.zero,
         children: [
-          Box(
+          // profil
+          Container(
+            decoration: const BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
+            padding: EdgeInsets.fromLTRB(16, top + 18, 8, 22),
             child: Row(children: [
-              MiniAvatar(s.name.isEmpty ? 'D' : trUpper(s.name.substring(0, 1)), C.tint, C.redDeep, size: 52),
+              Container(
+                width: 58,
+                height: 58,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: s.name.isEmpty
+                    ? const Icon(Icons.person_rounded, color: C.red, size: 32)
+                    : Text(trUpper(s.name.substring(0, 1)), style: display(26, color: C.red)),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.name.isEmpty ? 'Adını ekle' : s.name, style: body(17, weight: FontWeight.w800, color: s.name.isEmpty ? C.muted : C.ink)),
+                  Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22, color: Colors.white)),
                   const SizedBox(height: 2),
                   if (s.phone != null)
                     Row(children: [
-                      Text(s.maskPhone(s.phone), style: body(14, color: C.muted)),
+                      Text(s.maskPhone(s.phone), style: body(14, color: Colors.white.withValues(alpha: 0.9))),
                       const SizedBox(width: 6),
-                      const Pill('doğrulandı', bg: C.greenTint, fg: C.greenInk, size: 11),
+                      const Icon(Icons.verified_rounded, size: 16, color: C.saffron),
                     ])
                   else
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyScreen())),
-                      child: Text('Telefonunu doğrula', style: body(14, color: C.redDeep, weight: FontWeight.w800)),
+                      child: Text('Telefonunu doğrula', style: body(14, color: C.saffron, weight: FontWeight.w800)),
                     ),
                 ]),
               ),
-              TextButton(onPressed: () => _editName(context, s), child: const Text('Düzenle')),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          Material(
-            color: C.red,
-            borderRadius: BorderRadius.circular(18),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteScreen())),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('DAVET ET', style: body(12, color: C.saffron, weight: FontWeight.w800).copyWith(letterSpacing: 0.6)),
-                      Text('Arkadaşlarını çağır', style: display(22, color: Colors.white)),
-                      Text('Mahallenin lezzetini paylaş', style: body(13, color: const Color(0xFFFFE1DA))),
-                    ]),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-                    child: Text('Davet et', style: body(14, color: C.redDeep, weight: FontWeight.w800)),
-                  ),
-                ]),
+              IconButton(
+                tooltip: 'Adını düzenle',
+                onPressed: () => _editName(context, s),
+                icon: const Icon(Icons.edit_outlined, color: Colors.white),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Box(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            child: Column(children: [
-              LinkRow(Icons.location_on_outlined, 'Adreslerim', meta: '${s.addresses.length} adres', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressListScreen()))),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.confirmation_number_outlined, 'Kuponlarım', meta: '$usable kupon', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen()))),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.receipt_long_outlined, 'Siparişlerim', onTap: () => shellTab.value = 3),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.favorite_border_rounded, 'Favori restoranlarım', meta: '${s.favorites.length}', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
             ]),
           ),
-          const SectionLabel('Bildirimler'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              group([
+                LinkRow(Icons.receipt_long_outlined, 'Siparişlerim', onTap: () => shellTab.value = 3),
+                LinkRow(Icons.location_on_outlined, 'Adreslerim', meta: '${s.addresses.length}', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressListScreen()))),
+                LinkRow(Icons.favorite_border_rounded, 'Favorilerim', meta: '${s.favorites.length}', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
+                LinkRow(Icons.confirmation_number_outlined, 'Kuponlarım', meta: '$usable', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen()))),
+              ]),
+              const SizedBox(height: 12),
+              group([
+                LinkRow(Icons.notifications_none_rounded, 'Bildirimler', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
+                LinkRow(Icons.card_giftcard_rounded, 'Arkadaşını davet et', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteScreen()))),
+                LinkRow(Icons.storefront_outlined, 'Restoranını ekle', sub: '%0 komisyon, ilk ay ücretsiz', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplyScreen()))),
+              ]),
+              const SizedBox(height: 12),
+              group([
+                LinkRow(Icons.help_outline, 'Yardım ve destek', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Yardım ve destek', helpText)))),
+                LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
+              ]),
+              const SizedBox(height: 20),
+              if (s.phone != null) BigButton('Çıkış yap', outlined: true, height: 48, onPressed: s.signOut),
+              TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
+              const _VersionTap(),
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sürüm yazısı. 5 kez dokununca işletme girişi açılır (müşteriye görünmez).
+class _VersionTap extends StatefulWidget {
+  const _VersionTap();
+
+  @override
+  State<_VersionTap> createState() => _VersionTapState();
+}
+
+class _VersionTapState extends State<_VersionTap> {
+  int _n = 0;
+  DateTime _first = DateTime(2000);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        final t = DateTime.now();
+        if (t.difference(_first) > const Duration(seconds: 3)) {
+          _first = t;
+          _n = 0;
+        }
+        if (++_n >= 5) {
+          _n = 0;
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnerEntryScreen()));
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Center(child: Text('Doybi 0.3', style: body(12, color: C.placeholder))),
+      ),
+    );
+  }
+}
+
+class NotificationsScreen extends StatelessWidget {
+  const NotificationsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bildirimler')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
           Box(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             child: Column(children: [
@@ -205,53 +237,11 @@ class AccountScreen extends StatelessWidget {
               SwitchRow('Kampanya SMS\'leri', sub: 'İstediğin zaman kapatabilirsin', value: s.notifSms, onChanged: (v) => s.setNotif(sms: v)),
             ]),
           ),
-          const SizedBox(height: 12),
-          Box(
-            color: C.ink,
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplyScreen())),
-            child: Row(children: [
-              const Icon(Icons.storefront, color: C.saffron),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Restoranın mı var?', style: body(15, weight: FontWeight.w800, color: Colors.white)),
-                  Text('%0 komisyon, ilk ay ücretsiz', style: body(13, color: const Color(0xFFE7E1DD))),
-                ]),
-              ),
-              const Icon(Icons.chevron_right, color: Colors.white),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          Box(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            child: Column(children: [
-              LinkRow(Icons.help_outline, 'Yardım ve destek', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Yardım ve destek', helpText)))),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
-            ]),
-          ),
-          const SectionLabel('İşletme girişi'),
-          Box(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-            child: Column(children: [
-              LinkRow(Icons.storefront_outlined, 'Restoran paneli', sub: 'Siparişler, menü, ikram, abonelik', iconColor: C.ink, onTap: () => _openPanel(context, s)),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.admin_panel_settings_outlined, 'Doybi yönetimi', sub: 'Başvurular, kuponlar, vitrin', iconColor: C.ink,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminShell()))),
-              const Divider(color: C.line, height: 1),
-              LinkRow(Icons.tune_rounded, 'Test ayarları', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestSettingsScreen()))),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          if (s.phone != null) BigButton('Çıkış yap', outlined: true, onPressed: s.signOut),
-          TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
-          Center(child: Text('Doybi 0.3', style: body(12, color: C.placeholder))),
         ],
       ),
     );
   }
 }
-
 
 /// Tek telefonla denerken işe yarayan ayarlar.
 class TestSettingsScreen extends StatelessWidget {

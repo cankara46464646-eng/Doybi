@@ -34,7 +34,7 @@ class FirsatTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EverySecond(builder: (context) {
+    return RepaintBoundary(child: EverySecond(builder: (context) {
       final s = AppScope.read(context);
       var left = s.firsatEnd.difference(s.now);
       if (left.isNegative) left = Duration.zero;
@@ -48,7 +48,7 @@ class FirsatTimer extends StatelessWidget {
           ),
         ),
       );
-    });
+    }));
   }
 }
 
@@ -76,7 +76,7 @@ class FirsatBar extends StatelessWidget {
     final s = AppScope.of(context);
     return Material(
       color: Colors.white,
-      elevation: 6,
+      elevation: 3,
       shadowColor: Colors.black26,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
@@ -322,7 +322,7 @@ class _DealCard extends StatelessWidget {
     final s = AppScope.of(context);
     final z = s.zoneFor(r)!;
     final open = s.isOpen(r);
-    final img = s.photo(m.photo) != null ? m.photo : r.cover;
+    final img = s.hasPhoto(m.photo) ? m.photo : r.cover;
     return Dim(
       dim: !open,
       radius: 16,
@@ -339,7 +339,7 @@ class _DealCard extends StatelessWidget {
             child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               SizedBox(
                 width: 100,
-                child: s.photo(img) != null
+                child: s.hasPhoto(img)
                     ? PhotoBox(img, width: 100, height: 112, radius: 0)
                     : Container(color: r.bg, alignment: Alignment.center, child: Text(r.initials, style: display(28, color: r.fg))),
               ),

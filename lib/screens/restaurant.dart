@@ -35,7 +35,6 @@ class RestaurantScreen extends StatefulWidget {
 }
 
 class _RestaurantScreenState extends State<RestaurantScreen> {
-  bool _hours = false;
   final Map<String, GlobalKey> _keys = {};
   String _cat = 'Popüler';
 
@@ -83,7 +82,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       _keys.putIfAbsent(c, () => GlobalKey());
     }
     final t = s.now;
-    final hasCover = s.photo(r.cover) != null;
+    final hasCover = s.hasPhoto(r.cover);
 
     return Scaffold(
       appBar: AppBar(title: Text(r.name, style: display(22)), actions: [
@@ -115,83 +114,47 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
             const SizedBox(height: 10),
           ],
           Box(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (!hasCover) ...[Avatar(r, size: 56), const SizedBox(width: 12)],
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${r.cuisine} · ${r.branch}${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'}', style: body(13, color: C.muted)),
-                          const SizedBox(height: 2),
-                          Row(children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 18),
-                            Text(' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(15, weight: FontWeight.w800)),
-                            Text(' (${_count(r.ratingCount)})', style: body(13, color: C.muted)),
-                          ]),
-                          const SizedBox(height: 4),
-                          Row(children: [
-                            Pill(open ? 'Açık' : (s.onBreak(r) ? 'Molada' : 'Kapalı'), bg: open ? C.greenTint : C.tint, fg: open ? C.greenInk : C.redDeep),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(open ? r.todayText(t) : s.closedText(r).replaceFirst(RegExp(r'^(Kapalı|Kısa molada) · '), ''),
-                                  style: body(13, color: C.muted, weight: FontWeight.w700)),
-                            ),
-                          ]),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                InkWell(
-                  onTap: () => setState(() => _hours = !_hours),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(children: [
-                      const Icon(Icons.schedule, size: 18, color: C.muted),
-                      const SizedBox(width: 6),
-                      Text('Çalışma saatleri', style: body(14, weight: FontWeight.w700)),
-                      Icon(_hours ? Icons.expand_less : Icons.expand_more, color: C.muted),
-                    ]),
-                  ),
-                ),
-                if (_hours)
-                  for (final (d, h) in groupedHours(r.hours))
-                    Padding(
-                      padding: const EdgeInsets.only(left: 24, bottom: 4),
-                      child: Row(children: [
-                        Expanded(child: Text(d, style: body(13, color: C.muted))),
-                        Text(h, style: body(13, weight: FontWeight.w700)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                if (!hasCover) ...[Avatar(r, size: 52), const SizedBox(width: 12)],
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text.rich(
+                      TextSpan(children: [
+                        const WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 18)),
+                        TextSpan(text: ' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(15, weight: FontWeight.w800)),
+                        TextSpan(text: ' (${_count(r.ratingCount)})  ', style: body(13, color: C.muted)),
+                        TextSpan(text: r.cuisine, style: body(13, color: C.muted)),
                       ]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                if (z != null) ...[
-                  const Divider(color: C.line, height: 20),
-                  Row(children: [
-                    _stat('${z.eta} dk', 'Teslimat'),
-                    _stat(tl(z.min), 'Min. sepet'),
-                    _stat(z.fee == 0 ? 'Ücretsiz' : tl(z.fee), 'Teslimat ücreti'),
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      Pill(open ? 'Açık' : (s.onBreak(r) ? 'Molada' : 'Kapalı'), bg: open ? C.greenTint : C.tint, fg: open ? C.greenInk : C.redDeep),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(open ? r.todayText(t) : s.closedText(r).replaceFirst(RegExp(r'^(Kapalı|Kısa molada) · '), ''),
+                            maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted, weight: FontWeight.w700)),
+                      ),
+                    ]),
                   ]),
-                ],
+                ),
+                TextButton.icon(
+                  onPressed: () => _showInfo(context, s, r),
+                  icon: const Icon(Icons.info_outline_rounded, size: 18),
+                  label: const Text('Bilgiler'),
+                ),
+              ]),
+              if (z != null) ...[
                 const Divider(color: C.line, height: 22),
-                _line(Icons.verified_outlined, 'Dükkân fiyatı · servis ücreti yok', color: C.greenInk),
-                _line(Icons.payments_outlined, 'Kapıda ödeme: ${[if (r.cash) 'nakit', if (r.card) 'kart (POS)'].join(' ya da ')}'),
                 Row(children: [
-                  Expanded(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () => openMap(context, query: r.address, lat: r.lat, lng: r.lng),
-                      child: _line(Icons.place_outlined, r.address, color: C.red, trailing: const Icon(Icons.north_east_rounded, size: 16, color: C.red)),
-                    ),
-                  ),
-                  if (r.phone.isNotEmpty)
-                    IconButton(tooltip: 'Restoranı ara', onPressed: () => callPhone(context, r.phone, who: 'Restoranın numarası'), icon: const Icon(Icons.call, color: C.red)),
+                  _stat('${z.eta} dk', 'Teslimat'),
+                  _stat(tl(z.min), 'Min. sepet'),
+                  _stat(z.fee == 0 ? 'Ücretsiz' : tl(z.fee), 'Teslimat ücreti'),
                 ]),
               ],
-            ),
+            ]),
           ),
           if (r.promo != null) ...[
             const SizedBox(height: 10),
@@ -246,6 +209,48 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  void _showInfo(BuildContext context, AppState s, Restaurant r) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(r.name, style: display(22)),
+            Text('${r.branch} şubesi${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)} uzakta'}', style: body(14, color: C.muted)),
+            const SizedBox(height: 12),
+            _line(Icons.verified_outlined, 'Dükkân fiyatı · servis ücreti yok', color: C.greenInk),
+            _line(Icons.payments_outlined, 'Kapıda ödeme: ${[if (r.cash) 'nakit', if (r.card) 'kart (POS)'].join(' ya da ')}'),
+            InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => openMap(context, query: r.address, lat: r.lat, lng: r.lng),
+              child: _line(Icons.place_outlined, r.address, color: C.red, trailing: const Icon(Icons.north_east_rounded, size: 16, color: C.red)),
+            ),
+            if (r.phone.isNotEmpty)
+              InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => callPhone(context, r.phone, who: 'Restoranın numarası'),
+                child: _line(Icons.call_outlined, r.phone, color: C.red),
+              ),
+            const Divider(color: C.line, height: 24),
+            Text('Çalışma saatleri', style: body(15, weight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            for (final (d, h) in groupedHours(r.hours))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(children: [
+                  Expanded(child: Text(d, style: body(14, color: C.muted))),
+                  Text(h, style: body(14, weight: FontWeight.w700)),
+                ]),
+              ),
+          ]),
+        ),
+      ),
     );
   }
 
@@ -351,7 +356,7 @@ class _ItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              if (s.photo(m.photo) != null) ...[
+              if (s.hasPhoto(m.photo)) ...[
                 PhotoBox(m.photo, width: 64, height: 64, radius: 12),
                 const SizedBox(width: 8),
               ],
@@ -382,7 +387,7 @@ class _FeaturedItem extends StatelessWidget {
       child: Dim(
         dim: !m.available,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (s.photo(m.photo) != null)
+          if (s.hasPhoto(m.photo))
             SizedBox(
               height: 170,
               child: Stack(fit: StackFit.expand, children: [

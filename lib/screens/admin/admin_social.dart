@@ -128,7 +128,7 @@ class _AdminSocialState extends State<AdminSocial> {
           const SizedBox(height: 4),
           PhotoStrip(ids: x.photos),
         ],
-        if (x.design != null && s.photo(x.design) != null) ...[
+        if (x.design != null && s.hasPhoto(x.design)) ...[
           const SizedBox(height: 8),
           Text('Tasarım', style: body(12, color: C.muted, weight: FontWeight.w800)),
           const SizedBox(height: 4),
@@ -157,7 +157,7 @@ class _AdminSocialState extends State<AdminSocial> {
           const SizedBox(height: 8),
           BigButton('Planla', height: 44, color: C.ink, onPressed: _slot[x.id] == null ? null : () => s.setShareStatus(x, 'planlandi', planned: _slot[x.id])),
         ],
-        if (x.status == 'yayinlandi' && x.proofPhoto != null && s.photo(x.proofPhoto) != null) ...[
+        if (x.status == 'yayinlandi' && x.proofPhoto != null && s.hasPhoto(x.proofPhoto)) ...[
           const SizedBox(height: 8),
           GestureDetector(onTap: () => showPhoto(context, x.proofPhoto!), child: PhotoBox(x.proofPhoto, height: 140, width: double.infinity)),
         ],

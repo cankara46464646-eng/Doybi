@@ -94,7 +94,7 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
       Box(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            if (s.photo(c.photo) != null) ...[PhotoBox(c.photo, width: 56, height: 56, radius: 12), const SizedBox(width: 10)],
+            if (s.hasPhoto(c.photo)) ...[PhotoBox(c.photo, width: 56, height: 56, radius: 12), const SizedBox(width: 10)],
             Expanded(child: Text(c.title, style: display(22))),
             Pill(status.$1, bg: status.$2, fg: status.$3),
           ]),

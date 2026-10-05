@@ -307,11 +307,11 @@ class _SharesScreenState extends State<SharesScreen> {
           ]),
         ],
         if (x.photos.isNotEmpty) ...[const SizedBox(height: 8), PhotoStrip(ids: x.photos)],
-        if (x.status == 'onay' && s.photo(x.design) != null) ...[
+        if (x.status == 'onay' && s.hasPhoto(x.design)) ...[
           const SizedBox(height: 10),
           GestureDetector(onTap: () => showPhoto(context, x.design!), child: PhotoBox(x.design, height: 300, width: double.infinity, fit: BoxFit.contain)),
         ],
-        if (x.status == 'onay' && s.photo(x.design) == null) ...[
+        if (x.status == 'onay' && !s.hasPhoto(x.design)) ...[
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(14),
@@ -356,7 +356,7 @@ class _SharesScreenState extends State<SharesScreen> {
           ]),
         ],
         if (x.status == 'yayinlandi') ...[
-          if (s.photo(x.proofPhoto) != null) ...[
+          if (s.hasPhoto(x.proofPhoto)) ...[
             const SizedBox(height: 10),
             GestureDetector(onTap: () => showPhoto(context, x.proofPhoto!), child: PhotoBox(x.proofPhoto, height: 200, width: double.infinity, fit: BoxFit.contain)),
           ],

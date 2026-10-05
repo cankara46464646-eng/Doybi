@@ -70,7 +70,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         Text('${tl(m.price)}${m.deal != null ? ' · fırsatta ${tl(m.deal!)}' : ''} · ${m.groups.isEmpty ? 'Seçenek yok' : '${m.groups.length} seçenek grubu'}', style: body(13, color: m.deal != null ? C.red : C.muted)),
                       ]),
                     ),
-                    if (s.photo(m.photo) != null) ...[PhotoBox(m.photo, width: 48, height: 48, radius: 10), const SizedBox(width: 8)] else ...[
+                    if (s.hasPhoto(m.photo)) ...[PhotoBox(m.photo, width: 48, height: 48, radius: 10), const SizedBox(width: 8)] else ...[
                       const Icon(Icons.add_a_photo_outlined, color: C.ring, size: 22),
                       const SizedBox(width: 8),
                     ],

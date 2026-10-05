@@ -101,7 +101,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
           Box(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${r?.name ?? ''} · ${r?.branch ?? ''} şubesi', style: body(12, color: C.muted, weight: FontWeight.w800)),
-              if (s.photo(snap?.photo ?? c.photo) != null) ...[
+              if (s.hasPhoto(snap?.photo ?? c.photo)) ...[
                 PhotoBox(snap?.photo ?? c.photo, height: 150, width: double.infinity),
                 const SizedBox(height: 10),
               ],
