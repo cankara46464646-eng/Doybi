@@ -316,7 +316,7 @@ class Restaurant {
 class CartLine {
   final String itemId;
   final String name;
-  final int unit; // seçeneklerle birlikte birim fiyat
+  int unit; // seçeneklerle birlikte birim fiyat (fırsat bitince güncellenir)
   final int optAdd; // seçeneklerin toplam farkı
   int qty;
   final String opts; // "1,5 porsiyon · Acılı · Ekstra lavaş"

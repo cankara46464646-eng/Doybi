@@ -604,8 +604,12 @@ class RestaurantCard extends StatelessWidget {
                     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Expanded(child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w800))),
                       const SizedBox(width: 6),
-                      const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 17),
-                      Text(r.rating.toStringAsFixed(1).replaceAll('.', ','), style: body(13.5, weight: FontWeight.w800)),
+                      if (r.ratingCount == 0)
+                        const Pill('Yeni', bg: C.greenTint, fg: C.greenInk, size: 11)
+                      else ...[
+                        const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 17),
+                        Text(r.rating.toStringAsFixed(1).replaceAll('.', ','), style: body(13.5, weight: FontWeight.w800)),
+                      ],
                     ]),
                     Text(r.cuisine, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
                     const SizedBox(height: 6),

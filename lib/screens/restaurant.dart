@@ -121,9 +121,13 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text.rich(
                       TextSpan(children: [
-                        const WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 18)),
-                        TextSpan(text: ' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(15, weight: FontWeight.w800)),
-                        TextSpan(text: ' (${_count(r.ratingCount)})  ', style: body(13, color: C.muted)),
+                        if (r.ratingCount == 0)
+                          TextSpan(text: 'Yeni restoran  ', style: body(14, color: C.greenInk, weight: FontWeight.w800))
+                        else ...[
+                          const WidgetSpan(alignment: PlaceholderAlignment.middle, child: Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 18)),
+                          TextSpan(text: ' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(15, weight: FontWeight.w800)),
+                          TextSpan(text: ' (${_count(r.ratingCount)})  ', style: body(13, color: C.muted)),
+                        ],
                         TextSpan(text: r.cuisine, style: body(13, color: C.muted)),
                       ]),
                       maxLines: 1,

@@ -50,7 +50,18 @@ class _MenuScreenState extends State<MenuScreen> {
             ]),
           ),
           const SizedBox(height: 10),
-          const NoteBox('Bir ürün bittiyse kapat; müşteri onu sipariş edemez, ertesi gün tekrar aç.', icon: Icons.info_outline),
+          if (r.menu.isEmpty)
+            EmptyState(
+              icon: Icons.restaurant_menu_rounded,
+              title: 'Menün henüz boş',
+              text: 'İlk ürününü ekle; restoranın müşterilere o zaman görünür.',
+              action: SizedBox(
+                width: 240,
+                child: BigButton('Ürün ekle', icon: Icons.add, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ItemEditScreen(r, null)))),
+              ),
+            )
+          else
+            const NoteBox('Bir ürün bittiyse kapat; müşteri onu sipariş edemez, ertesi gün tekrar aç.', icon: Icons.info_outline),
           const SizedBox(height: 10),
           for (final m in items)
             Padding(

@@ -338,6 +338,19 @@ class AppState extends ChangeNotifier {
         changed = true;
       }
     }
+    // Fırsat Saati bitince ya da restoran fiyat değiştirince sepetteki fiyatları güncelle.
+    final cr = cartRestaurant;
+    if (cr != null) {
+      for (final l in cart) {
+        final i = cr.item(l.itemId);
+        if (i == null) continue;
+        final u = priceOf(i) + l.optAdd;
+        if (u != l.unit) {
+          l.unit = u;
+          changed = true;
+        }
+      }
+    }
     final before = ikramDay;
     _refreshDemoIkram();
     if (before != ikramDay) changed = true;
@@ -446,13 +459,20 @@ class AppState extends ChangeNotifier {
   bool hasPhoto(String? id) => id != null && id.isNotEmpty && (id.startsWith('a:') || photos.containsKey(id));
 
   /// Fotoğrafı telefona kaydeder, kimliğini döner.
-  Future<String> addPhoto(Uint8List bytes) async {
+  /// Fotoğrafı telefona kaydeder, kimliğini döner. Telefonun uygulamaya ayırdığı yer dolduysa null döner.
+  Future<String?> addPhoto(Uint8List bytes) async {
     final id = 'p${now.millisecondsSinceEpoch}${Random().nextInt(9999)}';
-    photos[id] = bytes;
+    // Uygulamanın kendi verisine yer kalsın: fotoğraflar toplam ~3 MB'ı geçmesin.
+    final used = photos.values.fold<int>(0, (a, b) => a + b.length);
+    if ((used + bytes.length) * 1.37 > 3000000) return null;
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setString('ph_$id', base64Encode(bytes));
-    } catch (_) {}
+      final ok = await p.setString('ph_$id', base64Encode(bytes));
+      if (!ok) return null;
+    } catch (_) {
+      return null;
+    }
+    photos[id] = bytes;
     notifyListeners();
     return id;
   }
@@ -559,7 +579,7 @@ class AppState extends ChangeNotifier {
 
   /// Keşfet sırası: öne çıkanlar önce, sonra açık olanlar, sonra puan.
   List<Restaurant> get nearby {
-    final list = restaurants.where((r) => zoneFor(r) != null).toList();
+    final list = restaurants.where((r) => zoneFor(r) != null && r.menu.isNotEmpty).toList();
     int rank(Restaurant r) {
       final i = featured.indexOf(r.id);
       return i < 0 ? 100 : i;
@@ -882,6 +902,9 @@ class AppState extends ChangeNotifier {
 
   List<Order> get activeOrders => orders.where((o) => !o.status.closed).toList();
 
+  /// Otomatik denemede kuryenin yolda geçirdiği süre (saniye).
+  static const autoRoadSeconds = 45;
+
   void _autoStep(Order o, int seconds) {
     _timers[o.id]?.cancel();
     _timers[o.id] = Timer(Duration(seconds: seconds), () {
@@ -934,7 +957,7 @@ class AppState extends ChangeNotifier {
     o.status = OrderStatus.hazirlaniyor;
     o.prepMin = prep;
     o.acceptedAt = now;
-    if (autoRestaurant) _autoStep(o, 10);
+    if (autoRestaurant) _autoStep(o, 25);
     notifyListeners();
   }
 
@@ -951,7 +974,7 @@ class AppState extends ChangeNotifier {
     if (o.status != OrderStatus.hazirlaniyor) return;
     o.status = OrderStatus.yolda;
     o.roadAt = now;
-    if (autoRestaurant) _autoStep(o, 10);
+    if (autoRestaurant) _autoStep(o, autoRoadSeconds);
     notifyListeners();
   }
 
@@ -1300,7 +1323,31 @@ class AppState extends ChangeNotifier {
       daysLeft: 30,
       bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: '1. dönem · İlk ay ücretsiz', state: 'free')],
     );
-    addLog('${a.name} · başvuru onaylandı, ilk ücretsiz ayı giriş paketiyle açıldı');
+    if (restaurant(a.id) == null) {
+      final words = a.name.split(' ').where((w) => w.isNotEmpty).toList();
+      const palette = [0xFFA8200A, 0xFF1C1917, 0xFF16683A, 0xFF5A4100, 0xFF7A2E8A];
+      restaurants.add(Restaurant(
+        id: a.id,
+        name: a.name,
+        initials: words.take(2).map((w) => w.substring(0, 1)).join().toUpperCase(),
+        color: palette[a.id.hashCode.abs() % palette.length],
+        ink: 0xFFFFFFFF,
+        cuisine: a.cuisines.map((c) => c.split(' & ').first).join(' · '),
+        branch: a.district,
+        rating: 0,
+        ratingCount: 0,
+        zones: {for (final h in (a.hoods.isEmpty ? mahalleCenters.keys.toList() : a.hoods)) h: DeliveryZone(150, 0, '30-40')},
+        cash: a.cash,
+        card: a.card,
+        address: a.address,
+        menu: [],
+        hours: [for (var i = 0; i < 7; i++) DayHours(660, 1380)],
+        phone: a.phone,
+        couriers: a.courier ? ['Kurye 1'] : [],
+        courierPins: a.courier ? {'Kurye 1': newPin()} : {},
+      ));
+    }
+    addLog('${a.name} · başvuru onaylandı, ilk ücretsiz ayı giriş paketiyle açıldı; menü eklenince müşteriler görür');
     notifyListeners();
   }
 
