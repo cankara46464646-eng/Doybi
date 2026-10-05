@@ -143,6 +143,8 @@ if kts.exists():
             g,
             "release signingConfig (kts)",
         )
+    # kamera (QR) kütüphanesi en az Android 6 ister
+    g = re.sub(r"minSdk\s*=\s*flutter\.minSdkVersion", "minSdk = 23", g)
     kts.write_text(g, encoding="utf-8")
     print("[patch_android] build.gradle.kts ayarlandı")
 elif groovy.exists():
@@ -164,6 +166,7 @@ elif groovy.exists():
             "buildTypes (groovy)",
         )
         g = sub_once(r"signingConfig\s*=?\s*signingConfigs\.debug", "signingConfig signingConfigs.doybiTest", g, "release signingConfig (groovy)")
+    g = re.sub(r"minSdkVersion\s+flutter\.minSdkVersion", "minSdkVersion 23", g)
     groovy.write_text(g, encoding="utf-8")
     print("[patch_android] build.gradle ayarlandı")
 else:
