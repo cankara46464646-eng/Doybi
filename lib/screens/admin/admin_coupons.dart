@@ -34,6 +34,79 @@ class _AdminCouponsState extends State<AdminCoupons> {
     return '$what · $where${c.min > 0 ? ' · min. ₺${c.min}' : ''}${c.firstOrder ? ' · ilk sipariş' : ''} · ${c.payer == 'doybi' ? 'Doybi karşılar' : 'restoran karşılar'}';
   }
 
+  /// Fırsat Saati: her gün açık, kademeli, Doybi karşılar.
+  Widget _firsat(AppState s) {
+    final tiers = s.firsatSorted;
+    void save() {
+      s.firsatTiers = tiers;
+      s.touch();
+    }
+
+    return Box(
+      color: C.ink,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const Icon(Icons.bolt_rounded, color: C.saffron),
+          const SizedBox(width: 6),
+          Expanded(child: Text('Fırsat Saati', style: display(20, color: Colors.white))),
+          Switch(
+            value: s.firsatOn,
+            activeColor: C.ink,
+            activeTrackColor: C.saffron,
+            onChanged: (v) {
+              s.firsatOn = v;
+              s.addLog('Fırsat Saati ${v ? 'açıldı' : 'kapatıldı'}');
+              s.touch();
+            },
+          ),
+        ]),
+        Text('Müşteri Keşfet\'in altında görür. Sepet tutarına göre indirim kendiliğinden düşer; günde 1 sipariş. İndirimi Doybi karşılar, restoranın aboneliğinden mahsup edilir.',
+            style: body(12.5, color: Colors.white70)),
+        const SizedBox(height: 10),
+        for (var i = 0; i < tiers.length; i++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            child: Column(children: [
+              StepRow('${i + 1}. kademe · min. sepet', tl(tiers[i][0]),
+                  onDec: tiers[i][0] > 50 ? () {
+                    tiers[i][0] -= 50;
+                    save();
+                  } : null, onInc: () {
+                    tiers[i][0] += 50;
+                    save();
+                  }),
+              StepRow('İndirim', tl(tiers[i][1]),
+                  onDec: tiers[i][1] > 10 ? () {
+                    tiers[i][1] -= 5;
+                    save();
+                  } : null,
+                  onInc: tiers[i][1] + 5 < tiers[i][0] ? () {
+                    tiers[i][1] += 5;
+                    save();
+                  } : null),
+            ]),
+          ),
+        const SizedBox(height: 4),
+        Text('Her gün bitiş saati', style: body(13, color: Colors.white, weight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final m in const [20 * 60, 22 * 60, 23 * 60 + 59])
+            ChoiceChip(
+              label: Text(hhmm(m)),
+              selected: s.firsatEndMin == m,
+              selectedColor: C.saffron,
+              onSelected: (_) {
+                s.firsatEndMin = m;
+                s.touch();
+              },
+            ),
+        ]),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
@@ -44,6 +117,8 @@ class _AdminCouponsState extends State<AdminCoupons> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          _firsat(s),
+          const SizedBox(height: 12),
           Box(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text('Yeni kupon', style: display(20)),

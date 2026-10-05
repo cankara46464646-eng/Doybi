@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'firsat.dart';
 import 'address.dart';
 import 'coupons.dart';
 import 'tracking.dart';
@@ -182,6 +183,10 @@ class _CartScreenState extends State<CartScreen> {
             ]),
           ],
           const SizedBox(height: 14),
+          if (s.firsatLive) ...[
+            FirsatCartBox(sub: s.subtotal, active: s.usingFirsat),
+            const SizedBox(height: 10),
+          ],
           Box(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen(selecting: true))),
             child: Row(children: [
@@ -192,8 +197,13 @@ class _CartScreenState extends State<CartScreen> {
                     ? Text('Kupon kullan', style: body(15, weight: FontWeight.w800))
                     : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(c.code, style: body(15, weight: FontWeight.w800)),
-                        Text(chk!.ok ? '${tl(chk.discount)} indirim uygulandı' : chk.why,
-                            style: body(13, color: chk.ok ? C.greenInk : C.redDeep, weight: FontWeight.w700)),
+                        Text(
+                            !chk!.ok
+                                ? chk.why
+                                : s.usingFirsat
+                                    ? 'Fırsat Saati daha avantajlı, o uygulanıyor'
+                                    : '${tl(chk.discount)} indirim uygulandı',
+                            style: body(13, color: !chk.ok ? C.redDeep : (s.usingFirsat ? C.muted : C.greenInk), weight: FontWeight.w700)),
                       ]),
               ),
               Text(c == null ? '${s.walletCoupons.where((x) => s.couponCheck(x).ok).length} uygun' : 'Değiştir', style: body(13, color: C.muted, weight: FontWeight.w700)),
@@ -207,7 +217,7 @@ class _CartScreenState extends State<CartScreen> {
             child: Column(
               children: [
                 _row('Ara toplam', tl(s.subtotal)),
-                if (s.discount > 0) _row('Kupon indirimi', '−${tl(s.discount)}', color: C.greenInk),
+                if (s.discount > 0) _row(s.usingFirsat ? 'Fırsat Saati indirimi' : 'Kupon indirimi', '−${tl(s.discount)}', color: C.greenInk),
                 _row('Teslimat ücreti', s.deliveryFee == 0 ? 'Ücretsiz' : tl(s.deliveryFee)),
                 _row('Servis ücreti', '₺0'),
                 const Divider(color: C.line),

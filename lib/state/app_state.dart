@@ -49,6 +49,16 @@ class AppState extends ChangeNotifier {
   String ikramDay = '';
   Map<String, int> failCount = {};
 
+  // ---------- Fırsat Saati (Doybi'nin karşıladığı kademeli indirim) ----------
+  bool firsatOn = true;
+  List<List<int>> firsatTiers = [
+    [250, 40],
+    [400, 75],
+    [600, 120],
+  ]; // [min sepet, indirim]
+  int firsatEndMin = 23 * 60 + 59; // her gün bu saate kadar
+  String firsatHiddenDay = ''; // müşteri kartı bugün kapattıysa
+
   // fiyatlar: devam eden dönemler [fees]/[vat] ile, yeni dönemler [futureFees]/[futureVat] ile hesaplanır
   List<int> fees = List.of(defaultFees);
   int vat = 20;
@@ -141,6 +151,14 @@ class AppState extends ChangeNotifier {
     vat = 20;
     futureFees = List.of(defaultFees);
     futureVat = 20;
+    firsatOn = true;
+    firsatTiers = [
+      [250, 40],
+      [400, 75],
+      [600, 120],
+    ];
+    firsatEndMin = 23 * 60 + 59;
+    firsatHiddenDay = '';
   }
 
   /// Gün değişince deneme ikramlarını bugüne göre yeniden kur.
@@ -186,6 +204,7 @@ class AppState extends ChangeNotifier {
         'recent': recentSearches,
         'wallet': wallet,
         'chosen': chosenCoupon,
+        'firsat': {'on': firsatOn, 'tiers': firsatTiers, 'end': firsatEndMin, 'hidden': firsatHiddenDay},
         'cartR': cartRestaurantId,
         'cart': cart.map((l) => l.toJson()).toList(),
         'restaurants': restaurants.map((r) => r.toJson()).toList(),
@@ -228,6 +247,13 @@ class AppState extends ChangeNotifier {
     recentSearches = List<String>.from(j['recent'] ?? const []);
     wallet = List<String>.from(j['wallet'] ?? const []);
     chosenCoupon = j['chosen'];
+    if (j['firsat'] is Map) {
+      final f = m(j['firsat']);
+      firsatOn = f['on'] ?? true;
+      firsatTiers = (f['tiers'] as List? ?? const []).map((e) => List<int>.from(e as List)).toList();
+      firsatEndMin = f['end'] ?? 23 * 60 + 59;
+      firsatHiddenDay = f['hidden'] ?? '';
+    }
     cartRestaurantId = j['cartR'];
     cart
       ..clear()
@@ -654,12 +680,69 @@ class AppState extends ChangeNotifier {
     return (ok: true, why: '', discount: d);
   }
 
-  int get discount {
+  int get couponDiscount {
     final c = coupon(chosenCoupon);
     if (c == null) return 0;
     final chk = couponCheck(c);
     return chk.ok ? chk.discount : 0;
   }
+
+  // ---------- Fırsat Saati ----------
+  DateTime get firsatEnd {
+    final t = now;
+    return DateTime(t.year, t.month, t.day).add(Duration(minutes: firsatEndMin));
+  }
+
+  bool get firsatUsedToday {
+    final t = now;
+    return orders.any((o) =>
+        o.coupon == 'FIRSAT' &&
+        o.status != OrderStatus.iptal &&
+        o.status != OrderStatus.edilemedi &&
+        o.createdAt.year == t.year &&
+        o.createdAt.month == t.month &&
+        o.createdAt.day == t.day);
+  }
+
+  /// Fırsat Saati şu an geçerli mi (açık, saati geçmemiş, bugün kullanılmamış)?
+  bool get firsatLive => firsatOn && firsatTiers.isNotEmpty && now.isBefore(firsatEnd) && !firsatUsedToday;
+
+  List<List<int>> get firsatSorted => [...firsatTiers]..sort((a, b) => a[0].compareTo(b[0]));
+
+  int get firsatMax => firsatTiers.fold(0, (a, t) => t[1] > a ? t[1] : a);
+
+  /// Bu sepet tutarına düşen Fırsat Saati indirimi.
+  int firsatFor(int sub) {
+    var d = 0;
+    for (final t in firsatSorted) {
+      if (sub >= t[0]) d = t[1];
+    }
+    return d > sub ? sub : d;
+  }
+
+  /// Bir sonraki kademe (yoksa null).
+  List<int>? firsatNext(int sub) {
+    for (final t in firsatSorted) {
+      if (sub < t[0]) return t;
+    }
+    return null;
+  }
+
+  bool get firsatCardVisible => firsatLive && firsatHiddenDay != ymd(now);
+
+  void hideFirsatCard() {
+    firsatHiddenDay = ymd(now);
+    notifyListeners();
+  }
+
+  /// Sepette Fırsat Saati mi uygulanıyor? (Seçili kupon daha az indirim veriyorsa Fırsat Saati geçer.)
+  bool get usingFirsat {
+    if (!firsatLive || cart.isEmpty) return false;
+    final f = firsatFor(subtotal);
+    return f > 0 && f >= couponDiscount;
+  }
+
+  int get discount => usingFirsat ? firsatFor(subtotal) : couponDiscount;
 
   int get total => subtotal + deliveryFee - discount;
 
@@ -688,7 +771,8 @@ class AppState extends ChangeNotifier {
 
   Order placeOrder({required String payment, String? change, required String note}) {
     final r = cartRestaurant!;
-    final c = coupon(chosenCoupon);
+    final firsat = usingFirsat;
+    final c = firsat ? null : coupon(chosenCoupon);
     final d = discount;
     final o = Order(
       id: '#D-${_seq++}',
@@ -697,9 +781,9 @@ class AppState extends ChangeNotifier {
       lines: cart.map((l) => CartLine(itemId: l.itemId, name: l.name, unit: l.unit, optAdd: l.optAdd, qty: l.qty, opts: l.opts, note: l.note)).toList(),
       subtotal: subtotal,
       deliveryFee: deliveryFee,
-      coupon: d > 0 ? c?.code : null,
+      coupon: d > 0 ? (firsat ? 'FIRSAT' : c?.code) : null,
       discount: d,
-      couponPayer: c?.payer ?? 'doybi',
+      couponPayer: firsat ? 'doybi' : (c?.payer ?? 'doybi'),
       payment: payment,
       change: payment == 'nakit' ? change : null,
       note: note.trim(),

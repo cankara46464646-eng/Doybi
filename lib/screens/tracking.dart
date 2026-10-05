@@ -264,7 +264,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
             if (o.deliveryFee > 0) Row(children: [Expanded(child: Text('Teslimat', style: body(14))), Text(tl(o.deliveryFee), style: body(14))]),
             if (o.discount > 0)
-              Row(children: [Expanded(child: Text('Kupon ${o.coupon}', style: body(14, color: C.greenInk))), Text('−${tl(o.discount)}', style: body(14, color: C.greenInk))]),
+              Row(children: [Expanded(child: Text(o.coupon == 'FIRSAT' ? 'Fırsat Saati indirimi' : 'Kupon ${o.coupon}', style: body(14, color: C.greenInk))), Text('−${tl(o.discount)}', style: body(14, color: C.greenInk))]),
             const Divider(color: C.line),
             Row(children: [
               Expanded(child: Text('Kapıda ödenecek', style: body(15, weight: FontWeight.w800))),

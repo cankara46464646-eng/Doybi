@@ -252,7 +252,7 @@ class PanelOrderCard extends StatelessWidget {
           if (o.deliveryFee > 0) Row(children: [Expanded(child: Text('Teslimat', style: body(13, color: C.muted))), Text(tl(o.deliveryFee), style: body(13))]),
           if (o.discount > 0)
             Row(children: [
-              Expanded(child: Text('${o.couponPayer == 'doybi' ? 'Doybi kuponu' : 'Restoran kuponu'} ${o.coupon}', style: body(13, color: C.greenInk, weight: FontWeight.w700))),
+              Expanded(child: Text(o.coupon == 'FIRSAT' ? 'Fırsat Saati (Doybi karşılar)' : '${o.couponPayer == 'doybi' ? 'Doybi kuponu' : 'Restoran kuponu'} ${o.coupon}', style: body(13, color: C.greenInk, weight: FontWeight.w700))),
               Text('−${tl(o.discount)}', style: body(13, color: C.greenInk, weight: FontWeight.w700)),
             ]),
           if (o.note.isNotEmpty) ...[
