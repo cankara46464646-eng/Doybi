@@ -257,10 +257,7 @@ class _FirsatSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
-    final tiers = s.firsatSorted;
     final deals = s.dealItems;
-    final has = s.firsatOn && tiers.isNotEmpty;
-    final used = has && s.firsatUsedToday;
     return ListView(
       controller: controller,
       padding: EdgeInsets.zero,
@@ -301,49 +298,10 @@ class _FirsatSheet extends StatelessWidget {
           ),
           for (final (m, r) in deals) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: _DealCard(m, r)),
         ],
-        if (has && s.firsatWindow) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text('Sepette ekstra indirim', style: display(19)),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text(
-              used ? 'Bugünkü sepet indirimini kullandın; fırsat ürünleri yine indirimli.' : 'Tüm restoranlarda, sepet tutarına göre kendiliğinden düşer.',
-              style: body(13, color: C.muted),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Opacity(
-              opacity: used ? 0.5 : 1,
-              child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: IntrinsicHeight(
-                  child: Row(children: [
-                    for (var i = 0; i < tiers.length; i++) ...[
-                      if (i > 0) const VerticalDivider(width: 1, thickness: 1, color: C.line),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            FittedBox(child: Text('${tl(tiers[i][1])} indirim', style: body(17, color: C.red, weight: FontWeight.w800))),
-                            const SizedBox(height: 2),
-                            Text('Min. sepet\n${tl(tiers[i][0])}', textAlign: TextAlign.center, style: body(12, color: C.muted, height: 1.25)),
-                          ]),
-                        ),
-                      ),
-                    ],
-                  ]),
-                ),
-              ),
-            ),
-          ),
-        ],
         Padding(
           padding: const EdgeInsets.fromLTRB(28, 18, 28, 28),
           child: Text(
-            '* Fırsat fiyatları bugün ${hhmm(s.firsatEndMin)}${dativeTime(s.firsatEndMin)} kadar geçerlidir; indirimi restoran karşılar. Sepet indirimi kod gerektirmez, günde 1 siparişte geçerlidir ve Doybi tarafından karşılanır.',
+            '* Fırsat fiyatları bugün ${hhmm(s.firsatEndMin)}${dativeTime(s.firsatEndMin)} kadar geçerlidir.',
             textAlign: TextAlign.center,
             style: body(12, color: C.muted),
           ),

@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       return;
     }
     _c.forward();
-    Future.delayed(const Duration(milliseconds: 2300), _next);
+    Future.delayed(const Duration(milliseconds: 1800), _next);
   }
 
   void _next() {
@@ -79,11 +79,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            FadeTransition(
-              opacity: CurvedAnimation(parent: _c, curve: const Interval(0.7, 1)),
-              child: Text('Mahallenin lezzeti, dükkân fiyatına.', style: display(18, color: Colors.white, weight: FontWeight.w600)),
             ),
           ],
         ),
