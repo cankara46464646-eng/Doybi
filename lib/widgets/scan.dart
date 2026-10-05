@@ -41,7 +41,7 @@ class _ScanScreenState extends State<ScanScreen> {
               }
             }
           },
-          errorBuilder: (context, error) => Center(
+          errorBuilder: (context, error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
               child: Text(
