@@ -136,12 +136,12 @@ class _CountBoxes extends StatelessWidget {
       var left = s.firsatEnd.difference(s.now);
       if (left.isNegative) left = Duration.zero;
       Widget box(int v) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
             decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(6)),
             child: Text(v.toString().padLeft(2, '0'),
-                style: body(15, color: Colors.white, weight: FontWeight.w800, height: 1.1).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                style: body(13, color: Colors.white, weight: FontWeight.w800, height: 1.1).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
           );
-      Widget dot() => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: Text(':', style: body(15, color: C.red, weight: FontWeight.w800)));
+      Widget dot() => Padding(padding: const EdgeInsets.symmetric(horizontal: 1.5), child: Text(':', style: body(13, color: C.red, weight: FontWeight.w800)));
       return Semantics(
         label: '${left.inHours} saat ${left.inMinutes % 60} dakika kaldı',
         child: ExcludeSemantics(
@@ -185,11 +185,11 @@ class _FirsatSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Row(children: [
-              const _Bolt(size: 52),
-              const SizedBox(width: 12),
+              const _Bolt(size: 46),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(has ? firsatTitle(s) : 'Fırsat Saati', style: display(21)),
+                  Text(has ? firsatTitle(s) : 'Fırsat Saati', style: display(19)),
                   const SizedBox(height: 2),
                   Text(sub, style: body(13.5, color: C.red, weight: FontWeight.w700)),
                 ]),

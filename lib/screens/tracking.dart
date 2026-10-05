@@ -78,9 +78,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 const SizedBox(height: 12),
                 if (!bad && o.status != OrderStatus.bekliyor && o.status != OrderStatus.teslim) ...[
                   Row(children: [
-                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda ? () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Kuryenin numarası') : null)),
+                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda && (s.restaurant(o.restaurantId)?.phone ?? '').isNotEmpty ? () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Kuryenin numarası') : null)),
                     const SizedBox(width: 10),
-                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Restoranın numarası'))),
+                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: (s.restaurant(o.restaurantId)?.phone ?? '').isEmpty ? null : () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Restoranın numarası'))),
                   ]),
                   const SizedBox(height: 12),
                 ],
