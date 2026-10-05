@@ -771,3 +771,76 @@ class PriceText extends StatelessWidget {
     ]);
   }
 }
+
+/// Bilet şekli: köşeleri yuvarlak, kenarlarından yarım daire oyulmuş.
+/// [at] 0–1 arasıysa oyuklar sol ve sağ kenarda o yükseklikte; 1'den büyükse üst ve alt kenarda soldan o kadar pikselde.
+class TicketBorder extends ShapeBorder {
+  final double radius;
+  final double notch;
+  final double at;
+  final Color? side;
+  const TicketBorder({this.radius = 18, this.notch = 9, this.at = 0.6, this.side});
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) => getOuterPath(rect, textDirection: textDirection);
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final base = Path()..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius)));
+    final cut = Path();
+    if (at <= 1) {
+      final y = rect.top + rect.height * at;
+      cut
+        ..addOval(Rect.fromCircle(center: Offset(rect.left, y), radius: notch))
+        ..addOval(Rect.fromCircle(center: Offset(rect.right, y), radius: notch));
+    } else {
+      final x = rect.left + at;
+      cut
+        ..addOval(Rect.fromCircle(center: Offset(x, rect.top), radius: notch))
+        ..addOval(Rect.fromCircle(center: Offset(x, rect.bottom), radius: notch));
+    }
+    return Path.combine(PathOperation.difference, base, cut);
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    if (side == null) return;
+    canvas.drawPath(getOuterPath(rect), Paint()
+      ..color = side!
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2);
+  }
+
+  @override
+  ShapeBorder scale(double t) => this;
+}
+
+/// Bilet üzerindeki kesik çizgi (yatay: [at] 0–1 yükseklik; dikey: [at] > 1 piksel).
+class DashLinePainter extends CustomPainter {
+  final double at;
+  final Color color;
+  const DashLinePainter({required this.at, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1.5;
+    if (at <= 1) {
+      final y = size.height * at;
+      for (var x = 14.0; x < size.width - 14; x += 9) {
+        canvas.drawLine(Offset(x, y), Offset(x + 5, y), p);
+      }
+    } else {
+      for (var y = 12.0; y < size.height - 12; y += 9) {
+        canvas.drawLine(Offset(at, y), Offset(at, y + 5), p);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant DashLinePainter old) => old.at != at || old.color != color;
+}

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <base href="/Doybi/app/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Doybi İşletme: siparişler, menü ve abonelik.">
+  <meta name="theme-color" content="#FC361B">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Doybi İşletme">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta property="og:title" content="Doybi">
+  <meta property="og:description" content="Mahallenin lezzeti, dükkân fiyatına.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="panel.webmanifest">
+  <link rel="preload" as="image" href="assets/assets/brand/letter-d.png">
+  <link rel="preload" as="image" href="assets/assets/brand/letter-o.png">
+  <link rel="preload" as="image" href="assets/assets/brand/letter-y.png">
+  <link rel="preload" as="image" href="assets/assets/brand/letter-b.png">
+  <link rel="preload" as="image" href="assets/assets/brand/letter-i.png">
+  <title>Doybi İşletme</title>
+  <script>
+    // Yüksek çözünürlüklü telefonlarda (3x) çizim yükünü azalt: 2x yeterince keskin, çok daha akıcı.
+    (function () {
+      var d = window.devicePixelRatio || 1;
+      if (d > 2) {
+        try { Object.defineProperty(window, 'devicePixelRatio', { get: function () { return 2; }, configurable: true }); } catch (e) {}
+      }
+    })();
+    window.__doybiStart = Date.now();
+  </script>
+  <style>
+    html, body { margin: 0; height: 100%; background: #FC361B; overflow: hidden; }
+    #splash {
+      position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #FC361B; transition: opacity .3s ease;
+    }
+    #logo { position: relative; width: 240px; height: 93.6px; }
+    #logo img { position: absolute; opacity: 0; transform: translateY(-160px); animation: drop .7s both; }
+    #logo img:nth-child(1) { animation-delay: .00s; }
+    #logo img:nth-child(2) { animation-delay: .13s; }
+    #logo img:nth-child(3) { animation-delay: .26s; }
+    #logo img:nth-child(4) { animation-delay: .39s; }
+    #logo img:nth-child(5) { animation-delay: .52s; }
+    @keyframes drop {
+      0%   { opacity: 0; transform: translateY(-160px); animation-timing-function: ease-in; }
+      12%  { opacity: 1; }
+      55%  { transform: translateY(0); animation-timing-function: ease-out; }
+      70%  { transform: translateY(-26px); animation-timing-function: ease-in; }
+      84%  { transform: translateY(0); animation-timing-function: ease-out; }
+      92%  { transform: translateY(-7px); animation-timing-function: ease-in; }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    #tag {
+      margin-top: 18px; color: #fff; opacity: 0; animation: fade .5s 1.05s both;
+      font: 600 18px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #dots { margin-top: 30px; height: 8px; opacity: 0; animation: fade .4s 2.4s both; }
+    #dots i { display: inline-block; width: 7px; height: 7px; margin: 0 4px; border-radius: 50%; background: rgba(255,255,255,.75); animation: blink 1s infinite; }
+    #dots i:nth-child(2) { animation-delay: .2s; }
+    #dots i:nth-child(3) { animation-delay: .4s; }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes blink { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div id="splash" aria-label="Doybi açılıyor">
+    <div id="logo">
+      <img alt="" src="assets/assets/brand/letter-d.png" style="left:0.73px;top:1.22px;width:58.36px;height:73.92px">
+      <img alt="" src="assets/assets/brand/letter-o.png" style="left:57.87px;top:18.97px;width:56.41px;height:56.41px">
+      <img alt="" src="assets/assets/brand/letter-y.png" style="left:109.67px;top:18.97px;width:53.74px;height:73.92px">
+      <img alt="" src="assets/assets/brand/letter-b.png" style="left:164.13px;top:0.97px;width:55.68px;height:74.16px">
+      <img alt="" src="assets/assets/brand/letter-i.png" style="left:219.33px;top:1.22px;width:19.94px;height:72.95px">
+    </div>
+    <div id="dots"><i></i><i></i><i></i></div>
+  </div>
+  <script>
+    // Uygulama hazır olunca (animasyon en az bir kez bitmiş olarak) açılış ekranını kaldır.
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      if (!s) return;
+      var wait = Math.max(0, 1400 - (Date.now() - window.__doybiStart));
+      setTimeout(function () {
+        s.style.opacity = '0';
+        setTimeout(function () { s.remove(); }, 320);
+      }, wait);
+    });
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

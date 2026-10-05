@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'address.dart';
+import 'partner.dart';
 import 'shell.dart';
 
 /// Açılış animasyonu: "doybi" harfleri sırayla düşer.
@@ -44,7 +45,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: kIsWeb ? Duration.zero : const Duration(milliseconds: 350),
-        pageBuilder: (_, __, ___) => s.address == null ? const AddressScreen(first: true) : const Shell(),
+        pageBuilder: (_, __, ___) => partnerEntry
+            ? const PartnerEntryScreen(root: true)
+            : (s.address == null ? const AddressScreen(first: true) : const Shell()),
         transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
       ),
     );
