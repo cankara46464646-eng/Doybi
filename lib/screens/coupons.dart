@@ -95,8 +95,8 @@ class _CouponCard extends StatelessWidget {
       if (c.restaurantId != null || !c.firstOrder) rest,
       if (c.min > 0) 'min. sepet ₺${c.min}',
     ].join(' · ');
-    return Opacity(
-      opacity: usable || chosen ? 1 : 0.6,
+    return Dim(
+      dim: !(usable || chosen),
       child: Container(
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: chosen ? C.red : Colors.white, width: 2)),
         clipBehavior: Clip.antiAlias,

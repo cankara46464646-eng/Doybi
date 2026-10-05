@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../state/app_state.dart';
@@ -28,6 +29,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      // Web'de animasyon sayfa açılırken zaten oynuyor (index.html); doğrudan devam et.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _next());
+      return;
+    }
     _c.forward();
     Future.delayed(const Duration(milliseconds: 2300), _next);
   }
@@ -37,8 +43,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final s = AppScope.of(context);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 350),
-        pageBuilder: (_, __, ___) => s.mahalle == null ? const AddressScreen(first: true) : const Shell(),
+        transitionDuration: kIsWeb ? Duration.zero : const Duration(milliseconds: 350),
+        pageBuilder: (_, __, ___) => s.address == null ? const AddressScreen(first: true) : const Shell(),
         transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
       ),
     );
@@ -52,6 +58,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return const Scaffold(backgroundColor: C.logoRed);
     const w = 240.0;
     const h = w * 385 / 987;
     return Scaffold(

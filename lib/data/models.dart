@@ -48,7 +48,8 @@ class MenuItem {
   bool available; // false = bugün tükendi
   bool featured; // restoran sayfasında öne çıkar
   List<OptGroup> groups;
-  MenuItem(this.id, this.name, this.price, this.category, {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups})
+  String? photo; // fotoğraf kimliği (PhotoStore)
+  MenuItem(this.id, this.name, this.price, this.category, {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups, this.photo})
       : groups = groups ?? [];
 
   Map<String, dynamic> toJson() => {
@@ -60,6 +61,7 @@ class MenuItem {
         'av': available,
         'ft': featured,
         'g': groups.map((g) => g.toJson()).toList(),
+        'ph': photo,
       };
   factory MenuItem.fromJson(Map<String, dynamic> j) => MenuItem(
         j['id'],
@@ -70,6 +72,7 @@ class MenuItem {
         available: j['av'] ?? true,
         featured: j['ft'] ?? false,
         groups: (j['g'] as List? ?? const []).map((e) => OptGroup.fromJson(_m(e))).toList(),
+        photo: j['ph'],
       );
 }
 
@@ -82,6 +85,20 @@ class DayHours {
   Map<String, dynamic> toJson() => {'on': on, 'o': open, 'c': close};
   factory DayHours.fromJson(Map<String, dynamic> j) => DayHours(j['o'], j['c'], on: j['on'] ?? true);
 }
+
+/// Özel gün (bayram vb.): o gün kapalı ya da farklı saatlerde açık.
+class SpecialDay {
+  final String date; // 2026-10-29
+  bool closed;
+  int open;
+  int close;
+  String note;
+  SpecialDay(this.date, {this.closed = false, this.open = 720, this.close = 1200, this.note = ''});
+  Map<String, dynamic> toJson() => {'d': date, 'x': closed, 'o': open, 'c': close, 'n': note};
+  factory SpecialDay.fromJson(Map<String, dynamic> j) => SpecialDay(j['d'], closed: j['x'] ?? false, open: j['o'] ?? 720, close: j['c'] ?? 1200, note: j['n'] ?? '');
+}
+
+String ymd(DateTime t) => '${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}';
 
 String hhmm(int minutes) {
   final m = minutes % 1440;
@@ -115,6 +132,13 @@ class Restaurant {
   bool alertCall;
   List<String> couriers;
   String? promo; // "2 dürüme ayran bizden"
+  String phone; // işletme telefonu
+  String? logo; // fotoğraf kimliği
+  String? cover; // kapak fotoğrafı
+  double? lat;
+  double? lng;
+  List<SpecialDay> specialDays;
+  Map<String, String> courierPins; // kurye -> 4 haneli kod
 
   Restaurant({
     required this.id,
@@ -141,8 +165,17 @@ class Restaurant {
     this.alertCall = true,
     List<String>? couriers,
     this.promo,
+    this.phone = '',
+    this.logo,
+    this.cover,
+    this.lat,
+    this.lng,
+    List<SpecialDay>? specialDays,
+    Map<String, String>? courierPins,
   })  : blocked = blocked ?? [],
-        couriers = couriers ?? [];
+        couriers = couriers ?? [],
+        specialDays = specialDays ?? [],
+        courierPins = courierPins ?? {};
 
   Color get bg => Color(color);
   Color get fg => Color(ink);
@@ -164,13 +197,28 @@ class Restaurant {
   }
 
   /// Saat kontrolü açıkken çalışma saatine göre açık mı?
+  SpecialDay? specialFor(DateTime t) {
+    final d = ymd(t);
+    for (final s in specialDays) {
+      if (s.date == d) return s;
+    }
+    return null;
+  }
+
+  /// O günün geçerli saatleri (özel gün varsa onunla).
+  DayHours hoursOn(DateTime t) {
+    final sp = specialFor(t);
+    if (sp != null) return DayHours(sp.open, sp.close, on: !sp.closed);
+    return hours[t.weekday - 1];
+  }
+
   bool openAt(DateTime t) {
     final mins = t.hour * 60 + t.minute;
-    final today = hours[t.weekday - 1];
+    final today = hoursOn(t);
     final last = lastCall30 ? 30 : 0;
     if (today.on && mins >= today.open && mins < today.close - last) return true;
     // dünden sarkan saatler (ör. 00:30'a kadar)
-    final y = hours[(t.weekday + 5) % 7];
+    final y = hoursOn(t.subtract(const Duration(days: 1)));
     if (y.on && y.close > 1440 && mins < y.close - 1440 - last) return true;
     return false;
   }
@@ -178,17 +226,17 @@ class Restaurant {
   /// Bir sonraki açılış saati (bugün ya da yarın).
   String nextOpenText(DateTime t) {
     final mins = t.hour * 60 + t.minute;
-    final today = hours[t.weekday - 1];
+    final today = hoursOn(t);
     if (today.on && mins < today.open) return '${hhmm(today.open)}\'de açılır';
     for (var i = 1; i <= 7; i++) {
-      final d = hours[(t.weekday - 1 + i) % 7];
+      final d = hoursOn(t.add(Duration(days: i)));
       if (d.on) return i == 1 ? 'yarın ${hhmm(d.open)}\'de açılır' : '${dayNames[(t.weekday - 1 + i) % 7]} ${hhmm(d.open)}\'de açılır';
     }
     return 'şimdilik kapalı';
   }
 
   String todayText(DateTime t) {
-    final d = hours[t.weekday - 1];
+    final d = hoursOn(t);
     return d.on ? '${hhmm(d.close)}\'a kadar' : 'bugün kapalı';
   }
 
@@ -217,6 +265,13 @@ class Restaurant {
         'alertCall': alertCall,
         'couriers': couriers,
         'promo': promo,
+        'phone': phone,
+        'logo': logo,
+        'cover': cover,
+        'lat': lat,
+        'lng': lng,
+        'special': specialDays.map((d) => d.toJson()).toList(),
+        'pins': courierPins,
       };
 
   factory Restaurant.fromJson(Map<String, dynamic> j) => Restaurant(
@@ -244,6 +299,13 @@ class Restaurant {
         alertCall: j['alertCall'] ?? true,
         couriers: List<String>.from(j['couriers'] ?? const []),
         promo: j['promo'],
+        phone: j['phone'] ?? '',
+        logo: j['logo'],
+        cover: j['cover'],
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
+        specialDays: (j['special'] as List? ?? const []).map((e) => SpecialDay.fromJson(_m(e))).toList(),
+        courierPins: Map<String, String>.from(j['pins'] ?? const {}),
       );
 }
 
@@ -327,6 +389,8 @@ class Order {
   String? collectedVia; // pos | nakit
   Rating? rating;
   bool fullRefund; // tamamen iade edildi: paket sayısına girmez
+  final double? lat; // teslimat noktası (haritada işaretlendiyse)
+  final double? lng;
 
   Order({
     required this.id,
@@ -356,6 +420,8 @@ class Order {
     this.collectedVia,
     this.rating,
     this.fullRefund = false,
+    this.lat,
+    this.lng,
   });
 
   int get total => subtotal + deliveryFee - discount;
@@ -391,6 +457,8 @@ class Order {
         'via': collectedVia,
         'rating': rating?.toJson(),
         'refund': fullRefund,
+        'lat': lat,
+        'lng': lng,
       };
 
   factory Order.fromJson(Map<String, dynamic> j) => Order(
@@ -421,6 +489,8 @@ class Order {
         collectedVia: j['via'],
         rating: j['rating'] == null ? null : Rating.fromJson(_m(j['rating'])),
         fullRefund: j['refund'] ?? false,
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
       );
 }
 
@@ -499,6 +569,7 @@ class Complaint {
   int refund;
   String? how; // nakit | pos
   bool gift; // Doybi müşteriye kupon verdi
+  List<String> photos;
 
   Complaint({
     required this.id,
@@ -515,7 +586,8 @@ class Complaint {
     this.refund = 0,
     this.how,
     this.gift = false,
-  });
+    List<String>? photos,
+  }) : photos = photos ?? [];
 
   String get wantLabel => const {'iade': 'para iadesi', 'getir': 'eksiği getirsinler', 'bilgi': 'sadece bilsinler'}[want] ?? want;
   String get title => items.isEmpty ? typeLabel : '$typeLabel: ${items.join(', ')}';
@@ -535,6 +607,7 @@ class Complaint {
         'refund': refund,
         'how': how,
         'gift': gift,
+        'photos': photos,
       };
   factory Complaint.fromJson(Map<String, dynamic> j) => Complaint(
         id: j['id'],
@@ -551,6 +624,7 @@ class Complaint {
         refund: j['refund'] ?? 0,
         how: j['how'],
         gift: j['gift'] ?? false,
+        photos: List<String>.from(j['photos'] ?? const []),
       );
 }
 
@@ -572,6 +646,8 @@ class Application {
   final String menuWay; // ekip | foto | kendim
   final DateTime at;
   final bool demo; // örnek başvuru
+  final String? taxDoc; // vergi levhası fotoğrafı
+  final String? menuPhoto; // menü fotoğrafı
   String status; // bekliyor | onay | red
   String? reason;
   Set<String> checks;
@@ -593,6 +669,8 @@ class Application {
     required this.menuWay,
     required this.at,
     this.demo = false,
+    this.taxDoc,
+    this.menuPhoto,
     this.status = 'bekliyor',
     this.reason,
     Set<String>? checks,
@@ -622,6 +700,8 @@ class Application {
         'menu': menuWay,
         'at': _ms(at),
         'demo': demo,
+        'taxDoc': taxDoc,
+        'menuPhoto': menuPhoto,
         'st': status,
         'reason': reason,
         'checks': checks.toList(),
@@ -643,6 +723,8 @@ class Application {
         menuWay: j['menu'] ?? 'ekip',
         at: _dt(j['at'])!,
         demo: j['demo'] ?? false,
+        taxDoc: j['taxDoc'],
+        menuPhoto: j['menuPhoto'],
         status: j['st'] ?? 'bekliyor',
         reason: j['reason'],
         checks: Set<String>.from(j['checks'] ?? const []),
@@ -664,6 +746,9 @@ class ShareReq {
   String? clicks;
   bool proof;
   DateTime at;
+  List<String> photos; // restoranın yüklediği ürün fotoğrafları
+  String? design; // Doybi'nin hazırladığı tasarım
+  String? proofPhoto; // yayın ekran görüntüsü
 
   ShareReq({
     required this.id,
@@ -679,7 +764,10 @@ class ShareReq {
     this.clicks,
     this.proof = false,
     required this.at,
-  });
+    List<String>? photos,
+    this.design,
+    this.proofPhoto,
+  }) : photos = photos ?? [];
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -695,6 +783,9 @@ class ShareReq {
         'clicks': clicks,
         'proof': proof,
         'at': _ms(at),
+        'photos': photos,
+        'design': design,
+        'proofPhoto': proofPhoto,
       };
   factory ShareReq.fromJson(Map<String, dynamic> j) => ShareReq(
         id: j['id'],
@@ -710,6 +801,9 @@ class ShareReq {
         clicks: j['clicks'],
         proof: j['proof'] ?? false,
         at: _dt(j['at'])!,
+        photos: List<String>.from(j['photos'] ?? const []),
+        design: j['design'],
+        proofPhoto: j['proofPhoto'],
       );
 }
 
@@ -831,7 +925,81 @@ class PromoBanner {
   final String owner;
   final int swatch;
   bool on;
-  PromoBanner(this.id, this.title, this.owner, this.swatch, {this.on = true});
-  Map<String, dynamic> toJson() => {'id': id, 't': title, 'o': owner, 's': swatch, 'on': on};
-  factory PromoBanner.fromJson(Map<String, dynamic> j) => PromoBanner(j['id'], j['t'], j['o'], j['s'], on: j['on'] ?? true);
+  String? photo;
+  PromoBanner(this.id, this.title, this.owner, this.swatch, {this.on = true, this.photo});
+  Map<String, dynamic> toJson() => {'id': id, 't': title, 'o': owner, 's': swatch, 'on': on, 'ph': photo};
+  factory PromoBanner.fromJson(Map<String, dynamic> j) => PromoBanner(j['id'], j['t'], j['o'], j['s'], on: j['on'] ?? true, photo: j['ph']);
+}
+
+/// Kayıtlı teslimat adresi.
+class SavedAddress {
+  final String id;
+  String label; // Ev | İş | Diğer
+  String city;
+  String ilce;
+  String mahalle;
+  String street;
+  String building;
+  String floor;
+  String door;
+  String note;
+  double? lat;
+  double? lng;
+
+  SavedAddress({
+    required this.id,
+    this.label = 'Ev',
+    this.city = 'Kahramanmaraş',
+    this.ilce = 'Onikişubat',
+    required this.mahalle,
+    this.street = '',
+    this.building = '',
+    this.floor = '',
+    this.door = '',
+    this.note = '',
+    this.lat,
+    this.lng,
+  });
+
+  /// "12. Sk. No: 4, Kat 2, D: 3"
+  String get line {
+    final parts = <String>[
+      if (street.isNotEmpty) street,
+      if (building.isNotEmpty) 'No: $building',
+      if (floor.isNotEmpty) 'Kat $floor',
+      if (door.isNotEmpty) 'D: $door',
+    ];
+    return parts.join(', ');
+  }
+
+  String get full => ['$mahalle Mah.', if (line.isNotEmpty) line, if (note.isNotEmpty) note].join(' · ');
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'label': label,
+        'city': city,
+        'ilce': ilce,
+        'mahalle': mahalle,
+        'street': street,
+        'building': building,
+        'floor': floor,
+        'door': door,
+        'note': note,
+        'lat': lat,
+        'lng': lng,
+      };
+  factory SavedAddress.fromJson(Map<String, dynamic> j) => SavedAddress(
+        id: j['id'],
+        label: j['label'] ?? 'Ev',
+        city: j['city'] ?? 'Kahramanmaraş',
+        ilce: j['ilce'] ?? 'Onikişubat',
+        mahalle: j['mahalle'],
+        street: j['street'] ?? '',
+        building: j['building'] ?? '',
+        floor: j['floor'] ?? '',
+        door: j['door'] ?? '',
+        note: j['note'] ?? '',
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
+      );
 }

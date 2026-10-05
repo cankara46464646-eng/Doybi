@@ -5,6 +5,7 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'address.dart';
+import '../logic/location.dart';
 import 'cart.dart';
 import 'restaurant.dart';
 import 'shell.dart';
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Flexible(
                         child: InkWell(
                           borderRadius: BorderRadius.circular(999),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen())),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressListScreen())),
                           child: Container(
                             height: 40,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 const Icon(Icons.home_rounded, color: C.saffron, size: 18),
                                 const SizedBox(width: 6),
-                                Flexible(child: Text('${s.mahalle ?? ''} Mah.', overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white, weight: FontWeight.w700))),
+                                Flexible(child: Text('${s.address?.label ?? 'Adres'} · ${s.mahalle ?? ''}', overflow: TextOverflow.ellipsis, style: body(14, color: Colors.white, weight: FontWeight.w700))),
                                 const Icon(Icons.expand_more, color: Colors.white, size: 18),
                               ],
                             ),
@@ -260,7 +261,8 @@ class _BannerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final bg = Color(b.swatch);
-    final dark = bg.computeLuminance() < 0.4;
+    final hasPhoto = s.photo(b.photo) != null;
+    final dark = hasPhoto || bg.computeLuminance() < 0.4;
     final fg = dark ? Colors.white : C.ink;
     Restaurant? r;
     if (b.id == 'b') r = s.restaurant('UD');
@@ -271,11 +273,23 @@ class _BannerCard extends StatelessWidget {
       child: Material(
         color: bg,
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
+        clipBehavior: hasPhoto ? Clip.antiAlias : Clip.none,
+        child: Ink(
+          decoration: hasPhoto
+              ? BoxDecoration(
+                  image: DecorationImage(image: MemoryImage(s.photo(b.photo)!), fit: BoxFit.cover),
+                )
+              : null,
+          child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: r == null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r!))),
-          child: Padding(
+          child: Container(
+            decoration: hasPhoto
+                ? const BoxDecoration(gradient: LinearGradient(colors: [Color(0xCC000000), Color(0x33000000)], begin: Alignment.centerLeft, end: Alignment.centerRight))
+                : null,
             padding: const EdgeInsets.all(14),
+            child: Padding(
+            padding: EdgeInsets.zero,
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -294,6 +308,8 @@ class _BannerCard extends StatelessWidget {
                 ),
             ]),
           ),
+          ),
+          ),
         ),
       ),
     );
@@ -310,8 +326,8 @@ class RestaurantCard extends StatelessWidget {
     final z = s.zoneFor(r)!;
     final open = s.isOpen(r);
     final month = s.monthRestaurant == r.id;
-    return Opacity(
-      opacity: open ? 1 : 0.6,
+    return Dim(
+      dim: !open,
       child: Material(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -346,7 +362,7 @@ class RestaurantCard extends StatelessWidget {
                             Text(' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(13, weight: FontWeight.w800)),
                             Flexible(
                               child: Text(
-                                ' · ${z.eta} dk · Min. ${tl(z.min)} · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}',
+                                ' · ${z.eta} dk${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'} · Min. ${tl(z.min)} · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}',
                                 maxLines: 2,
                                 style: body(13, color: C.muted),
                               ),

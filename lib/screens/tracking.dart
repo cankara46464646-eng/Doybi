@@ -4,6 +4,7 @@ import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'rate.dart';
 import 'report.dart';
 import 'shell.dart';
@@ -77,9 +78,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 const SizedBox(height: 12),
                 if (!bad && o.status != OrderStatus.bekliyor && o.status != OrderStatus.teslim) ...[
                   Row(children: [
-                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda ? () => snack(context, 'Deneme sürümü: arama yapılmaz.') : null)),
+                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda ? () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Kuryenin numarası') : null)),
                     const SizedBox(width: 10),
-                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: () => snack(context, 'Deneme sürümü: arama yapılmaz.'))),
+                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Restoranın numarası'))),
                   ]),
                   const SizedBox(height: 12),
                 ],

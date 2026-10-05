@@ -1,9 +1,11 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import 'business_shell.dart';
 import 'complaints.dart';
 import 'courier.dart';
@@ -20,6 +22,38 @@ class PanelScreen extends StatefulWidget {
 
 class _PanelScreenState extends State<PanelScreen> {
   final Set<String> _muted = {};
+  final _player = AudioPlayer();
+  bool _ringing = false;
+  bool _soundBlocked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.setReleaseMode(ReleaseMode.loop);
+  }
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  /// Bekleyen sipariş varken zili çal; telefon izin vermezse "Sesi aç" düğmesi çıkar.
+  Future<void> _ring(bool on) async {
+    if (on == _ringing) return;
+    _ringing = on;
+    try {
+      if (on) {
+        await _player.play(AssetSource('sounds/zil.wav'));
+        if (_soundBlocked && mounted) setState(() => _soundBlocked = false);
+      } else {
+        await _player.stop();
+      }
+    } catch (_) {
+      _ringing = false;
+      if (on && mounted) setState(() => _soundBlocked = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +65,7 @@ class _PanelScreenState extends State<PanelScreen> {
     final ringing = all.where((o) => o.status == OrderStatus.bekliyor && !_muted.contains(o.id)).toList();
     final complaints = s.complaints.where((c) => c.restaurantId == r.id && c.status == 'bekliyor').length;
     final isOpen = !r.manualClosed;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ring(ringing.isNotEmpty));
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -82,7 +117,16 @@ class _PanelScreenState extends State<PanelScreen> {
                     Text('Onaylanmazsa 2 dk sonra SMS atıp ararız', style: body(13, color: C.noteInk)),
                   ]),
                 ),
-                TextButton(onPressed: () => setState(() => _muted.addAll(ringing.map((o) => o.id))), child: Text('Sesi kapat', style: body(13, weight: FontWeight.w800))),
+                if (_soundBlocked)
+                  TextButton(
+                    onPressed: () {
+                      _ringing = false;
+                      _ring(true);
+                    },
+                    child: Text('Sesi aç', style: body(13, weight: FontWeight.w800)),
+                  )
+                else
+                  TextButton(onPressed: () => setState(() => _muted.addAll(ringing.map((o) => o.id))), child: Text('Sesi kapat', style: body(13, weight: FontWeight.w800))),
               ]),
             ),
           ],
@@ -184,7 +228,11 @@ class PanelOrderCard extends StatelessWidget {
             TextSpan(text: ' · ${maskTr(o.phone)} · doğrulandı · $prevDelivered teslim aldı', style: body(13, color: C.muted)),
           ])),
           if (prevFailed > 0) Text('Daha önce $prevFailed kez teslim edilemedi', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
-          Text(o.address, style: body(13, color: C.muted)),
+          Row(children: [
+            Expanded(child: Text(o.address, style: body(13, color: C.muted))),
+            IconButton(tooltip: 'Müşteriyi ara', onPressed: () => callPhone(context, '0${o.phone}', who: 'Müşterinin numarası'), icon: const Icon(Icons.call, color: C.ink, size: 20)),
+            IconButton(tooltip: 'Haritada göster', onPressed: () => openMap(context, query: o.address, lat: o.lat, lng: o.lng), icon: const Icon(Icons.map_outlined, color: C.ink, size: 20)),
+          ]),
           const SizedBox(height: 8),
           for (final l in o.lines)
             Padding(

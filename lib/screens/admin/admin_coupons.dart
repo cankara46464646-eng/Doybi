@@ -102,8 +102,8 @@ class _AdminCouponsState extends State<AdminCoupons> {
           for (final c in s.coupons)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Opacity(
-                opacity: c.active && !c.expired ? 1 : 0.55,
+              child: Dim(
+                dim: !(c.active && !c.expired),
                 child: Box(
                   padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
                   child: Row(children: [

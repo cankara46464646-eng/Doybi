@@ -4,6 +4,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import 'admin_shell.dart';
 
 String ago(DateTime t) {
@@ -94,6 +95,12 @@ class _AdminApplicationsState extends State<AdminApplications> {
                 Expanded(child: Text(v, style: body(13, weight: FontWeight.w700, color: bad ? C.redDeep : C.ink))),
               ]),
             ),
+          if (a.taxDoc != null || a.menuPhoto != null) ...[
+            const SizedBox(height: 8),
+            Text('Belgeler', style: body(14, weight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            PhotoStrip(ids: [if (a.taxDoc != null) a.taxDoc!, if (a.menuPhoto != null) a.menuPhoto!]),
+          ],
           if (a.status == 'bekliyor') ...[
             const SizedBox(height: 8),
             Text('Onaydan önce', style: body(14, weight: FontWeight.w800)),

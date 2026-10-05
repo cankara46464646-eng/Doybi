@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 
 /// Kurye modu: kuryenin telefonunda sade görünüm.
 class CourierScreen extends StatefulWidget {
@@ -16,6 +18,55 @@ class CourierScreen extends StatefulWidget {
 class _CourierScreenState extends State<CourierScreen> {
   final Map<String, String> _mode = {}; // sipariş -> pay | fail
   final Map<String, String> _reason = {};
+  String? _courier; // kod ile giren kurye
+  String? _pick;
+  final _pin = TextEditingController();
+  String? _pinMsg;
+
+  @override
+  void dispose() {
+    _pin.dispose();
+    super.dispose();
+  }
+
+  Widget _login(AppState s, Restaurant r) {
+    return Scaffold(
+      backgroundColor: C.bg,
+      appBar: AppBar(backgroundColor: C.ink, foregroundColor: Colors.white, title: Text('Kurye modu', style: display(21, color: Colors.white))),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
+        Text('Kim giriyor?', style: display(24)),
+        Text('Kurye kodu Ayarlar > Kuryeler\'de yazar.', style: body(14, color: C.muted)),
+        const SizedBox(height: 12),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final k in r.couriers) SelChip(k, selected: _pick == k, onTap: () => setState(() => _pick = k)),
+        ]),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _pin,
+          keyboardType: TextInputType.number,
+          obscureText: true,
+          textAlign: TextAlign.center,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+          style: display(28).copyWith(letterSpacing: 10),
+          decoration: const InputDecoration(hintText: '••••'),
+        ),
+        if (_pinMsg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_pinMsg!, style: body(13, color: C.redDeep, weight: FontWeight.w800))),
+        const SizedBox(height: 14),
+        BigButton('Gir', color: C.ink, onPressed: _pick == null
+            ? null
+            : () {
+                if (r.courierPins[_pick] == _pin.text) {
+                  setState(() {
+                    _courier = _pick;
+                    _pinMsg = null;
+                  });
+                } else {
+                  setState(() => _pinMsg = 'Kod yanlış.');
+                }
+              }),
+      ]),
+    );
+  }
 
   int _changeBack(Order o) {
     final c = o.change;
@@ -34,7 +85,8 @@ class _CourierScreenState extends State<CourierScreen> {
     final today = s.ordersOf(r.id).where((o) => o.status == OrderStatus.teslim && o.doneAt != null && o.doneAt!.day == now.day && o.doneAt!.month == now.month);
     final cash = today.where((o) => o.collectedVia == 'nakit' || (!o.collected && o.payment == 'nakit')).fold(0, (a, o) => a + o.total);
     final pos = today.where((o) => o.collectedVia == 'pos' || (!o.collected && o.payment == 'kart')).fold(0, (a, o) => a + o.total);
-    final courier = r.couriers.isEmpty ? 'Kurye' : r.couriers.first;
+    if (r.couriers.isNotEmpty && (_courier == null || !r.couriers.contains(_courier))) return _login(s, r);
+    final courier = _courier ?? 'Kurye';
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -112,9 +164,9 @@ class _CourierScreenState extends State<CourierScreen> {
         ],
         const SizedBox(height: 10),
         Row(children: [
-          Expanded(child: BigButton('Yol tarifi', outlined: true, height: 44, icon: Icons.directions, onPressed: () => snack(context, 'Deneme sürümünde harita açılmıyor.'))),
+          Expanded(child: BigButton('Yol tarifi', outlined: true, height: 44, icon: Icons.directions, onPressed: () => openMap(context, query: o.address, lat: o.lat, lng: o.lng))),
           const SizedBox(width: 8),
-          Expanded(child: BigButton('Müşteriyi ara', outlined: true, height: 44, icon: Icons.call, onPressed: () => snack(context, 'Deneme sürümü: arama yapılmaz.'))),
+          Expanded(child: BigButton('Müşteriyi ara', outlined: true, height: 44, icon: Icons.call, onPressed: () => callPhone(context, '0${o.phone}', who: 'Müşterinin numarası'))),
         ]),
         const SizedBox(height: 10),
         Container(

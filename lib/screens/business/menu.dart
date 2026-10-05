@@ -4,6 +4,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import 'business_shell.dart';
 
 class MenuScreen extends StatefulWidget {
@@ -56,8 +57,9 @@ class _MenuScreenState extends State<MenuScreen> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Box(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ItemEditScreen(r, m))),
-                child: Opacity(
-                  opacity: m.available ? 1 : 0.55,
+                child: Dim(
+                  dim: !m.available,
+                  radius: 0,
                   child: Row(children: [
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -68,6 +70,10 @@ class _MenuScreenState extends State<MenuScreen> {
                         Text('${tl(m.price)} · ${m.groups.isEmpty ? 'Seçenek yok' : '${m.groups.length} seçenek grubu'}', style: body(13, color: C.muted)),
                       ]),
                     ),
+                    if (s.photo(m.photo) != null) ...[PhotoBox(m.photo, width: 48, height: 48, radius: 10), const SizedBox(width: 8)] else ...[
+                      const Icon(Icons.add_a_photo_outlined, color: C.ring, size: 22),
+                      const SizedBox(width: 8),
+                    ],
                     const SizedBox(width: 8),
                     SizedBox(
                       height: 36,
@@ -104,6 +110,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   late int _price = widget.item?.price ?? 100;
   late bool _available = widget.item?.available ?? true;
   late bool _featured = widget.item?.featured ?? false;
+  late String? _photo = widget.item?.photo;
   late final List<OptGroup> _groups = [
     for (final g in widget.item?.groups ?? <OptGroup>[]) OptGroup(g.name, [for (final o in g.opts) Opt(o.label, o.add)], required: g.required),
   ];
@@ -189,6 +196,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       ..price = _price
       ..available = _available
       ..featured = _featured
+      ..photo = _photo
       ..groups = List.of(_groups);
     s.saveItem(widget.r, m);
     setState(() {
@@ -224,17 +232,17 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(18)),
-            child: Center(
-              child: TextButton.icon(
-                onPressed: () => snack(context, 'Deneme sürümünde fotoğraf yüklenmiyor.'),
-                icon: const Icon(Icons.photo_camera_outlined),
-                label: const Text('Fotoğrafı değiştir'),
-              ),
-            ),
+          PhotoField(
+            id: _photo,
+            label: 'Ürün fotoğrafı ekle',
+            height: 170,
+            onChanged: (id) => setState(() {
+              _photo = id;
+              _saved = false;
+            }),
           ),
+          const SizedBox(height: 4),
+          Text('Fotoğraflı ürünler daha çok sipariş alır. Kamerayla çekebilir ya da galeriden seçebilirsin.', style: body(12, color: C.muted)),
           const SizedBox(height: 14),
           Text('Ürün adı', style: body(14, weight: FontWeight.w800)),
           const SizedBox(height: 6),

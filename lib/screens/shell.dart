@@ -31,10 +31,8 @@ class Shell extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: shellTab,
       builder: (context, tab, _) => Scaffold(
-        body: IndexedStack(
-          index: tab,
-          children: const [HomeScreen(), SearchScreen(), StudentScreen(), OrdersScreen(), AccountScreen()],
-        ),
+        // Yalnızca açık sekme çizilir; arkadaki sekmeler boşuna yeniden çizilmez.
+        body: const [HomeScreen(), SearchScreen(), StudentScreen(), OrdersScreen(), AccountScreen()][tab],
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (i) => shellTab.value = i,

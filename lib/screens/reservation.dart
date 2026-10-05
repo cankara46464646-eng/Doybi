@@ -5,6 +5,7 @@ import '../logic/ikram.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'verify.dart';
 
 class ReservationScreen extends StatefulWidget {
@@ -100,6 +101,10 @@ class _ReservationScreenState extends State<ReservationScreen> {
           Box(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${r?.name ?? ''} · ${r?.branch ?? ''} şubesi', style: body(12, color: C.muted, weight: FontWeight.w800)),
+              if (s.photo(snap?.photo ?? c.photo) != null) ...[
+                PhotoBox(snap?.photo ?? c.photo, height: 150, width: double.infinity),
+                const SizedBox(height: 10),
+              ],
               Text(snap?.title ?? c.title, style: display(24)),
               const SizedBox(height: 4),
               Text(snap?.content ?? c.content, style: body(14)),
@@ -118,7 +123,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
                     Text('Gel-al · bugün ${hm(snap?.start ?? c.start)} – ${hm(snap?.end ?? c.end)} arası', style: body(13, color: C.muted)),
                   ]),
                 ),
-                TextButton(onPressed: () => snack(context, 'Deneme sürümünde harita açılmıyor.'), child: const Text('Yol tarifi')),
+                TextButton(onPressed: () => openMap(context, query: snap?.address ?? c.address, lat: r?.lat, lng: r?.lng), child: const Text('Yol tarifi')),
               ]),
             ]),
           ),

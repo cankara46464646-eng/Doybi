@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Doybi renkleri (tasarım dosyasıyla aynı).
 class C {
@@ -24,20 +23,22 @@ class C {
   static const ring = Color(0xFFC9C1BC);
 }
 
+// Yazı tipleri uygulamanın içinde (assets/fonts); internetten indirilmez.
 TextStyle display(double size, {Color color = C.ink, FontWeight weight = FontWeight.w700, double height = 1.1}) =>
-    GoogleFonts.fredoka(fontSize: size, fontWeight: weight, color: color, height: height);
+    TextStyle(fontFamily: 'Fredoka', fontSize: size, fontWeight: weight, color: color, height: height);
 
 TextStyle body(double size, {Color color = C.ink, FontWeight weight = FontWeight.w500, double height = 1.35}) =>
-    GoogleFonts.figtree(fontSize: size, fontWeight: weight, color: color, height: height);
+    TextStyle(fontFamily: 'Figtree', fontSize: size, fontWeight: weight, color: color, height: height);
 
 ThemeData buildTheme() {
   final base = ThemeData(
     useMaterial3: true,
+    fontFamily: 'Figtree',
     colorScheme: ColorScheme.fromSeed(seedColor: C.red, primary: C.red, secondary: C.saffron, surface: Colors.white),
     scaffoldBackgroundColor: C.bg,
   );
   return base.copyWith(
-    textTheme: GoogleFonts.figtreeTextTheme(base.textTheme).apply(bodyColor: C.ink, displayColor: C.ink),
+    textTheme: base.textTheme.apply(bodyColor: C.ink, displayColor: C.ink, fontFamily: 'Figtree'),
     appBarTheme: AppBarTheme(
       backgroundColor: C.bg,
       foregroundColor: C.ink,

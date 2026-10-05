@@ -32,6 +32,7 @@ class Campaign {
   int restCancelled;
   bool showGiven;
   String? stopReason;
+  String? photo; // ürün görseli (fotoğraf kimliği)
 
   Campaign({
     required this.id,
@@ -48,6 +49,7 @@ class Campaign {
     this.restCancelled = 0,
     this.showGiven = true,
     this.stopReason,
+    this.photo,
   });
 
   Map<String, dynamic> toJson() => {
@@ -65,6 +67,7 @@ class Campaign {
         'restCancelled': restCancelled,
         'showGiven': showGiven,
         'stopReason': stopReason,
+        'photo': photo,
       };
 
   factory Campaign.fromJson(Map<String, dynamic> j) => Campaign(
@@ -82,6 +85,7 @@ class Campaign {
         restCancelled: j['restCancelled'] ?? 0,
         showGiven: j['showGiven'] ?? true,
         stopReason: j['stopReason'],
+        photo: j['photo'],
       );
 }
 
@@ -90,7 +94,8 @@ class Snapshot {
   final String title, content, address, branchId;
   final List<String> allergens;
   final DateTime start, end;
-  const Snapshot(this.title, this.content, this.allergens, this.address, this.branchId, this.start, this.end);
+  final String? photo;
+  const Snapshot(this.title, this.content, this.allergens, this.address, this.branchId, this.start, this.end, [this.photo]);
 
   Map<String, dynamic> toJson() => {
         'title': title,
@@ -100,6 +105,7 @@ class Snapshot {
         'branchId': branchId,
         'start': start.millisecondsSinceEpoch,
         'end': end.millisecondsSinceEpoch,
+        'photo': photo,
       };
 
   factory Snapshot.fromJson(Map<String, dynamic> j) => Snapshot(
@@ -110,6 +116,7 @@ class Snapshot {
         j['branchId'],
         DateTime.fromMillisecondsSinceEpoch(j['start']),
         DateTime.fromMillisecondsSinceEpoch(j['end']),
+        j['photo'],
       );
 }
 
@@ -303,7 +310,7 @@ class IkramStore {
       status: 'ayrildi',
       createdAt: now,
       expiresAt: hold.isBefore(c.end) ? hold : c.end,
-      snapshot: Snapshot(c.title, c.content, List.of(c.allergens), c.address, c.branchId, c.start, c.end),
+      snapshot: Snapshot(c.title, c.content, List.of(c.allergens), c.address, c.branchId, c.start, c.end, c.photo),
     );
     reservations.add(r);
     final out = IkramResult.ok(r);

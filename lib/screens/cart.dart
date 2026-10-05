@@ -152,7 +152,7 @@ class _CartScreenState extends State<CartScreen> {
           Box(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             child: Column(children: [
-              LinkRow(Icons.home_outlined, 'Ev', sub: s.fullAddress, meta: 'Değiştir', trailing: const SizedBox(), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()))),
+              LinkRow(Icons.home_outlined, s.address?.label ?? 'Adres', sub: s.fullAddress, meta: 'Değiştir', trailing: const SizedBox(), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressListScreen()))),
               const Divider(color: C.line, height: 1),
               LinkRow(
                 Icons.phone_iphone,

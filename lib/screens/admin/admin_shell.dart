@@ -23,7 +23,7 @@ class AdminShell extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: adminTab,
       builder: (context, tab, _) => Scaffold(
-        body: IndexedStack(index: tab, children: const [AdminHome(), AdminVitrin(), AdminCoupons(), AdminSubscriptions(), AdminSocial()]),
+        body: const [AdminHome(), AdminVitrin(), AdminCoupons(), AdminSubscriptions(), AdminSocial()][tab],
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (i) => adminTab.value = i,

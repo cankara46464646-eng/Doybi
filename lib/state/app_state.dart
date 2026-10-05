@@ -1,6 +1,7 @@
 import 'dart:async' show Timer;
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,16 +9,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/demo.dart';
 import '../data/models.dart';
 import '../logic/ikram.dart';
+import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 3;
+const _dataVersion = 4;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
 class AppState extends ChangeNotifier {
   // ---------- müşteri ----------
-  String? mahalle;
-  String addressLine = '';
+  List<SavedAddress> addresses = [];
+  String? addressId;
+  Set<String> cityVotes = {};
   String? phone; // SMS ile doğrulanmış numara
   String name = '';
   bool notifPush = true;
@@ -80,17 +83,22 @@ class AppState extends ChangeNotifier {
         if (j['v'] == _dataVersion) {
           _fromJson(j);
         } else {
+          // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
-          mahalle = j['mahalle'];
-          addressLine = j['address'] ?? '';
+          _migrateAddress(j['mahalle'], j['address']);
           phone = j['phone'];
+          name = j['name'] ?? '';
         }
       } else {
         _seed();
         // 0.1 sürümünden kalan adres ve telefon
-        mahalle = p.getString('mahalle');
-        addressLine = p.getString('address') ?? '';
+        _migrateAddress(p.getString('mahalle'), p.getString('address'));
         phone = p.getString('phone');
+      }
+      for (final k in p.getKeys()) {
+        if (!k.startsWith('ph_')) continue;
+        final v = p.getString(k);
+        if (v != null) photos[k.substring(3)] = base64Decode(v);
       }
     } catch (_) {
       _seed();
@@ -98,6 +106,13 @@ class AppState extends ChangeNotifier {
     _refreshDemoIkram();
     _loading = false;
     _tick = Timer.periodic(const Duration(seconds: 10), (_) => _housekeeping());
+  }
+
+  void _migrateAddress(String? m, String? line) {
+    if (m == null) return;
+    final a = SavedAddress(id: 'a1', mahalle: m, street: line ?? '');
+    addresses = [a];
+    addressId = a.id;
   }
 
   void _seed() {
@@ -158,6 +173,9 @@ class AppState extends ChangeNotifier {
 
   Map<String, dynamic> _toJson() => {
         'v': _dataVersion,
+        'addresses': addresses.map((a) => a.toJson()).toList(),
+        'addressId': addressId,
+        'votes': cityVotes.toList(),
         'mahalle': mahalle,
         'address': addressLine,
         'phone': phone,
@@ -199,8 +217,9 @@ class AppState extends ChangeNotifier {
 
   void _fromJson(Map<String, dynamic> j) {
     Map<String, dynamic> m(dynamic v) => Map<String, dynamic>.from(v as Map);
-    mahalle = j['mahalle'];
-    addressLine = j['address'] ?? '';
+    addresses = (j['addresses'] as List? ?? const []).map((e) => SavedAddress.fromJson(m(e))).toList();
+    addressId = j['addressId'];
+    cityVotes = Set<String>.from(j['votes'] ?? const []);
     phone = j['phone'];
     name = j['name'] ?? '';
     notifPush = j['np'] ?? true;
@@ -278,15 +297,21 @@ class AppState extends ChangeNotifier {
       t.cancel();
     }
     _timers.clear();
-    final m = mahalle, a = addressLine;
+    final keep = List.of(addresses), keepId = addressId;
     _seed();
     cart.clear();
     cartRestaurantId = null;
     chosenCoupon = null;
     phone = null;
     name = '';
-    mahalle = keepAddress ? m : null;
-    addressLine = keepAddress ? a : '';
+    addresses = keepAddress ? keep : [];
+    addressId = keepAddress ? keepId : null;
+    if (!keepAddress) {
+      cityVotes = {};
+      for (final id in photos.keys.toList()) {
+        removePhoto(id);
+      }
+    }
     _refreshDemoIkram();
     notifyListeners();
   }
@@ -294,13 +319,92 @@ class AppState extends ChangeNotifier {
   // =====================================================================
   // adres ve hesap
   // =====================================================================
-  void setAddress(String m, String line) {
-    mahalle = m;
-    addressLine = line.trim();
-    final r = cartRestaurant;
-    if (r != null && zoneFor(r) == null) clearCart();
+  SavedAddress? get address {
+    for (final a in addresses) {
+      if (a.id == addressId) return a;
+    }
+    return addresses.isEmpty ? null : addresses.first;
+  }
+
+  String? get mahalle => address?.mahalle;
+  String get addressLine => address?.line ?? '';
+
+  void saveAddress(SavedAddress a, {bool select = true}) {
+    final i = addresses.indexWhere((x) => x.id == a.id);
+    if (i < 0) {
+      addresses.add(a);
+    } else {
+      addresses[i] = a;
+    }
+    if (select) addressId = a.id;
+    _afterAddressChange();
     notifyListeners();
   }
+
+  void selectAddress(String id) {
+    addressId = id;
+    _afterAddressChange();
+    notifyListeners();
+  }
+
+  void deleteAddress(String id) {
+    addresses.removeWhere((a) => a.id == id);
+    if (addressId == id) addressId = addresses.isEmpty ? null : addresses.first.id;
+    _afterAddressChange();
+    notifyListeners();
+  }
+
+  void _afterAddressChange() {
+    final r = cartRestaurant;
+    if (r != null && zoneFor(r) == null) {
+      cart.clear();
+      cartRestaurantId = null;
+    }
+  }
+
+  void toggleVote(String city) {
+    if (!cityVotes.remove(city)) cityVotes.add(city);
+    notifyListeners();
+  }
+
+  /// Müşterinin konumu: adreste işaretli nokta ya da mahallenin merkezi.
+  LatLngPoint? get here {
+    final a = address;
+    if (a == null) return null;
+    if (a.lat != null && a.lng != null) return LatLngPoint(a.lat!, a.lng!);
+    return mahalleCenters[a.mahalle];
+  }
+
+  double? distanceTo(Restaurant r) {
+    final h = here;
+    if (h == null || r.lat == null || r.lng == null) return null;
+    return distanceKm(h, LatLngPoint(r.lat!, r.lng!));
+  }
+
+  // ---------- fotoğraflar ----------
+  final Map<String, Uint8List> photos = {};
+
+  Uint8List? photo(String? id) => id == null ? null : photos[id];
+
+  /// Fotoğrafı telefona kaydeder, kimliğini döner.
+  Future<String> addPhoto(Uint8List bytes) async {
+    final id = 'p${now.millisecondsSinceEpoch}${Random().nextInt(9999)}';
+    photos[id] = bytes;
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setString('ph_$id', base64Encode(bytes));
+    } catch (_) {}
+    notifyListeners();
+    return id;
+  }
+
+  void removePhoto(String? id) {
+    if (id == null) return;
+    photos.remove(id);
+    SharedPreferences.getInstance().then((p) => p.remove('ph_$id')).catchError((_) => false);
+  }
+
+  String newPin() => (1000 + Random().nextInt(9000)).toString();
 
   void verifyPhone(String p) {
     phone = p;
@@ -348,7 +452,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  String get fullAddress => [if (mahalle != null) '$mahalle Mah.', if (addressLine.isNotEmpty) addressLine].join(' ');
+  String get fullAddress => address?.full ?? '';
 
   String maskPhone(String? p) {
     if (p == null || p.isEmpty) return '';
@@ -600,6 +704,8 @@ class AppState extends ChangeNotifier {
       change: payment == 'nakit' ? change : null,
       note: note.trim(),
       address: fullAddress,
+      lat: address?.lat ?? here?.lat,
+      lng: address?.lng ?? here?.lng,
       phone: phone ?? '',
       customerName: name.isEmpty ? '' : name,
       createdAt: now,
@@ -746,7 +852,7 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  Complaint addComplaint(Order o, {required String type, required String typeLabel, required List<String> items, required String want, required String text}) {
+  Complaint addComplaint(Order o, {required String type, required String typeLabel, required List<String> items, required String want, required String text, List<String> photos = const []}) {
     final c = Complaint(
       id: 'S-${complaints.length + 1}',
       orderId: o.id,
@@ -757,6 +863,7 @@ class AppState extends ChangeNotifier {
       want: want,
       text: text.trim(),
       at: now,
+      photos: List.of(photos),
     );
     complaints.insert(0, c);
     notifyListeners();
@@ -974,7 +1081,7 @@ class AppState extends ChangeNotifier {
   ShareCounts shareCountsOf(String rid) => shareCounts([for (final s in sharesOf(rid)) (id: s.id, status: s.status)], 4);
 
   /// Yeni paylaşım talebi. [submit] false ise taslak. Hak kalmadıysa hata metni döner.
-  String? addShare(String rid, {required String title, required String price, required String date, required String note, required bool submit}) {
+  String? addShare(String rid, {required String title, required String price, required String date, required String note, required bool submit, List<String> photos = const []}) {
     if (submit && shareCountsOf(rid).left <= 0) return 'Bu ayki 4 hakkını kullandın.';
     shares.insert(0, ShareReq(
       id: 'sh${now.millisecondsSinceEpoch}',
@@ -985,18 +1092,21 @@ class AppState extends ChangeNotifier {
       note: note.trim(),
       status: submit ? 'alindi' : 'taslak',
       at: now,
+      photos: List.of(photos),
     ));
     notifyListeners();
     return null;
   }
 
-  String? setShareStatus(ShareReq s, String status, {String? revision, String? planned, String? reach, String? clicks}) {
+  String? setShareStatus(ShareReq s, String status, {String? revision, String? planned, String? reach, String? clicks, String? design, String? proofPhoto}) {
     if (s.status == 'taslak' && status == 'alindi' && shareCountsOf(s.restaurantId).left <= 0) return 'Bu ayki 4 hakkını kullandın.';
     s.status = status;
     if (revision != null) s.revision = revision;
     if (planned != null) s.planned = planned;
     if (reach != null) s.reach = reach;
     if (clicks != null) s.clicks = clicks;
+    if (design != null) s.design = design;
+    if (proofPhoto != null) s.proofPhoto = proofPhoto;
     if (status == 'yayinlandi') s.proof = true;
     final rn = restaurant(s.restaurantId)?.name ?? '';
     switch (status) {
@@ -1099,7 +1209,7 @@ class AppState extends ChangeNotifier {
 
   int givenTotal(String rid) => (ikramGivenBase[rid] ?? 0) + ikram.reservations.where((r) => r.snapshot.branchId == rid && r.status == 'teslim').length;
 
-  Campaign publishCampaign(String rid, {required String title, required String content, required List<String> allergens, required int quota, required DateTime start, required DateTime end}) {
+  Campaign publishCampaign(String rid, {required String title, required String content, required List<String> allergens, required int quota, required DateTime start, required DateTime end, String? photo}) {
     final r = restaurant(rid)!;
     final c = ikram.createCampaign(Campaign(
       id: 'C${now.millisecondsSinceEpoch}',
@@ -1111,9 +1221,18 @@ class AppState extends ChangeNotifier {
       quota: quota,
       start: start,
       end: end,
+      photo: photo,
     ));
     notifyListeners();
     return c;
+  }
+
+  /// QR ile kontrol ("doybi-ikram:<jeton>").
+  IkramResult checkQr(String rid, String raw) {
+    final qr = raw.startsWith('doybi-ikram:') ? raw.substring(12) : raw;
+    final out = ikram.redeem(staffBranchId: rid, qr: qr, now: now);
+    notifyListeners();
+    return out;
   }
 
   IkramResult checkCode(String rid, String code) {

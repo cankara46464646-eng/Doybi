@@ -4,6 +4,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import '../home.dart';
 import 'admin_shell.dart';
 
@@ -31,6 +32,7 @@ class AdminVitrin extends StatelessWidget {
     final title = TextEditingController();
     final owner = TextEditingController(text: 'Doybi · bu hafta');
     var color = 0xFFA8200A;
+    String? photo;
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -58,13 +60,18 @@ class AdminVitrin extends StatelessWidget {
                 ),
             ]),
             const SizedBox(height: 12),
+            PhotoField(id: photo, label: 'Afiş görseli (isteğe bağlı)', height: 110, icon: Icons.image_outlined, onChanged: (v) => set(() => photo = v)),
+            const SizedBox(height: 12),
             BigButton('Afişi ekle', onPressed: () => Navigator.pop(ctx, true)),
           ]),
         ),
       ),
     );
-    if (ok != true || title.text.trim().isEmpty) return;
-    s.banners.add(PromoBanner('n${DateTime.now().millisecondsSinceEpoch}', title.text.trim(), owner.text.trim(), color));
+    if (ok != true || title.text.trim().isEmpty) {
+      if (photo != null) s.removePhoto(photo);
+      return;
+    }
+    s.banners.add(PromoBanner('n${DateTime.now().millisecondsSinceEpoch}', title.text.trim(), owner.text.trim(), color, photo: photo));
     s.addLog('Yeni kampanya afişi: ${title.text.trim()}');
     s.touch();
   }
@@ -102,15 +109,34 @@ class AdminVitrin extends StatelessWidget {
               ]),
             ),
           SectionLabel('Kampanya afişleri', trailing: TextButton(onPressed: () => _newBanner(context, s), child: const Text('+ Yeni afiş'))),
+          Text('Görsel eklemek ya da değiştirmek için soldaki kareye dokun.', style: body(12, color: C.muted)),
+          const SizedBox(height: 8),
           for (final b in s.banners)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Opacity(
-                opacity: b.on ? 1 : 0.55,
+              child: Dim(
+                dim: !b.on,
                 child: Box(
                   padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
                   child: Row(children: [
-                    Container(width: 16, height: 40, decoration: BoxDecoration(color: Color(b.swatch), borderRadius: BorderRadius.circular(6))),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        final r = await pickPhoto(context, title: 'Afiş görseli', allowRemove: b.photo != null);
+                        if (r == null) return;
+                        if (b.photo != null) s.removePhoto(b.photo);
+                        b.photo = r.isEmpty ? null : r;
+                        s.touch();
+                      },
+                      child: b.photo != null && s.photo(b.photo) != null
+                          ? PhotoBox(b.photo, width: 48, height: 40, radius: 8)
+                          : Container(
+                              width: 48,
+                              height: 40,
+                              decoration: BoxDecoration(color: Color(b.swatch), borderRadius: BorderRadius.circular(8)),
+                              child: Icon(Icons.add_photo_alternate_outlined, size: 18, color: Color(b.swatch).computeLuminance() < 0.4 ? Colors.white : C.ink),
+                            ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -4,6 +4,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import '../orders.dart';
 
 class PanelComplaintsScreen extends StatelessWidget {
@@ -105,7 +106,8 @@ class _OpenComplaintState extends State<_OpenComplaint> {
           ),
         ],
         const SizedBox(height: 10),
-        BigButton('Müşteriyi ara', outlined: true, height: 44, icon: Icons.call, onPressed: () => snack(context, 'Deneme sürümü: arama yapılmaz.')),
+        if (c.photos.isNotEmpty) ...[PhotoStrip(ids: c.photos), const SizedBox(height: 10)],
+        BigButton('Müşteriyi ara', outlined: true, height: 44, icon: Icons.call, onPressed: () => callPhone(context, o == null ? null : '0${o.phone}', who: 'Müşterinin numarası')),
         const SizedBox(height: 10),
         Text('Nasıl çözdün?', style: body(15, weight: FontWeight.w800)),
         for (final (id, label) in ways) RadioRow(label, selected: _way == id, onTap: () => setState(() => _way = id)),

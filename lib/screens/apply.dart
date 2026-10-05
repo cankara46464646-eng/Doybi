@@ -7,6 +7,7 @@ import '../logic/pricing.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 
 const _cuisineDefs = ['Kebap & dürüm', 'Pide & lahmacun', 'Çiğköfte', 'Tatlı & dondurma', 'Ev yemekleri', 'Burger', 'Pizza', 'Kahvaltı'];
 
@@ -26,7 +27,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
   final _tax = TextEditingController();
   final Set<String> _cu = {};
   String _district = 'Dulkadiroğlu';
-  bool _uploaded = false;
+  String? _taxDoc;
+  String? _menuPhoto;
   bool _courier = true;
   int _couriers = 1;
   final Set<String> _hoods = {};
@@ -82,7 +84,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
         cuisines: _cu.toList(),
         district: _district,
         address: _address.text.trim(),
-        taxUploaded: _uploaded,
+        taxUploaded: _taxDoc != null,
+        taxDoc: _taxDoc,
+        menuPhoto: _menu == 'foto' ? _menuPhoto : null,
         courier: _courier,
         couriers: _courier ? _couriers : 0,
         hoods: _hoods.toList(),
@@ -208,10 +212,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
         _label('Vergi bilgisi'),
         TextField(controller: _tax, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Vergi / TC kimlik no')),
         const SizedBox(height: 8),
-        BigButton(_uploaded ? 'Vergi levhası eklendi' : 'Vergi levhası yükle', outlined: true, icon: _uploaded ? Icons.check : Icons.upload_file, textColor: _uploaded ? C.greenInk : C.ink,
-            onPressed: () => setState(() => _uploaded = !_uploaded)),
+        PhotoField(id: _taxDoc, label: 'Vergi levhasının fotoğrafını ekle', height: 120, icon: Icons.upload_file, onChanged: (id) => setState(() => _taxDoc = id)),
         const SizedBox(height: 4),
-        Text('Deneme sürümünde dosya yüklenmez; yalnızca işaretlenir.', style: body(12, color: C.muted)),
+        Text('Belgen yalnızca Doybi ekibi tarafından başvurunu doğrulamak için görülür.', style: body(12, color: C.muted)),
       ];
 
   Widget _fact(String a, String b) => Container(
@@ -256,7 +259,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ),
         if (_menu == 'foto') ...[
           const SizedBox(height: 10),
-          BigButton('Menünün fotoğrafını çek', outlined: true, icon: Icons.photo_camera_outlined, onPressed: () => snack(context, 'Deneme sürümünde fotoğraf yüklenmiyor.')),
+          PhotoField(id: _menuPhoto, label: 'Menünün fotoğrafını çek', height: 160, onChanged: (id) => setState(() => _menuPhoto = id)),
         ],
         const SizedBox(height: 12),
         const NoteBox(

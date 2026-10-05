@@ -1,7 +1,7 @@
 name: doybi
 description: "Doybi - mahallenin lezzeti, dükkân fiyatına."
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.3.0+3
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -9,10 +9,19 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   shared_preferences: '>=2.3.0 <3.0.0'
-  google_fonts: '>=6.2.0 <7.0.0'
   qr_flutter: '>=4.1.0 <5.0.0'
   share_plus: '>=10.1.0 <11.0.0'
+  image_picker: '>=1.1.2 <2.0.0'
+  url_launcher: '>=6.3.0 <7.0.0'
+  geolocator: '>=13.0.0 <15.0.0'
+  flutter_map: '>=7.0.0 <9.0.0'
+  latlong2: '>=0.9.0 <1.0.0'
+  http: '>=1.2.0 <2.0.0'
+  mobile_scanner: '>=6.0.0 <7.0.0'
+  audioplayers: '>=6.1.0 <7.0.0'
 
 dev_dependencies:
   flutter_test:
@@ -23,4 +32,25 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
-    - assets/google_fonts/
+    - assets/sounds/
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Figtree-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Figtree-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Figtree-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Figtree-ExtraBold.ttf
+          weight: 800
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Fredoka-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Fredoka-Bold.ttf
+          weight: 700

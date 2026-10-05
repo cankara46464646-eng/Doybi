@@ -4,6 +4,8 @@ import '../../logic/ikram.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
+import '../../widgets/scan.dart';
 import 'business_shell.dart';
 
 class IkramPanelScreen extends StatefulWidget {
@@ -28,6 +30,7 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
   int _day = 0; // 0 bugün, 1 yarın
   int _start = 14 * 60;
   int _end = 17 * 60;
+  String? _photo;
   String? _formMsg;
 
   @override
@@ -91,6 +94,7 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
       Box(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
+            if (s.photo(c.photo) != null) ...[PhotoBox(c.photo, width: 56, height: 56, radius: 12), const SizedBox(width: 10)],
             Expanded(child: Text(c.title, style: display(22))),
             Pill(status.$1, bg: status.$2, fg: status.$3),
           ]),
@@ -153,7 +157,15 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
             ),
           ]),
           const SizedBox(height: 8),
-          BigButton('QR okut', outlined: true, height: 44, icon: Icons.qr_code_scanner, onPressed: () => snack(context, 'Kamerayla okutma uygulama sürümünde gelecek. Şimdilik öğrencinin söylediği kodu yaz.')),
+          BigButton('QR okut', outlined: true, height: 44, icon: Icons.qr_code_scanner, onPressed: () async {
+            final raw = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => const ScanScreen()));
+            if (raw == null || !mounted) return;
+            final r = s.checkQr(rid, raw);
+            setState(() {
+              _result = r;
+              _seen = false;
+            });
+          }),
           if (_result != null) ...[
             const SizedBox(height: 10),
             Container(
@@ -278,7 +290,7 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
       const SizedBox(height: 6),
       TextField(controller: _content, maxLines: 2),
       const SizedBox(height: 8),
-      BigButton('Ürün görseli ekle', outlined: true, height: 44, icon: Icons.photo_camera_outlined, onPressed: () => snack(context, 'Deneme sürümünde fotoğraf yüklenmiyor.')),
+      PhotoField(id: _photo, label: 'Ürün görseli ekle', height: 120, onChanged: (id) => setState(() => _photo = id)),
       const SizedBox(height: 12),
       Text('Alerjenler', style: body(14, weight: FontWeight.w800)),
       const SizedBox(height: 6),
@@ -335,7 +347,8 @@ class _IkramPanelScreenState extends State<IkramPanelScreen> {
           return;
         }
         s.publishCampaign(s.panelRestaurantId,
-            title: _title.text.trim(), content: _content.text.trim(), allergens: _allergens.toList(), quota: _count, start: start, end: end);
+            title: _title.text.trim(), content: _content.text.trim(), allergens: _allergens.toList(), quota: _count, start: start, end: end, photo: _photo);
+        _photo = null;
         setState(() {
           _formMsg = null;
           _tab = 0;

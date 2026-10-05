@@ -5,6 +5,7 @@ import '../../logic/pricing.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import '../business/social.dart';
 import 'admin_shell.dart';
 
@@ -18,7 +19,7 @@ class AdminSocial extends StatefulWidget {
 class _AdminSocialState extends State<AdminSocial> {
   int _tab = 0;
   final Map<String, String> _slot = {};
-  final Map<String, bool> _shot = {};
+  final Map<String, String> _shot = {};
   final Map<String, TextEditingController> _reach = {};
   final Map<String, TextEditingController> _clicks = {};
   late final _handle = TextEditingController();
@@ -120,9 +121,27 @@ class _AdminSocialState extends State<AdminSocial> {
         ]),
         Text(x.title, style: body(15, weight: FontWeight.w800)),
         Text(meta, style: body(12, color: C.muted)),
+        if (x.note.isNotEmpty) Text('Not: ${x.note}', style: body(12, color: C.ink, weight: FontWeight.w600)),
+        if (x.photos.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text('Restoranın gönderdiği fotoğraflar', style: body(12, color: C.muted, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          PhotoStrip(ids: x.photos),
+        ],
+        if (x.design != null && s.photo(x.design) != null) ...[
+          const SizedBox(height: 8),
+          Text('Tasarım', style: body(12, color: C.muted, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          GestureDetector(onTap: () => showPhoto(context, x.design!), child: PhotoBox(x.design, height: 160, width: double.infinity)),
+        ],
         if (x.status == 'alindi' || x.status == 'tasarim') ...[
           const SizedBox(height: 10),
-          BigButton('Tasarımı yükle, restoran onayına gönder', height: 44, color: C.ink, onPressed: () => s.setShareStatus(x, 'onay')),
+          BigButton('Tasarımı yükle, restoran onayına gönder', height: 44, color: C.ink, icon: Icons.upload_outlined, onPressed: () async {
+            final id = await pickPhoto(context, title: 'Tasarımı yükle');
+            if (id == null || id.isEmpty) return;
+            s.setShareStatus(x, 'onay', design: id);
+            if (mounted) snack(context, 'Tasarım restoran onayına gönderildi.');
+          }),
         ],
         if (x.status == 'onay') ...[
           const SizedBox(height: 8),
@@ -138,12 +157,26 @@ class _AdminSocialState extends State<AdminSocial> {
           const SizedBox(height: 8),
           BigButton('Planla', height: 44, color: C.ink, onPressed: _slot[x.id] == null ? null : () => s.setShareStatus(x, 'planlandi', planned: _slot[x.id])),
         ],
+        if (x.status == 'yayinlandi' && x.proofPhoto != null && s.photo(x.proofPhoto) != null) ...[
+          const SizedBox(height: 8),
+          GestureDetector(onTap: () => showPhoto(context, x.proofPhoto!), child: PhotoBox(x.proofPhoto, height: 140, width: double.infinity)),
+        ],
         if (x.status == 'planlandi') ...[
           const SizedBox(height: 10),
           Text('Yayın kaydı', style: body(14, weight: FontWeight.w800)),
           const SizedBox(height: 6),
-          BigButton(_shot[x.id] == true ? 'Ekran görüntüsü eklendi' : 'Ekran görüntüsü ekle', outlined: true, height: 42,
-              icon: _shot[x.id] == true ? Icons.check : Icons.image_outlined, onPressed: () => setState(() => _shot[x.id] = !(_shot[x.id] ?? false))),
+          if (_shot[x.id] != null) ...[
+            GestureDetector(onTap: () => showPhoto(context, _shot[x.id]!), child: PhotoBox(_shot[x.id], height: 140, width: double.infinity)),
+            const SizedBox(height: 6),
+          ],
+          BigButton(_shot[x.id] != null ? 'Ekran görüntüsünü değiştir' : 'Ekran görüntüsü ekle', outlined: true, height: 42,
+              icon: _shot[x.id] != null ? Icons.check : Icons.image_outlined, onPressed: () async {
+            final id = await pickPhoto(context, title: 'Yayın ekran görüntüsü');
+            if (id == null || id.isEmpty) return;
+            final old = _shot[x.id];
+            if (old != null) s.removePhoto(old);
+            setState(() => _shot[x.id] = id);
+          }),
           const SizedBox(height: 6),
           Row(children: [
             Expanded(child: TextField(controller: _reach[x.id], keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Erişim (varsa)'))),
@@ -151,9 +184,9 @@ class _AdminSocialState extends State<AdminSocial> {
             Expanded(child: TextField(controller: _clicks[x.id], keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Tıklama (varsa)'))),
           ]),
           const SizedBox(height: 8),
-          BigButton('Yayınlandı olarak kaydet', height: 44, color: C.green, onPressed: _shot[x.id] != true
+          BigButton('Yayınlandı olarak kaydet', height: 44, color: C.green, onPressed: _shot[x.id] == null
               ? null
-              : () => s.setShareStatus(x, 'yayinlandi', reach: _reach[x.id]!.text.trim(), clicks: _clicks[x.id]!.text.trim())),
+              : () => s.setShareStatus(x, 'yayinlandi', reach: _reach[x.id]!.text.trim(), clicks: _clicks[x.id]!.text.trim(), proofPhoto: _shot[x.id])),
           const SizedBox(height: 4),
           Text('Instagram\'a otomatik paylaşım ve istatistik çekme yok. Boş bırakılan veriler restorana "Veri henüz eklenmedi" olarak görünür.', style: body(11, color: C.muted)),
         ],

@@ -61,14 +61,14 @@ jobs:
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-log
 
       - name: Sürüm yayınla
-        if: success()
+        if: success() && github.ref == 'refs/heads/main'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp build/app/outputs/flutter-apk/app-release.apk doybi.apk
-          gh release create "v0.1.${{ github.run_number }}" doybi.apk \
+          gh release create "v0.3.${{ github.run_number }}" doybi.apk \
             --repo "${{ github.repository }}" \
-            --title "Doybi 0.1.${{ github.run_number }}" \
+            --title "Doybi 0.3.${{ github.run_number }}" \
             --notes "Telefonuna indir ve kur. Eski sürüm varsa üstüne kurulur, bilgilerin kaybolmaz." \
             --latest

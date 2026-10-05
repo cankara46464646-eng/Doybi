@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/splash.dart';
 import 'state/app_state.dart';
@@ -23,6 +24,13 @@ class DoybiApp extends StatelessWidget {
         title: 'Doybi',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
+        locale: const Locale('tr', 'TR'),
+        supportedLocales: const [Locale('tr', 'TR')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: const SplashScreen(),
       ),
     );

@@ -5,6 +5,9 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
+import '../../logic/location.dart';
+import '../address.dart';
 import '../restaurant.dart';
 import 'business_shell.dart';
 
@@ -37,14 +40,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.delivery_dining),
                 title: Text(k, style: body(15, weight: FontWeight.w800)),
-                trailing: IconButton(
-                  tooltip: 'Çıkar',
-                  icon: const Icon(Icons.close),
-                  onPressed: () => set(() {
-                    r.couriers.remove(k);
-                    s.touch();
-                  }),
-                ),
+                subtitle: Text('Kurye kodu: ${r.courierPins[k] ?? '-'}', style: body(13, color: C.muted, weight: FontWeight.w700)),
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(
+                    tooltip: 'Yeni kod',
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () => set(() {
+                      r.courierPins[k] = s.newPin();
+                      s.touch();
+                    }),
+                  ),
+                  IconButton(
+                    tooltip: 'Çıkar',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => set(() {
+                      r.couriers.remove(k);
+                      r.courierPins.remove(k);
+                      s.touch();
+                    }),
+                  ),
+                ]),
               ),
             Row(children: [
               Expanded(child: TextField(controller: c, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'Kurye adı'))),
@@ -54,7 +69,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: BigButton('Ekle', color: C.ink, onPressed: () {
                   if (c.text.trim().isEmpty) return;
                   set(() {
-                    r.couriers.add(c.text.trim());
+                    final n = c.text.trim();
+                    r.couriers.add(n);
+                    r.courierPins[n] = s.newPin();
                     c.clear();
                     s.touch();
                   });
@@ -97,6 +114,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _phone(AppState s, Restaurant r) async {
+    final c = TextEditingController(text: r.phone);
+    final v = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('İşletme telefonu', style: display(20)),
+        content: TextField(controller: c, autofocus: true, keyboardType: TextInputType.phone, decoration: const InputDecoration(hintText: '0344 XXX XX XX')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, c.text), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
+        ],
+      ),
+    );
+    if (v != null) {
+      r.phone = v.trim();
+      s.touch();
+    }
+  }
+
   Future<void> _backup(AppState s, Restaurant r) async {
     final c = TextEditingController(text: r.backupPhone);
     final v = await showDialog<String>(
@@ -129,6 +165,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
+          const SectionLabel('Restoran profili'),
+          Box(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              PhotoField(id: r.cover, label: 'Kapak fotoğrafı ekle', height: 130, icon: Icons.panorama_outlined, onChanged: (id) {
+                r.cover = id;
+                s.touch();
+              }),
+              const SizedBox(height: 10),
+              Row(children: [
+                SizedBox(
+                  width: 96,
+                  child: PhotoField(id: r.logo, label: 'Logo', height: 96, icon: Icons.storefront_outlined, onChanged: (id) {
+                    r.logo = id;
+                    s.touch();
+                  }),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(r.name, style: body(16, weight: FontWeight.w800)),
+                    Text('${r.branch} şubesi', style: body(13, color: C.muted)),
+                    const SizedBox(height: 4),
+                    Text('Logo ve kapak, müşterinin gördüğü restoran sayfasında çıkar.', style: body(12, color: C.muted)),
+                  ]),
+                ),
+              ]),
+              const Divider(color: C.line, height: 22),
+              LinkRow(Icons.call_outlined, 'İşletme telefonu', sub: r.phone.isEmpty ? 'Müşteri ve kurye bu numarayı arar' : r.phone, meta: r.phone.isEmpty ? 'Ekle' : 'Değiştir',
+                  iconColor: C.ink, trailing: const SizedBox(), onTap: () => _phone(s, r)),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.place_outlined, 'Dükkân konumu', sub: r.lat == null ? r.address : '${r.address} · haritada işaretli', meta: 'Haritada seç',
+                  iconColor: C.ink, trailing: const SizedBox(), onTap: () async {
+                final p = await Navigator.push<LatLngPoint>(
+                    context, MaterialPageRoute(builder: (_) => MapPickScreen(start: r.lat == null ? maras : LatLngPoint(r.lat!, r.lng!))));
+                if (p == null) return;
+                r.lat = p.lat;
+                r.lng = p.lng;
+                s.touch();
+                if (context.mounted) snack(context, 'Dükkân konumu kaydedildi. Müşteriler mesafeyi ve yol tarifini buna göre görür.');
+              }),
+            ]),
+          ),
+          const SizedBox(height: 12),
           Box(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Kısa mola ver', style: body(15, weight: FontWeight.w800)),
@@ -272,6 +351,58 @@ class HoursScreen extends StatefulWidget {
 class _HoursScreenState extends State<HoursScreen> {
   late final List<DayHours> _h = [for (final d in widget.r.hours) DayHours(d.open, d.close, on: d.on)];
   late bool _last = widget.r.lastCall30;
+  late final List<SpecialDay> _special = [for (final d in widget.r.specialDays) SpecialDay(d.date, closed: d.closed, open: d.open, close: d.close, note: d.note)];
+
+  static const _months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+  String _dateText(String ymdStr) {
+    final d = DateTime.tryParse(ymdStr);
+    if (d == null) return ymdStr;
+    return '${d.day} ${_months[d.month - 1]} ${dayNames[d.weekday - 1]}';
+  }
+
+  Future<void> _editSpecial(SpecialDay? d) async {
+    final now = DateTime.now();
+    DateTime date = d == null ? now : (DateTime.tryParse(d.date) ?? now);
+    var closed = d?.closed ?? false;
+    var open = d?.open ?? 720;
+    var close = d?.close ?? 1200;
+    final note = TextEditingController(text: d?.note ?? '');
+    final ok = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, set) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(ctx).viewInsets.bottom + 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(d == null ? 'Özel gün ekle' : 'Özel günü düzenle', style: display(22)),
+            const SizedBox(height: 10),
+            BigButton(_dateText(ymd(date)), outlined: true, icon: Icons.calendar_month_outlined, height: 46, onPressed: () async {
+              final p = await showDatePicker(context: ctx, initialDate: date, firstDate: DateTime(now.year, now.month, now.day), lastDate: now.add(const Duration(days: 366)));
+              if (p != null) set(() => date = p);
+            }),
+            const SizedBox(height: 8),
+            TextField(controller: note, decoration: const InputDecoration(hintText: 'Not (örn. Cumhuriyet Bayramı)')),
+            SwitchRow('O gün kapalıyım', value: closed, onChanged: (v) => set(() => closed = v)),
+            if (!closed) ...[
+              StepRow('Açılış', hhmm(open), onDec: open >= 30 ? () => set(() => open -= 30) : null, onInc: open + 90 <= close ? () => set(() => open += 30) : null),
+              StepRow('Kapanış', hhmm(close), onDec: close - 90 >= open ? () => set(() => close -= 30) : null, onInc: close + 30 <= open + 1380 ? () => set(() => close += 30) : null),
+            ],
+            const SizedBox(height: 12),
+            BigButton('Tamam', onPressed: () => Navigator.pop(ctx, true)),
+          ]),
+        ),
+      ),
+    );
+    if (ok != true) return;
+    _upd(() {
+      if (d != null) _special.remove(d);
+      _special.removeWhere((x) => x.date == ymd(date));
+      _special.add(SpecialDay(ymd(date), closed: closed, open: open, close: close, note: note.text.trim()));
+      _special.sort((a, b) => a.date.compareTo(b.date));
+    });
+  }
   int? _editing;
   bool _saved = false;
 
@@ -333,7 +464,26 @@ class _HoursScreenState extends State<HoursScreen> {
             child: SwitchRow('Son sipariş 30 dk önce', sub: 'Kapanışa 30 dk kala yeni sipariş alma, mutfak yetişsin.', value: _last, onChanged: (v) => _upd(() => _last = v)),
           ),
           const SectionLabel('Özel günler'),
-          BigButton('+ Özel gün ekle', outlined: true, height: 46, onPressed: () => snack(context, 'Deneme sürümünde özel gün eklenmiyor.')),
+          for (final d in List.of(_special))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Box(
+                padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+                child: Row(children: [
+                  const Icon(Icons.event_outlined, color: C.red),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(_dateText(d.date), style: body(15, weight: FontWeight.w800)),
+                      Text('${d.note.isEmpty ? '' : '${d.note} · '}${d.closed ? 'Kapalı' : '${hhmm(d.open)} – ${hhmm(d.close)}'}', style: body(13, color: C.muted)),
+                    ]),
+                  ),
+                  IconButton(tooltip: 'Düzenle', onPressed: () => _editSpecial(d), icon: const Icon(Icons.edit_outlined)),
+                  IconButton(tooltip: 'Sil', onPressed: () => _upd(() => _special.remove(d)), icon: const Icon(Icons.delete_outline)),
+                ]),
+              ),
+            ),
+          BigButton('+ Özel gün ekle', outlined: true, height: 46, onPressed: () => _editSpecial(null)),
           const SizedBox(height: 12),
           Text('Önizleme', style: body(13, color: C.muted, weight: FontWeight.w800)),
           for (final (d, h) in groupedHours(_h)) Text('$d  $h', style: body(13, color: C.muted)),
@@ -346,6 +496,7 @@ class _HoursScreenState extends State<HoursScreen> {
             final s = AppScope.read(context);
             widget.r.hours = [for (final d in _h) DayHours(d.open, d.close, on: d.on)];
             widget.r.lastCall30 = _last;
+            widget.r.specialDays = List.of(_special);
             s.touch();
             setState(() => _saved = true);
           }),

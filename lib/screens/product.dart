@@ -4,6 +4,7 @@ import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'restaurant.dart';
 
 /// Ürün seçenekleri: porsiyon, acı tercihi, ekstralar, not, adet.
@@ -86,6 +87,10 @@ class _ProductScreenState extends State<ProductScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
+          if (AppScope.of(context).photo(m.photo) != null) ...[
+            GestureDetector(onTap: () => showPhoto(context, m.photo!), child: PhotoBox(m.photo, height: 220, width: double.infinity, radius: 20)),
+            const SizedBox(height: 14),
+          ],
           Text(m.name, style: display(28)),
           if (m.desc.isNotEmpty) ...[const SizedBox(height: 6), Text(m.desc, style: body(15, color: C.muted))],
           const SizedBox(height: 6),

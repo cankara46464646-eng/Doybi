@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../logic/location.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'cart.dart';
 import 'product.dart';
 
@@ -87,6 +89,10 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
         children: [
+          if (s.photo(r.cover) != null) ...[
+            PhotoBox(r.cover, height: 150, width: double.infinity, radius: 18),
+            const SizedBox(height: 10),
+          ],
           Box(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +105,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('${r.cuisine} · ${r.branch}', style: body(13, color: C.muted)),
+                          Text('${r.cuisine} · ${r.branch}${s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'}', style: body(13, color: C.muted)),
                           const SizedBox(height: 2),
                           Row(children: [
                             const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 18),
@@ -156,6 +162,18 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                   if (r.cash) const Pill('Nakit'),
                   if (r.card) const Pill('Kart (POS)'),
                 ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () => openMap(context, query: r.address, lat: r.lat, lng: r.lng),
+                      icon: const Icon(Icons.place_outlined, size: 18),
+                      label: Text(r.address, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                  if (r.phone.isNotEmpty)
+                    IconButton(tooltip: 'Restoranı ara', onPressed: () => callPhone(context, r.phone, who: 'Restoranın numarası'), icon: const Icon(Icons.call, color: C.red)),
+                ]),
               ],
             ),
           ),
@@ -200,6 +218,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               ),
             ),
           ],
+          ..._reviews(s),
         ],
       ),
       bottomNavigationBar: !mine || s.cart.isEmpty
@@ -214,6 +233,32 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               ),
             ),
     );
+  }
+
+  List<Widget> _reviews(AppState s) {
+    final rated = s.orders.where((o) => o.restaurantId == r.id && o.rating != null).toList();
+    if (rated.isEmpty) return const [];
+    return [
+      Padding(padding: const EdgeInsets.fromLTRB(4, 18, 4, 8), child: Text('Değerlendirmeler', style: display(20))),
+      for (final o in rated.take(5))
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Box(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                for (var i = 1; i <= 5; i++) Icon(i <= o.rating!.taste ? Icons.star_rounded : Icons.star_outline_rounded, size: 18, color: const Color(0xFFE79A00)),
+                const Spacer(),
+                Text(o.customerName.isEmpty ? 'Doybi müşterisi' : o.customerName, style: body(12, color: C.muted, weight: FontWeight.w700)),
+              ]),
+              if (o.rating!.tags.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(spacing: 6, runSpacing: 6, children: [for (final t in o.rating!.tags) Pill(t, bg: C.greenTint, fg: C.greenInk, size: 11)]),
+              ],
+              if (o.rating!.comment.isNotEmpty) ...[const SizedBox(height: 6), Text(o.rating!.comment, style: body(14))],
+            ]),
+          ),
+        ),
+    ];
   }
 
   Widget _stat(String v, String k) => Expanded(
@@ -261,8 +306,9 @@ class _ItemRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
-        child: Opacity(
-          opacity: m.available ? 1 : 0.55,
+        child: Dim(
+          dim: !m.available,
+          radius: 0,
           child: Row(
             children: [
               Expanded(
@@ -281,6 +327,10 @@ class _ItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
+              if (s.photo(m.photo) != null) ...[
+                PhotoBox(m.photo, width: 64, height: 64, radius: 12),
+                const SizedBox(width: 8),
+              ],
               QtyControl(qty: qty, onAdd: m.available ? onTap : null, onRemove: () => s.removeOne(m.id)),
             ],
           ),
@@ -304,14 +354,20 @@ class _FeaturedItem extends StatelessWidget {
     return Box(
       onTap: m.available ? onTap : null,
       padding: EdgeInsets.zero,
-      child: Opacity(
-        opacity: m.available ? 1 : 0.55,
+      clip: true,
+      child: Dim(
+        dim: !m.available,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Container(
-            height: 96,
-            decoration: BoxDecoration(color: r.bg.computeLuminance() > 0.8 ? C.tint : r.bg.withValues(alpha: 0.14)),
-            child: Stack(children: [
-              Center(child: Icon(Icons.restaurant, size: 44, color: r.bg.computeLuminance() > 0.8 ? C.red : r.bg)),
+          SizedBox(
+            height: s.photo(m.photo) != null ? 170 : 96,
+            child: Stack(fit: StackFit.expand, children: [
+              if (s.photo(m.photo) != null)
+                PhotoBox(m.photo, radius: 0)
+              else
+                ColoredBox(
+                  color: r.bg.computeLuminance() > 0.8 ? C.tint : r.bg.withValues(alpha: 0.14),
+                  child: Center(child: Icon(Icons.restaurant, size: 44, color: r.bg.computeLuminance() > 0.8 ? C.red : r.bg)),
+                ),
               const Positioned(left: 12, top: 12, child: Pill('Çok satan', bg: C.saffron, size: 11)),
             ]),
           ),

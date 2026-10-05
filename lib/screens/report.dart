@@ -4,6 +4,7 @@ import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'orders.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _ReportScreenState extends State<ReportScreen> {
   final Set<int> _items = {};
   String _want = 'iade';
   final _text = TextEditingController();
+  final List<String> _photos = [];
 
   static const _issues = [
     ('eksik', 'Eksik ürün geldi'),
@@ -101,7 +103,18 @@ class _ReportScreenState extends State<ReportScreen> {
               const SizedBox(height: 14),
               TextField(controller: _text, maxLines: 3, decoration: const InputDecoration(hintText: 'Kısaca anlat (isteğe bağlı)')),
               const SizedBox(height: 8),
-              BigButton('Fotoğraf ekle', outlined: true, icon: Icons.photo_camera_outlined, height: 46, onPressed: () => snack(context, 'Deneme sürümünde fotoğraf yüklenmiyor.')),
+              Text('Fotoğraf (isteğe bağlı)', style: body(13, weight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              PhotoStrip(
+                ids: _photos,
+                addLabel: 'Sorunun fotoğrafı',
+                max: 3,
+                onAdd: (id) => setState(() => _photos.add(id)),
+                onRemove: (id) => setState(() {
+                  _photos.remove(id);
+                  s.removePhoto(id);
+                }),
+              ),
             ],
             const SizedBox(height: 14),
             Text(
@@ -118,7 +131,8 @@ class _ReportScreenState extends State<ReportScreen> {
                         typeLabel: label,
                         items: needItems ? [for (final i in _items.toList()..sort()) '${o.lines[i].qty}× ${o.lines[i].name}'] : [],
                         want: neverCame ? 'bilgi' : _want,
-                        text: _text.text);
+                        text: _text.text,
+                        photos: _photos);
                   }),
           ],
         ],
@@ -136,6 +150,7 @@ class _ReportScreenState extends State<ReportScreen> {
         '${c.title}${c.type == 'gelmedi' ? '' : ' · İsteğin: ${c.wantLabel}'}.${done ? '' : ' ${o.restaurantName} genelde 1 saat içinde cevap verir.'}',
         style: body(15, color: C.muted),
       ),
+      if (c.photos.isNotEmpty) ...[const SizedBox(height: 10), PhotoStrip(ids: c.photos)],
       const SizedBox(height: 16),
       Box(
         child: Column(children: [

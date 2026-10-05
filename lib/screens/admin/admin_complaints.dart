@@ -4,6 +4,7 @@ import '../../data/models.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 import '../orders.dart';
 import 'admin_shell.dart';
 
@@ -90,10 +91,11 @@ class _AdminComplaintsState extends State<AdminComplaints> {
           c.resolution ?? (c.text.isNotEmpty ? '"${c.text}" · İsteği: ${c.wantLabel}' : 'İsteği: ${c.wantLabel}${c.type == 'gelmedi' ? '. Ödeme kapıda olduğu için müşteriden para alınmadı.' : ''}'),
           style: body(13, color: C.muted),
         ),
+        if (c.photos.isNotEmpty) ...[const SizedBox(height: 8), PhotoStrip(ids: c.photos)],
         if (actionable) ...[
           const SizedBox(height: 10),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            _mini('Restoranı ara', C.line, C.ink, () => snack(context, 'Deneme sürümü: arama yapılmaz.')),
+            _mini('Restoranı ara', C.line, C.ink, () => callPhone(context, s.restaurant(c.restaurantId)?.phone, who: 'Restoranın numarası')),
             _mini(c.gift ? 'Kupon verildi' : 'Müşteriye ₺50 kupon', c.gift ? C.greenTint : C.tint, c.gift ? C.greenInk : C.redDeep, c.gift ? null : () => s.giftCoupon(c)),
             _mini('Çözüldü olarak kapat', C.ink, Colors.white, () => s.adminCloseComplaint(c)),
           ]),

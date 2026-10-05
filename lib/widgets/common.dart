@@ -3,6 +3,7 @@ import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 
 import '../data/models.dart';
+import '../state/app_state.dart';
 import '../theme.dart';
 
 class Avatar extends StatelessWidget {
@@ -11,7 +12,13 @@ class Avatar extends StatelessWidget {
   const Avatar(this.r, {super.key, this.size = 44});
 
   @override
-  Widget build(BuildContext context) => MiniAvatar(r.initials, r.bg, r.fg, size: size);
+  Widget build(BuildContext context) {
+    final bytes = r.logo == null ? null : AppScope.of(context).photo(r.logo);
+    if (bytes != null) {
+      return ClipOval(child: Image.memory(bytes, width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true, cacheWidth: (size * 3).round()));
+    }
+    return MiniAvatar(r.initials, r.bg, r.fg, size: size);
+  }
 }
 
 class MiniAvatar extends StatelessWidget {
@@ -106,6 +113,25 @@ class BigButton extends StatelessWidget {
   }
 }
 
+/// Soluk gösterim (kapalı restoran, tükenen ürün). Opacity yerine üstüne yarı saydam katman çizer;
+/// telefonda çok daha hafif.
+class Dim extends StatelessWidget {
+  final bool dim;
+  final Widget child;
+  final double radius;
+  final Color color;
+  const Dim({super.key, required this.dim, required this.child, this.radius = 18, this.color = const Color(0x8CFFFFFF)});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!dim) return child;
+    return Container(
+      foregroundDecoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(radius)),
+      child: child,
+    );
+  }
+}
+
 class Box extends StatelessWidget {
   final Widget child;
   final EdgeInsets padding;
@@ -113,7 +139,8 @@ class Box extends StatelessWidget {
   final Color? border;
   final double radius;
   final VoidCallback? onTap;
-  const Box({super.key, required this.child, this.padding = const EdgeInsets.all(14), this.color = Colors.white, this.border, this.radius = 18, this.onTap});
+  final bool clip;
+  const Box({super.key, required this.child, this.padding = const EdgeInsets.all(14), this.color = Colors.white, this.border, this.radius = 18, this.onTap, this.clip = false});
 
   @override
   Widget build(BuildContext context) {
@@ -121,14 +148,12 @@ class Box extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       side: border == null ? BorderSide.none : BorderSide(color: border!, width: 2),
     );
+    final inner = Padding(padding: padding, child: SizedBox(width: double.infinity, child: child));
     return Material(
       color: color,
       shape: shape,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(padding: padding, child: SizedBox(width: double.infinity, child: child)),
-      ),
+      clipBehavior: clip ? Clip.hardEdge : Clip.none,
+      child: onTap == null ? inner : InkWell(onTap: onTap, borderRadius: BorderRadius.circular(radius), child: inner),
     );
   }
 }

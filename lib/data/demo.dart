@@ -41,7 +41,11 @@ List<Restaurant> demoRestaurants() => [
         hours: _hours(660, 1410, weekendClose: 1470, sundayOpen: 720, sundayClose: 1380),
         backupPhone: '0542 *** ** 15',
         couriers: ['Mehmet', 'Ali'],
+        courierPins: {'Mehmet': '4821', 'Ali': '1937'},
         promo: '2 dürüme ayran bizden',
+        lat: 37.5912,
+        lng: 36.9165,
+        specialDays: [SpecialDay('2026-10-29', open: 720, close: 1200, note: 'Cumhuriyet Bayramı')],
         menu: [
           MenuItem('adana', 'Adana Dürüm', 320, 'Dürümler',
               desc: 'Zırhla çekilmiş acılı Adana, lavaş, közlenmiş domates, sumaklı soğan.', featured: true, groups: [_portion(), _spicy(), _extras()]),
@@ -76,6 +80,9 @@ List<Restaurant> demoRestaurants() => [
         address: 'Kurtuluş Mah. 8. Sk. No: 22',
         hours: _hours(630, 1380),
         couriers: ['Hasan'],
+        courierPins: {'Hasan': '5502'},
+        lat: 37.5752,
+        lng: 36.9348,
         menu: [
           MenuItem('kiymali', 'Kıymalı Lahmacun', 85, 'Lahmacun', desc: 'Bol yeşillik ve limonla.', featured: true, groups: [_spicy()]),
           MenuItem('acili', 'Acılı Lahmacun', 90, 'Lahmacun', desc: 'Acı biberli, Maraş usulü.'),
@@ -105,6 +112,9 @@ List<Restaurant> demoRestaurants() => [
         address: 'Mimar Sinan Mah. 5. Sk. No: 11',
         hours: _hours(660, 1350),
         couriers: ['Emre'],
+        courierPins: {'Emre': '7314'},
+        lat: 37.5973,
+        lng: 36.9262,
         menu: [
           MenuItem('karisik', 'Karışık Pide', 280, 'Pide', desc: 'Kıyma, kaşar, sucuk.', featured: true),
           MenuItem('kasarli', 'Kaşarlı Pide', 240, 'Pide'),
@@ -132,6 +142,9 @@ List<Restaurant> demoRestaurants() => [
         address: 'Hayrullah Mah. 3. Sk. No: 9',
         hours: _hours(660, 1380),
         couriers: ['Furkan'],
+        courierPins: {'Furkan': '2648'},
+        lat: 37.5838,
+        lng: 36.9312,
         menu: [
           MenuItem('ckdurum', 'Çiğköfte Dürüm', 90, 'Dürümler', desc: 'Nar ekşili, yeşillikli.', featured: true, groups: [_spicy()]),
           MenuItem('ckporsiyon', 'Porsiyon Çiğköfte', 160, 'Porsiyon', desc: 'Marul, limon, nar ekşisi ile.'),
@@ -159,6 +172,9 @@ List<Restaurant> demoRestaurants() => [
         hours: _hours(720, 1440),
         manualClosed: true,
         couriers: ['Yusuf'],
+        courierPins: {'Yusuf': '9051'},
+        lat: 37.5895,
+        lng: 36.9120,
         menu: [
           MenuItem('d250', 'Kaymaklı Dondurma (250 g)', 220, 'Dondurma', desc: 'Keçi sütü, salep; bıçakla kesilir.', featured: true),
           MenuItem('d500', 'Kaymaklı Dondurma (500 g)', 400, 'Dondurma'),

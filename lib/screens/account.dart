@@ -16,7 +16,7 @@ const helpText = [
   ('Siparişim gecikti', 'Takip ekranından restoranı arayabilirsin. Restoran onaylamadan önce siparişini ücretsiz iptal edebilirsin.'),
   ('Eksik ya da yanlış geldi', 'Siparişlerim > Sorun bildir. Ödemeyi restorana yaptığın için iadeyi restoran yapar; 24 saat içinde dönmezse Doybi ekibi devreye girer.'),
   ('Ödeme', 'Doybi\'de ödeme yalnızca kapıda yapılır: nakit ya da kuryenin getirdiği POS ile kart. Uygulamada kart bilgisi istemeyiz.'),
-  ('Bize ulaş', 'destek@doybi.app (deneme sürümünde yanıt verilmez)'),
+  ('Bize ulaş', 'Siparişlerim > Sorun bildir ile yaz; fotoğraf da ekleyebilirsin. Bildirimin önce restorana, 24 saatte çözülmezse Doybi ekibine düşer.'),
 ];
 
 class AccountScreen extends StatelessWidget {
@@ -177,7 +177,7 @@ class AccountScreen extends StatelessWidget {
           Box(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             child: Column(children: [
-              LinkRow(Icons.location_on_outlined, 'Adreslerim', meta: s.mahalle == null ? '' : '1 adres', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressScreen()))),
+              LinkRow(Icons.location_on_outlined, 'Adreslerim', meta: '${s.addresses.length} adres', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressListScreen()))),
               const Divider(color: C.line, height: 1),
               LinkRow(Icons.confirmation_number_outlined, 'Kuponlarım', meta: '$usable kupon', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen()))),
               const Divider(color: C.line, height: 1),
@@ -255,7 +255,7 @@ class AccountScreen extends StatelessWidget {
           const SizedBox(height: 16),
           if (s.phone != null) BigButton('Çıkış yap', outlined: true, onPressed: s.signOut),
           TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
-          Center(child: Text('Doybi 0.2 · deneme sürümü', style: body(12, color: C.placeholder))),
+          Center(child: Text('Doybi 0.3 · deneme sürümü', style: body(12, color: C.placeholder))),
         ],
       ),
     );

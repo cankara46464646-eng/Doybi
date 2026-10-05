@@ -5,6 +5,7 @@ import '../../logic/pricing.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/photo.dart';
 
 const socialIncl = [
   'Ayda 4 Instagram story paylaşımı',
@@ -181,6 +182,7 @@ class _SharesScreenState extends State<SharesScreen> {
     final price = TextEditingController();
     final note = TextEditingController();
     var date = 'Bu hafta';
+    final photos = <String>[];
     final res = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -200,7 +202,9 @@ class _SharesScreenState extends State<SharesScreen> {
               const SizedBox(height: 6),
               TextField(controller: price, decoration: const InputDecoration(hintText: 'Örn. ₺220, hafta sonu 2 alana çay')),
               const SizedBox(height: 10),
-              BigButton('Ürün fotoğrafları ve logo yükle', outlined: true, height: 44, icon: Icons.upload, onPressed: () => snack(context, 'Deneme sürümünde fotoğraf yüklenmiyor.')),
+              Text('Ürün fotoğrafları ve logo', style: body(14, weight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              PhotoStrip(ids: photos, addLabel: 'Ürün fotoğrafı', onAdd: (id) => set(() => photos.add(id)), onRemove: (id) => set(() => photos.remove(id))),
               const SizedBox(height: 10),
               Text('Tercih ettiğin yayın tarihi', style: body(14, weight: FontWeight.w800)),
               const SizedBox(height: 6),
@@ -223,7 +227,7 @@ class _SharesScreenState extends State<SharesScreen> {
       ),
     );
     if (res == null) return;
-    final err = s.addShare(rid, title: title.text, price: price.text, date: date, note: note.text, submit: res);
+    final err = s.addShare(rid, title: title.text, price: price.text, date: date, note: note.text, submit: res, photos: photos);
     if (err != null && mounted) snack(context, err);
   }
 
@@ -302,7 +306,12 @@ class _SharesScreenState extends State<SharesScreen> {
               ),
           ]),
         ],
-        if (x.status == 'onay') ...[
+        if (x.photos.isNotEmpty) ...[const SizedBox(height: 8), PhotoStrip(ids: x.photos)],
+        if (x.status == 'onay' && s.photo(x.design) != null) ...[
+          const SizedBox(height: 10),
+          GestureDetector(onTap: () => showPhoto(context, x.design!), child: PhotoBox(x.design, height: 300, width: double.infinity, fit: BoxFit.contain)),
+        ],
+        if (x.status == 'onay' && s.photo(x.design) == null) ...[
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(14),
@@ -347,6 +356,10 @@ class _SharesScreenState extends State<SharesScreen> {
           ]),
         ],
         if (x.status == 'yayinlandi') ...[
+          if (s.photo(x.proofPhoto) != null) ...[
+            const SizedBox(height: 10),
+            GestureDetector(onTap: () => showPhoto(context, x.proofPhoto!), child: PhotoBox(x.proofPhoto, height: 200, width: double.infinity, fit: BoxFit.contain)),
+          ],
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(10),

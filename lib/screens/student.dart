@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../logic/ikram.dart';
+import '../logic/location.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'reservation.dart';
 import 'shell.dart';
 
@@ -106,11 +108,14 @@ class _CampaignCard extends StatelessWidget {
     final given = s.givenTotal(c.branchId);
     final mineHere = s.lastReservationOf(c.id);
     final held = mineHere != null && mineHere.status == 'ayrildi';
-    return Opacity(
-      opacity: sold ? 0.75 : 1,
+    return Dim(
+      dim: sold,
+      color: const Color(0x55FFFFFF),
       child: Box(
         padding: EdgeInsets.zero,
+        clip: true,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (s.photo(c.photo) != null) PhotoBox(c.photo, height: 150, width: double.infinity, radius: 0),
           Container(
             height: 84,
             color: sold ? C.line : (later ? C.greenTint : C.tint),
@@ -139,7 +144,7 @@ class _CampaignCard extends StatelessWidget {
               Row(children: [
                 const Icon(Icons.place_outlined, size: 16, color: C.muted),
                 const SizedBox(width: 4),
-                Expanded(child: Text(c.address, style: body(13, color: C.muted))),
+                Expanded(child: Text('${c.address}${r == null || s.distanceTo(r) == null ? '' : ' · ${kmText(s.distanceTo(r)!)}'}', style: body(13, color: C.muted))),
               ]),
               const SizedBox(height: 8),
               Text('Tamamen ücretsiz • Gel-al • Öğrenci kimliği gerekli', style: body(12, color: C.greenInk, weight: FontWeight.w800)),

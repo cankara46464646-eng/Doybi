@@ -24,7 +24,7 @@ class BusinessShell extends StatelessWidget {
     return ValueListenableBuilder<int>(
       valueListenable: businessTab,
       builder: (context, tab, _) => Scaffold(
-        body: IndexedStack(index: tab, children: const [PanelScreen(), MenuScreen(), IkramPanelScreen(), SubscriptionScreen(), SettingsScreen()]),
+        body: const [PanelScreen(), MenuScreen(), IkramPanelScreen(), SubscriptionScreen(), SettingsScreen()][tab],
         bottomNavigationBar: NavigationBar(
           selectedIndex: tab,
           onDestinationSelected: (i) => businessTab.value = i,
