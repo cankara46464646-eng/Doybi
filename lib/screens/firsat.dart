@@ -171,8 +171,8 @@ class _Hero extends StatelessWidget {
             ]),
           ),
           Positioned(
-            left: w / 2 + 72,
-            top: 30,
+            left: w / 2 + 92,
+            top: 26,
             child: Transform.rotate(angle: 0.3, child: const Icon(Icons.bolt_rounded, size: 40, color: C.saffron)),
           ),
           Positioned(
