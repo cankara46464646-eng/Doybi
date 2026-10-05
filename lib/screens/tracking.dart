@@ -160,7 +160,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final start = o.acceptedAt ?? o.createdAt;
     final eta = start.add(Duration(minutes: o.prepMin + 15));
     final steps = <(String, DateTime?, bool)>[
-      ('Restoran onayı bekleniyor', o.createdAt, true),
+      (o.acceptedAt != null ? 'Restoran onayladı' : 'Restoran onayı bekleniyor', o.createdAt, true),
       ('Hazırlanıyor · ${o.prepMin} dk', o.acceptedAt, o.acceptedAt != null),
       ('Yolda', o.roadAt, o.roadAt != null),
       ('Teslim edildi', o.doneAt, o.status == OrderStatus.teslim),
@@ -345,7 +345,8 @@ class _RouteMap extends StatelessWidget {
     return EverySecond(builder: (context) {
       LatLng? courier;
       if (o.status == OrderStatus.yolda && o.roadAt != null) {
-        final t = (s.now.difference(o.roadAt!).inSeconds / (travel * 60)).clamp(0.0, 0.95);
+        final total = s.autoRestaurant ? AppState.autoRoadSeconds : travel * 60;
+        final t = (s.now.difference(o.roadAt!).inSeconds / total).clamp(0.0, 0.95);
         courier = LatLng(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t);
       }
       return Container(
