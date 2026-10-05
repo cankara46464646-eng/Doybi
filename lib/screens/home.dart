@@ -614,12 +614,16 @@ class RestaurantCard extends StatelessWidget {
                     else
                       Text.rich(
                         TextSpan(children: [
-                          TextSpan(text: '${z.eta} dk · '),
+                          TextSpan(text: '${z.eta} dk  ·  '),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Icon(Icons.delivery_dining_outlined, size: 16, color: z.fee == 0 ? C.greenInk : C.muted),
+                          ),
                           TextSpan(
-                            text: z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat',
+                            text: z.fee == 0 ? ' Ücretsiz' : ' ${tl(z.fee)}',
                             style: z.fee == 0 ? body(13, color: C.greenInk, weight: FontWeight.w800) : null,
                           ),
-                          TextSpan(text: ' · Min. ${tl(z.min)}'),
+                          TextSpan(text: '  ·  Min. ${tl(z.min)}'),
                         ]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

@@ -96,11 +96,45 @@ class _SearchScreenState extends State<SearchScreen> {
                       SelChip(r, selected: false, onTap: () => setState(() => _c.text = r)),
                   ]),
                 ],
-                const SectionLabel('Ne yesem?'),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  for (final r in const ['Dürüm', 'Lahmacun', 'Pide', 'Çiğköfte', 'Dondurma', 'Tava'])
-                    SelChip(r, selected: false, onTap: () => setState(() => _c.text = r)),
-                ]),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
+                  child: Text('Ne yesem?', style: display(20)),
+                ),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.45,
+                  children: [
+                    for (final (label, photo) in const [
+                      ('Dürüm', 'a:adana'),
+                      ('Lahmacun', 'a:lahmacun'),
+                      ('Pide', 'a:pide_karisik'),
+                      ('Çiğköfte', 'a:cig_porsiyon'),
+                      ('Dondurma', 'a:dondurma'),
+                      ('Tava', 'a:tava'),
+                    ])
+                      Material(
+                        color: C.line,
+                        borderRadius: BorderRadius.circular(18),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () => setState(() => _c.text = label),
+                          child: Stack(fit: StackFit.expand, children: [
+                            PhotoBox(photo, radius: 0, width: 180),
+                            const DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(colors: [Color(0x00000000), Color(0xAA000000)], begin: Alignment.center, end: Alignment.bottomCenter),
+                              ),
+                            ),
+                            Positioned(left: 12, bottom: 10, child: Text(label, style: display(19, color: Colors.white))),
+                          ]),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             )
           : ListView(
