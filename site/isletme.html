@@ -182,6 +182,7 @@ table.tiers { width: 100%; border-collapse: collapse; font-variant-numeric: tabu
 .tiers th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-muted); }
 .tiers td:last-child, .tiers th:last-child { text-align: right; }
 .tiers td:last-child { white-space: nowrap; }
+.tiers-note { color: var(--on-dark-muted); font-size: 14px; margin-top: 10px; }
 .tiers tr.on td { background: rgba(255,197,61,0.14); color: var(--saffron); font-weight: 800; }
 .rules { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--on-dark-muted); font-size: 14.5px; }
 .rules li { display: flex; gap: 10px; }
@@ -249,7 +250,7 @@ footer small { display: block; margin-top: 8px; color: #FFE1DA; font-size: 13px;
   <div class="wrap" style="padding-bottom:64px">
     <div class="biz-grid">
       <div class="biz-card"><b>%0</b><span>komisyon</span></div>
-      <div class="biz-card"><b>İlk ay</b><span>ücretsiz</span></div>
+      <div class="biz-card"><b>İlk 3 ay</b><span>ücretsiz</span></div>
       <div class="biz-card"><b>Kendi kuryen</b><span>kendi müşterin</span></div>
       <div class="biz-card"><b>Kapıda</b><span>para doğrudan sana</span></div>
     </div>
@@ -268,6 +269,7 @@ footer small { display: block; margin-top: 8px; color: #FFE1DA; font-size: 13px;
         </tbody>
       </table>
     </div>
+    <p class="tiers-note">İlk 3 ay ücret yok. 4. aydan itibaren paketin, bir önceki ay teslim ettiğin siparişe göre belirlenir.</p>
 
     <div class="addon">
       <div>

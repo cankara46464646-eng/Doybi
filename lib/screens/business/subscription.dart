@@ -47,7 +47,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final bill = s.currentBill(r.id);
     final payState = sub.fee == 0 ? 'free' : (bill?.state ?? 'unpaid');
     final sales = s.ordersOf(r.id).where((o) => o.status == OrderStatus.teslim).fold(0, (a, o) => a + o.total);
-    final over = sub.history.isNotEmpty && sub.history.last > customOver;
+    final over = sub.overLimit;
+    final credit = s.creditNow(r.id);
+    // ücretsiz dönemde bu dönemin liste paketi
+    final cur = nextPackage(sub.history, 0, fees: s.fees);
 
     // sonraki sınır
     const bounds = [150, 300, 450, 600, 900, 1200];
@@ -56,10 +59,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     String nextTitle;
     String nextWhy;
     var warn = false;
-    if (nx.kind == 'hold') {
+    if (nx.free) {
+      nextTitle = 'Ücretsiz dönem · ${sub.periodNo + 1}/$freePeriods';
+      nextWhy = 'Sonraki dönem de ücretsiz. Bu sipariş sayısıyla liste fiyatın ${nx.kind == 'tier' ? '${tiers[nx.idx].label} paketi, ' : ''}${shortMoney(nx.listFee)} + KDV olurdu.';
+    } else if (nx.kind == 'hold') {
       nextTitle = 'Özel teklif';
       warn = true;
-      nextWhy = '1.200\'ü geçersen Doybi sana özel teklif hazırlar. Sen onaylayıp yeni dönem başlayana kadar mevcut ücretin (${shortMoney(sub.fee)} + KDV) geçerli kalır; sipariş alımın durmaz.';
+      nextWhy = '1.200\'ü geçersen Doybi sana özel teklif hazırlar. Sen onaylayıp yeni dönem başlayana kadar ${shortMoney(nx.fee)} + KDV uygulanır; sipariş alımın durmaz.';
     } else if (nx.kind == 'custom') {
       nextTitle = 'Özel teklif paketi';
       nextWhy = 'Onayladığın özel teklif sonraki dönemden itibaren geçerli.';
@@ -69,9 +75,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       nextWhy = '900\'ü geçtin ama geçen dönem ${sub.history.last} idi. 20.000 TL\'lik pakete geçmek için iki dönem üst üste 900\'ü aşman gerekir; sonraki dönem ${shortMoney(s.futureFees[4])} olur.';
     } else {
       nextTitle = '${tiers[nx.idx].label} paketi';
-      nextWhy = nx.fee > sub.fee
-          ? 'Bu dönemki sipariş sayın sonraki dönemin paketini belirler.'
-          : (nx.fee < sub.fee ? 'Siparişler düştüğü için sonraki dönem daha uygun pakete geçersin.' : 'Aynı pakette kalırsın.');
+      nextWhy = sub.freePeriod
+          ? 'Ücretsiz dönemin bu dönemle bitiyor. Bu dönem teslim ettiğin sipariş, ilk ücretli dönemin paketini belirler.'
+          : nx.fee > sub.fee
+              ? 'Bu dönemki sipariş sayın sonraki dönemin paketini belirler.'
+              : (nx.fee < sub.fee ? 'Siparişler düştüğü için sonraki dönem daha uygun pakete geçersin.' : 'Aynı pakette kalırsın.');
     }
 
     return Scaffold(
@@ -119,10 +127,22 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SectionLabel('Bu dönemin paketi'),
           Box(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (sub.firstPeriod) ...[
-                Text('Giriş paketi · ${tiers[0].label} sipariş', style: body(15, weight: FontWeight.w800)),
-                Text('İlk ay ücretsiz', style: display(30, color: C.green)),
-                Text('Liste fiyatı ${shortMoney(s.fees[0])} + KDV. Sonraki dönemin paketi bu dönem teslim ettiğin siparişe göre belirlenir.', style: body(13, color: C.muted)),
+              if (sub.freePeriod) ...[
+                Text(
+                  sub.firstPeriod
+                      ? 'Giriş paketi · ${tiers[0].label} sipariş'
+                      : (cur.kind == 'tier' ? '${tiers[cur.idx].label} sipariş' : '1.200 üstü'),
+                  style: body(15, weight: FontWeight.w800),
+                ),
+                Text('Ücretsiz', style: display(30, color: C.green)),
+                const SizedBox(height: 6),
+                _freeSteps(sub.periodNo),
+                const SizedBox(height: 8),
+                Text(
+                  'İlk $freePeriods dönem ($freePeriods ay) ücret alınmaz. Liste fiyatı ${shortMoney(cur.listFee)} + KDV. '
+                  '${sub.periodNo < freePeriods ? 'Paket ücreti ${freePeriods + 1}. dönemden itibaren başlar.' : 'Bu son ücretsiz dönemin; paket ücreti sonraki dönemden itibaren başlar.'}',
+                  style: body(13, color: C.muted),
+                ),
               ] else ...[
                 Text('${_tierLabel(s, sub.fee)} sipariş', style: body(15, weight: FontWeight.w800)),
                 Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -182,7 +202,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Expanded(child: Text(nextTitle, style: body(15, weight: FontWeight.w800))),
-                    Text(nx.kind == 'hold' ? '${shortMoney(nx.fee)} sürer' : '${shortMoney(nx.fee)} + KDV', style: body(15, weight: FontWeight.w800)),
+                    Text(
+                      nx.free
+                          ? 'Ücretsiz'
+                          : (nx.kind == 'hold' && !sub.freePeriod ? '${shortMoney(nx.fee)} sürer' : '${shortMoney(nx.fee)} + KDV'),
+                      style: body(15, weight: FontWeight.w800, color: nx.free ? C.greenInk : C.ink),
+                    ),
                   ]),
                   const SizedBox(height: 4),
                   Text(nextWhy, style: body(13, color: warn ? C.noteInk : C.muted)),
@@ -198,10 +223,21 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           const SectionLabel('Bu dönemin faturası'),
           Box(
             child: sub.fee == 0
-                ? Row(children: [
-                    const Icon(Icons.celebration_outlined, color: C.green),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text('İlk ay ücretsiz · bu dönem fatura yok.', style: body(15, weight: FontWeight.w800, color: C.greenInk))),
+                ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(Icons.celebration_outlined, color: C.green),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          sub.freePeriod ? 'Ücretsiz dönem (${sub.periodNo}/$freePeriods) · bu dönem fatura yok.' : 'Bu dönem fatura yok.',
+                          style: body(15, weight: FontWeight.w800, color: C.greenInk),
+                        ),
+                      ),
+                    ]),
+                    if (credit > 0) ...[
+                      const SizedBox(height: 6),
+                      Text('Doybi kuponlarından ${money(credit)} mahsup birikti; ilk ücretli faturandan düşülür.', style: body(12, color: C.muted)),
+                    ],
                   ])
                 : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     Text('Son ödeme ${sub.periodEnd.split(' ·').first}', style: body(12, color: C.muted, weight: FontWeight.w700)),
@@ -212,7 +248,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     _line('KDV (%${s.vat})', money(inv.money.vat)),
                     const Divider(color: C.line),
                     _line('Toplam', money(inv.money.total), bold: true),
-                    if (inv.credit > 0) Text('Doybi\'nin karşıladığı kuponlarda indirim tutarı faturandan düşülür.', style: body(12, color: C.muted)),
+                    if (inv.credit > 0)
+                      Text(
+                        'Doybi\'nin karşıladığı kuponlarda indirim tutarı faturandan düşülür.'
+                        '${credit > inv.fee ? ' Fazlası (${money(credit - inv.fee)}) sonraki faturana devreder.' : ''}',
+                        style: body(12, color: C.muted),
+                      ),
                     const SizedBox(height: 10),
                     if (payState == 'unpaid' || payState == 'late') ...[
                       if (payState == 'late') const NoteBox('Son ödeme tarihi geçti. Ödemeyi yaptıysan bildir.', icon: Icons.warning_amber, color: C.tint, ink: C.redDeep),
@@ -281,11 +322,26 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   String _billTotal(AppState s, String rid, Bill b) {
-    if (b.state == 'free') return '0,00 TL · İlk ay ücretsiz';
+    if (b.state == 'free') return '0,00 TL · ücretsiz dönem';
     if (b.gross) return '${money(b.net)} · KDV dahil';
     if (b.id.endsWith('-cur')) return '${money(s.invoiceNow(rid).money.total)} · KDV dahil';
     return '${money(fromNet(b.net, s.vat).total)} · KDV dahil';
   }
+
+  /// İlk 3 dönemden kaçıncısında: dolu çizgiler geçen ve bu dönem.
+  Widget _freeSteps(int n) => Row(children: [
+        for (var i = 1; i <= freePeriods; i++) ...[
+          if (i > 1) const SizedBox(width: 4),
+          Expanded(
+            child: Container(
+              height: 6,
+              decoration: BoxDecoration(color: i <= n ? C.green : C.line, borderRadius: BorderRadius.circular(99)),
+            ),
+          ),
+        ],
+        const SizedBox(width: 10),
+        Text('$n/$freePeriods', style: body(13, color: C.greenInk, weight: FontWeight.w800)),
+      ]);
 
   Widget _kv(String k, String v) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(k, style: body(12, color: C.muted, weight: FontWeight.w700)),

@@ -34,7 +34,7 @@ class AdminSubscriptions extends StatelessWidget {
         }
       }
     });
-    final needOffer = s.subs.values.where((x) => x.history.isNotEmpty && x.history.last > customOver && x.offerState != 'onaylandi').toList();
+    final needOffer = s.subs.values.where((x) => x.overLimit && x.offerState != 'onaylandi').toList();
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -84,14 +84,16 @@ class AdminSubscriptions extends StatelessWidget {
 
   Widget _row(BuildContext context, AppState s, String rid, Subscription sub) {
     final r = s.restaurant(rid);
-    final over = sub.history.isNotEmpty && sub.history.last > customOver;
+    final over = sub.overLimit;
     final now = s.billableNow(rid);
-    final nx = sub.history.isEmpty ? null : s.nextFor(rid, now);
-    final note = sub.firstPeriod
-        ? 'İlk dönem: giriş paketi, ilk ay ücretsiz. Sonraki paketi bu dönemin teslim sayısı belirler.'
+    final nx = s.nextFor(rid, now);
+    final pkg = '${nx.kind == 'tier' ? '${tiers[nx.idx].label} · ' : ''}${shortMoney(nx.free ? nx.listFee : nx.fee)}';
+    final note = sub.freePeriod
+        ? 'Ücretsiz dönem ${sub.periodNo}/$freePeriods${sub.firstPeriod ? ' · giriş paketi' : ''}. '
+            '${nx.free ? 'Sonraki dönem de ücretsiz; şu anki gidişle liste fiyatı $pkg.' : 'Sonraki dönemden itibaren ücretli; şu anki gidişle $pkg.'}'
         : over
             ? '1.200 üstü: fiyat uydurulmaz, sipariş alımı durmaz. Teklif onaylanıp yeni dönem başlayana kadar ${shortMoney(sub.fee)}.'
-            : 'Şu anki gidişle sonraki dönem ${nx!.kind == 'tier' ? '${tiers[nx.idx].label} · ' : ''}${shortMoney(nx.fee)}.${nx.why == 'iki-donem-kurali' ? ' 20.000 TL için iki dönem üst üste 900 üstü gerekir.' : ''}';
+            : 'Şu anki gidişle sonraki dönem $pkg.${nx.why == 'iki-donem-kurali' ? ' 20.000 TL için iki dönem üst üste 900 üstü gerekir.' : ''}';
     return Box(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
@@ -109,7 +111,7 @@ class AdminSubscriptions extends StatelessWidget {
         Row(children: [
           Expanded(child: _kv('Geçen dönem', sub.history.isEmpty ? '—' : '${sub.history.last}')),
           Expanded(child: _kv('Bu dönem', '$now')),
-          Expanded(child: _kv('Paket', sub.fee == 0 ? 'Ücretsiz' : shortMoney(sub.fee))),
+          Expanded(child: _kv('Paket', sub.freePeriod ? 'Ücretsiz ${sub.periodNo}/$freePeriods' : shortMoney(sub.fee))),
         ]),
         const SizedBox(height: 6),
         Text(note, style: body(12, color: C.muted)),
@@ -174,7 +176,7 @@ class _AdminPricingState extends State<AdminPricing> {
     for (var i = 0; i < fees.length; i++) {
       if (fees[i] != s.futureFees[i]) dirty = true;
     }
-    final offers = s.subs.values.where((x) => x.history.isNotEmpty && x.history.last > customOver).toList();
+    final offers = s.subs.values.where((x) => x.overLimit).toList();
 
     return Scaffold(
       backgroundColor: C.bg,

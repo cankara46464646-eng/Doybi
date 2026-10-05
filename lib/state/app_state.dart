@@ -12,7 +12,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 6;
+const _dataVersion = 7;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -93,10 +93,15 @@ class AppState extends ChangeNotifier {
         final j = jsonDecode(raw) as Map<String, dynamic>;
         if (j['v'] == _dataVersion) {
           _fromJson(j);
+        } else if (j['v'] == 6) {
+          // ilk 3 ay ücretsiz kuralı: veriler korunur, abonelikler yeni kurala göre düzenlenir
+          _fromJson(j);
+          _migrateFreePeriods();
         } else if (j['v'] == 4 || j['v'] == 5) {
           // önceki 0.3: veriler korunur, hazır fotoğraflar, logolar ve fırsat fiyatları eklenir
           _fromJson(j);
           _fillDemoPhotos();
+          _migrateFreePeriods();
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
@@ -164,6 +169,24 @@ class AppState extends ChangeNotifier {
     ];
     firsatEndMin = 23 * 60 + 59;
     firsatHiddenDay = '';
+  }
+
+  /// İlk 3 dönem ücretsiz kuralına geçiş: deneme aboneliklerinin geçmişi ve ücretsiz dönem faturaları yenilenir,
+  /// onaylanmış başvuruların ücretsiz fatura başlıkları güncellenir. Ödeme durumlarına dokunulmaz.
+  void _migrateFreePeriods() {
+    final demo = demoSubscriptions(now);
+    subs.forEach((id, sub) {
+      final d = demo[id];
+      sub.bills.removeWhere((b) => b.state == 'free');
+      if (d != null) sub.history = List.of(d.history);
+      final free = d != null
+          ? d.bills.where((b) => b.state == 'free').toList()
+          : [if (sub.fee == 0) Bill(id: '$id-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(sub.periodNo), detail: sub.firstPeriod ? 'giriş paketi' : '', state: 'free')];
+      for (final b in free) {
+        final cur = sub.bills.indexWhere((x) => x.id.endsWith('-cur'));
+        sub.bills.insert(b.id.endsWith('-cur') ? 0 : cur + 1, b);
+      }
+    });
   }
 
   /// Deneme restoranlarına, ürünlerine ve afişlerine hazır fotoğrafları ekle (kullanıcının eklediklerine dokunmaz).
@@ -1321,7 +1344,7 @@ class AppState extends ChangeNotifier {
       periodStart: '${_shortDate(now)} · 00:00',
       periodEnd: '${_shortDate(now.add(const Duration(days: 30)))} · 23:59',
       daysLeft: 30,
-      bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: '1. dönem · İlk ay ücretsiz', state: 'free')],
+      bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(1), detail: 'giriş paketi', state: 'free')],
     );
     if (restaurant(a.id) == null) {
       final words = a.name.split(' ').where((w) => w.isNotEmpty).toList();
@@ -1347,7 +1370,7 @@ class AppState extends ChangeNotifier {
         courierPins: a.courier ? {'Kurye 1': newPin()} : {},
       ));
     }
-    addLog('${a.name} · başvuru onaylandı, ilk ücretsiz ayı giriş paketiyle açıldı; menü eklenince müşteriler görür');
+    addLog('${a.name} · başvuru onaylandı, ücretsiz ilk 3 ayı giriş paketiyle başladı; menü eklenince müşteriler görür');
     notifyListeners();
   }
 

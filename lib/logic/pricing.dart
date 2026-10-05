@@ -28,28 +28,49 @@ int tierFor(int count) {
   return -1; // 1.200 üstü: özel teklif
 }
 
+/// Yeni işletmenin ilk kaç dönemi ücretsiz (1 dönem = 30 gün, yani ilk 3 ay).
+const freePeriods = 3;
+
+/// Dönem numarası ücretsiz döneme düşüyor mu (1'den başlar).
+bool isFreePeriod(int periodNo) => periodNo <= freePeriods;
+
+/// Ücretsiz dönemin fatura başlığı: "2. dönem · Ücretsiz (2/3)".
+String freePeriodTitle(int periodNo) => '$periodNo. dönem · Ücretsiz ($periodNo/$freePeriods)';
+
 class NextPackage {
   final String kind; // tier | hold | custom
   final int idx; // kademe (tier için)
-  final int fee; // uygulanacak ücret (kuruş, KDV hariç)
-  final int listFee; // liste fiyatı (ilk ay ücretsizken bile gösterilir)
-  final String why; // giris-ilk-ay-ucretsiz | onceki-donem | iki-donem-kurali | ozel-teklif-gerekli | teklif-onayli
+  final int fee; // uygulanacak ücret (kuruş, KDV hariç); ücretsiz dönemde 0
+  final int listFee; // liste fiyatı (ücretsiz dönemde de gösterilir)
+  final String why; // giris-ucretsiz | ucretsiz-donem | onceki-donem | iki-donem-kurali | ozel-teklif-gerekli | teklif-onayli
   const NextPackage(this.kind, this.idx, this.fee, this.listFee, this.why);
+
+  bool get free => why == 'giris-ucretsiz' || why == 'ucretsiz-donem';
 }
 
 /// Sonraki dönemin paketi.
 /// [history]: tamamlanmış dönemlerin teslim edilen sipariş sayıları (eskiden yeniye).
 /// [currentFee]: şu anki dönemin ücreti. [acceptedOffer]: restoranın onayladığı özel teklif.
+/// İlk [freePeriods] dönem ücretsizdir; paket yine hesaplanır ve liste fiyatı olarak gösterilir.
 NextPackage nextPackage(List<int> history, int currentFee, {List<int> fees = defaultFees, int? acceptedOffer}) {
-  if (history.isEmpty) return NextPackage('tier', 0, 0, fees[0], 'giris-ilk-ay-ucretsiz');
+  if (history.isEmpty) return NextPackage('tier', 0, 0, fees[0], 'giris-ucretsiz');
+  final p = _paidPackage(history, currentFee, fees, acceptedOffer);
+  if (isFreePeriod(history.length + 1)) return NextPackage(p.kind, p.idx, 0, p.listFee, 'ucretsiz-donem');
+  return p;
+}
+
+NextPackage _paidPackage(List<int> history, int currentFee, List<int> fees, int? acceptedOffer) {
   final last = history.last;
   final prev = history.length > 1 ? history[history.length - 2] : null;
+  final twoOver900 = prev != null && prev > 900;
   if (last > customOver) {
     if (acceptedOffer != null) return NextPackage('custom', -1, acceptedOffer, acceptedOffer, 'teklif-onayli');
-    return NextPackage('hold', -1, currentFee, currentFee, 'ozel-teklif-gerekli');
+    // Teklif onaylanana kadar mevcut ücret sürer. Ücretsiz dönemden çıkılıyorsa (ücret 0) en üst liste paketi uygulanır.
+    final hold = currentFee > 0 ? currentFee : fees[twoOver900 ? 5 : 4];
+    return NextPackage('hold', -1, hold, hold, 'ozel-teklif-gerekli');
   }
   final idx = tierFor(last);
-  if (idx == 5 && !(prev != null && prev > 900)) return NextPackage('tier', 4, fees[4], fees[4], 'iki-donem-kurali');
+  if (idx == 5 && !twoOver900) return NextPackage('tier', 4, fees[4], fees[4], 'iki-donem-kurali');
   return NextPackage('tier', idx, fees[idx], fees[idx], 'onceki-donem');
 }
 

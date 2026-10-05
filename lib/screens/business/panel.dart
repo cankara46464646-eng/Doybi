@@ -269,7 +269,9 @@ class PanelOrderCard extends StatelessWidget {
             Text(tl(o.total), style: body(17, weight: FontWeight.w800)),
           ]),
           if (o.discount > 0 && o.couponPayer == 'doybi')
-            Text('Doybi kuponu: ${tl(o.discount)} abonelik faturandan düşülür.', style: body(12, color: C.muted)),
+            Text(
+                'Doybi kuponu: ${tl(o.discount)} ${(s.sub(o.restaurantId)?.freePeriod ?? false) ? 'ilk ücretli' : 'abonelik'} faturandan düşülür.',
+                style: body(12, color: C.muted)),
           const SizedBox(height: 12),
           ..._actions(context, s),
         ],
