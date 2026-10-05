@@ -49,13 +49,17 @@ Future<String?> pickPhoto(BuildContext context, {String title = 'Fotoğraf ekle'
   try {
     final x = await ImagePicker().pickImage(
       source: source == 'camera' ? ImageSource.camera : ImageSource.gallery,
-      maxWidth: 1000,
-      maxHeight: 1000,
-      imageQuality: 72,
+      maxWidth: 900,
+      maxHeight: 900,
+      imageQuality: 65,
     );
     if (x == null) return null;
     final bytes = await x.readAsBytes();
-    return await s.addPhoto(bytes);
+    final id = await s.addPhoto(bytes);
+    if (id == null && context.mounted) {
+      snack(context, 'Fotoğraf kaydedilemedi: telefonda uygulamaya ayrılan yer doldu. Kullanmadığın fotoğrafları kaldırıp tekrar dene.');
+    }
+    return id;
   } catch (_) {
     if (context.mounted) snack(context, 'Fotoğraf alınamadı. Tekrar dene.');
     return null;

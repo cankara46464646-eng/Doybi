@@ -459,13 +459,20 @@ class AppState extends ChangeNotifier {
   bool hasPhoto(String? id) => id != null && id.isNotEmpty && (id.startsWith('a:') || photos.containsKey(id));
 
   /// Fotoğrafı telefona kaydeder, kimliğini döner.
-  Future<String> addPhoto(Uint8List bytes) async {
+  /// Fotoğrafı telefona kaydeder, kimliğini döner. Telefonun uygulamaya ayırdığı yer dolduysa null döner.
+  Future<String?> addPhoto(Uint8List bytes) async {
     final id = 'p${now.millisecondsSinceEpoch}${Random().nextInt(9999)}';
-    photos[id] = bytes;
+    // Uygulamanın kendi verisine yer kalsın: fotoğraflar toplam ~3 MB'ı geçmesin.
+    final used = photos.values.fold<int>(0, (a, b) => a + b.length);
+    if ((used + bytes.length) * 1.37 > 3000000) return null;
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setString('ph_$id', base64Encode(bytes));
-    } catch (_) {}
+      final ok = await p.setString('ph_$id', base64Encode(bytes));
+      if (!ok) return null;
+    } catch (_) {
+      return null;
+    }
+    photos[id] = bytes;
     notifyListeners();
     return id;
   }
