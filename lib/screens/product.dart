@@ -88,7 +88,7 @@ class _ProductScreenState extends State<ProductScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
-          if (AppScope.of(context).photo(m.photo) != null) ...[
+          if (AppScope.of(context).hasPhoto(m.photo)) ...[
             GestureDetector(onTap: () => showPhoto(context, m.photo!), child: PhotoBox(m.photo, height: 220, width: double.infinity, radius: 20)),
             const SizedBox(height: 14),
           ],

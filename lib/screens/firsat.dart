@@ -322,7 +322,7 @@ class _DealCard extends StatelessWidget {
     final s = AppScope.of(context);
     final z = s.zoneFor(r)!;
     final open = s.isOpen(r);
-    final img = s.photo(m.photo) != null ? m.photo : r.cover;
+    final img = s.hasPhoto(m.photo) ? m.photo : r.cover;
     return Dim(
       dim: !open,
       radius: 16,
@@ -339,7 +339,7 @@ class _DealCard extends StatelessWidget {
             child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               SizedBox(
                 width: 100,
-                child: s.photo(img) != null
+                child: s.hasPhoto(img)
                     ? PhotoBox(img, width: 100, height: 112, radius: 0)
                     : Container(color: r.bg, alignment: Alignment.center, child: Text(r.initials, style: display(28, color: r.fg))),
               ),

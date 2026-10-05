@@ -34,6 +34,7 @@ flutter:
     - assets/brand/
     - assets/sounds/
     - assets/photos/
+    - assets/photos/k/
   fonts:
     - family: Figtree
       fonts:

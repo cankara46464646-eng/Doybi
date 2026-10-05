@@ -469,7 +469,7 @@ class _DealTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
-    final img = s.photo(m.photo) != null ? m.photo : r.cover;
+    final img = s.hasPhoto(m.photo) ? m.photo : r.cover;
     return SizedBox(
       width: 156,
       child: Material(
@@ -480,7 +480,7 @@ class _DealTile extends StatelessWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id))),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Stack(children: [
-              s.photo(img) != null
+              s.hasPhoto(img)
                   ? PhotoBox(img, width: 156, height: 100, radius: 0)
                   : Container(width: 156, height: 100, color: r.bg, alignment: Alignment.center, child: Text(r.initials, style: display(26, color: r.fg))),
               Positioned(
@@ -566,7 +566,7 @@ class _BannerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final bg = Color(b.swatch);
-    final hasPhoto = s.photo(b.photo) != null;
+    final hasPhoto = s.hasPhoto(b.photo);
     final dark = hasPhoto || bg.computeLuminance() < 0.4;
     final fg = dark ? Colors.white : C.ink;
     Restaurant? r;
@@ -581,7 +581,7 @@ class _BannerCard extends StatelessWidget {
         child: Ink(
           decoration: hasPhoto
               ? BoxDecoration(
-                  image: DecorationImage(image: MemoryImage(s.photo(b.photo)!), fit: BoxFit.cover),
+                  image: DecorationImage(image: photoImage(context, b.photo, width: 340)!, fit: BoxFit.cover, filterQuality: FilterQuality.low),
                 )
               : null,
           child: InkWell(
@@ -712,7 +712,7 @@ class _Thumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     const size = 88.0;
-    final id = s.photo(r.cover) != null ? r.cover : (s.photo(r.logo) != null ? r.logo : null);
+    final id = s.hasPhoto(r.cover) ? r.cover : (s.hasPhoto(r.logo) ? r.logo : null);
     final img = id != null
         ? PhotoBox(id, width: size, height: size, radius: 16)
         : MiniAvatar(r.initials, r.bg, r.fg, size: size, square: true);
@@ -730,7 +730,7 @@ class _Thumb extends StatelessWidget {
             child: Container(
               width: 28,
               height: 28,
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.94), shape: BoxShape.circle),
               child: Icon(fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 17, color: fav ? C.red : C.ink),
             ),
           ),

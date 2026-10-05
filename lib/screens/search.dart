@@ -123,7 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id)));
                         },
                         child: Row(children: [
-                          if (s.photo(m.photo) != null) PhotoBox(m.photo, width: 52, height: 52, radius: 12) else Avatar(r, size: 52),
+                          if (s.hasPhoto(m.photo)) PhotoBox(m.photo, width: 52, height: 52, radius: 12) else Avatar(r, size: 52),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

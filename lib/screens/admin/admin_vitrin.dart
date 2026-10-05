@@ -128,7 +128,7 @@ class AdminVitrin extends StatelessWidget {
                         b.photo = r.isEmpty ? null : r;
                         s.touch();
                       },
-                      child: b.photo != null && s.photo(b.photo) != null
+                      child: b.photo != null && s.hasPhoto(b.photo)
                           ? PhotoBox(b.photo, width: 48, height: 40, radius: 8)
                           : Container(
                               width: 48,

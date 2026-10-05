@@ -115,13 +115,13 @@ class _CampaignCard extends StatelessWidget {
         padding: EdgeInsets.zero,
         clip: true,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (s.photo(c.photo) != null) PhotoBox(c.photo, height: 150, width: double.infinity, radius: 0),
+          if (s.hasPhoto(c.photo)) PhotoBox(c.photo, height: 150, width: double.infinity, radius: 0),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            color: s.photo(c.photo) != null ? Colors.white : (sold ? C.line : (later ? C.greenTint : C.tint)),
+            color: s.hasPhoto(c.photo) ? Colors.white : (sold ? C.line : (later ? C.greenTint : C.tint)),
             child: Row(children: [
               const SizedBox(width: 16),
-              if (s.photo(c.photo) == null) ...[
+              if (!s.hasPhoto(c.photo)) ...[
                 Icon(Icons.lunch_dining, size: 46, color: sold ? C.muted : (later ? C.greenInk : C.red)),
                 const SizedBox(width: 14),
               ] else

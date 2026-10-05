@@ -83,7 +83,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       _keys.putIfAbsent(c, () => GlobalKey());
     }
     final t = s.now;
-    final hasCover = s.photo(r.cover) != null;
+    final hasCover = s.hasPhoto(r.cover);
 
     return Scaffold(
       appBar: AppBar(title: Text(r.name, style: display(22)), actions: [
@@ -351,7 +351,7 @@ class _ItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              if (s.photo(m.photo) != null) ...[
+              if (s.hasPhoto(m.photo)) ...[
                 PhotoBox(m.photo, width: 64, height: 64, radius: 12),
                 const SizedBox(width: 8),
               ],
@@ -382,7 +382,7 @@ class _FeaturedItem extends StatelessWidget {
       child: Dim(
         dim: !m.available,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (s.photo(m.photo) != null)
+          if (s.hasPhoto(m.photo))
             SizedBox(
               height: 170,
               child: Stack(fit: StackFit.expand, children: [

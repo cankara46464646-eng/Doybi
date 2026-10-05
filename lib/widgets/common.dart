@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import 'photo.dart';
 
 class Avatar extends StatelessWidget {
   final Restaurant r;
@@ -13,9 +14,12 @@ class Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bytes = r.logo == null ? null : AppScope.of(context).photo(r.logo);
-    if (bytes != null) {
-      return ClipOval(child: Image.memory(bytes, width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true, cacheWidth: (size * 3).round()));
+    final s = AppScope.of(context);
+    if (s.hasPhoto(r.logo)) {
+      final img = photoImage(context, r.logo, width: size);
+      if (img != null) {
+        return ClipOval(child: Image(image: img, width: size, height: size, fit: BoxFit.cover, gaplessPlayback: true, filterQuality: FilterQuality.low));
+      }
     }
     return MiniAvatar(r.initials, r.bg, r.fg, size: size);
   }

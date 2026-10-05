@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -201,9 +200,6 @@ class AppState extends ChangeNotifier {
     seedOtherReservations(ikram, now);
     ikramDay = today;
   }
-
-  /// Kaydetmeden ekranı yenile.
-  void _refresh() => super.notifyListeners();
 
   @override
   void notifyListeners() {
@@ -443,22 +439,8 @@ class AppState extends ChangeNotifier {
   // ---------- fotoğraflar ----------
   final Map<String, Uint8List> photos = {};
 
-  final Set<String> _assetLoading = {};
-
-  /// Fotoğrafın baytları. "a:isim" kimlikleri uygulamayla gelen hazır görsellerdir
-  /// (assets/photos/isim.jpg); ilk istendiğinde yüklenir, hazır olunca ekran yenilenir.
-  Uint8List? photo(String? id) {
-    if (id == null || id.isEmpty) return null;
-    final b = photos[id];
-    if (b != null || !id.startsWith('a:')) return b;
-    if (_assetLoading.add(id)) {
-      rootBundle.load('assets/photos/${id.substring(2)}.jpg').then((d) {
-        photos[id] = d.buffer.asUint8List(d.offsetInBytes, d.lengthInBytes);
-        _refresh();
-      }).catchError((_) {});
-    }
-    return null;
-  }
+  /// Kullanıcının eklediği fotoğrafın baytları (hazır görseller dosyadan okunur, burada yoktur).
+  Uint8List? photo(String? id) => id == null || id.isEmpty ? null : photos[id];
 
   /// Fotoğraf var mı (hazır görseller yüklenmemiş olsa da var sayılır).
   bool hasPhoto(String? id) => id != null && id.isNotEmpty && (id.startsWith('a:') || photos.containsKey(id));

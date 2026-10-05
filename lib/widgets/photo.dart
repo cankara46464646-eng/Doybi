@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +62,21 @@ Future<String?> pickPhoto(BuildContext context, {String title = 'Fotoğraf ekle'
   }
 }
 
+/// Fotoğraf kaynağı. Uygulamayla gelen hazır görseller ("a:isim") dosyadan okunur;
+/// küçük gösterimlerde 320 piksellik küçük sürümü kullanılır (çözmesi çok daha hızlı).
+ImageProvider? photoImage(BuildContext context, String? id, {double? width}) {
+  if (id == null || id.isEmpty) return null;
+  final mq = MediaQuery.of(context);
+  final px = (width != null && width.isFinite ? width : mq.size.width) * mq.devicePixelRatio;
+  if (id.startsWith('a:')) {
+    final name = id.substring(2);
+    return AssetImage(px <= 420 ? 'assets/photos/k/$name.jpg' : 'assets/photos/$name.jpg');
+  }
+  final bytes = AppScope.read(context).photo(id);
+  if (bytes == null) return null;
+  return ResizeImage.resizeIfNeeded(math.min(1000, (px * 1.5).round()), null, MemoryImage(bytes));
+}
+
 /// Kayıtlı fotoğrafı gösterir; yoksa [placeholder].
 class PhotoBox extends StatelessWidget {
   final String? id;
@@ -75,27 +89,28 @@ class PhotoBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bytes = AppScope.of(context).photo(id);
-    if (bytes == null) return placeholder ?? SizedBox(width: width, height: height);
-    final dpr = MediaQuery.of(context).devicePixelRatio;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: Image.memory(
-        bytes,
-        width: width,
-        height: height,
-        fit: fit,
-        gaplessPlayback: true,
-        cacheWidth: math.min(1000, ((width != null && width!.isFinite ? width! : MediaQuery.of(context).size.width) * dpr * 1.8).round()),
-      ),
+    // Kullanıcının eklediği fotoğraflar değişince yenilensin diye bağımlılık kur.
+    final s = AppScope.of(context);
+    final img = s.hasPhoto(id) ? photoImage(context, id, width: width) : null;
+    if (img == null) return placeholder ?? SizedBox(width: width, height: height);
+    final pic = Image(
+      image: img,
+      width: width,
+      height: height,
+      fit: fit,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.low,
+      frameBuilder: (context, child, frame, sync) => sync || frame != null ? child : Container(width: width, height: height, color: C.line),
     );
+    if (radius == 0) return pic;
+    return ClipRRect(borderRadius: BorderRadius.circular(radius), child: pic);
   }
 }
 
 /// Tam ekran fotoğraf.
 void showPhoto(BuildContext context, String id) {
-  final bytes = AppScope.read(context).photo(id);
-  if (bytes == null) return;
+  final img = photoImage(context, id, width: 2000);
+  if (img == null) return;
   Navigator.push(
     context,
     MaterialPageRoute(
@@ -103,7 +118,7 @@ void showPhoto(BuildContext context, String id) {
       builder: (_) => Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
-        body: Center(child: InteractiveViewer(child: Image.memory(bytes))),
+        body: Center(child: InteractiveViewer(child: Image(image: img))),
       ),
     ),
   );
@@ -121,7 +136,7 @@ class PhotoField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
-    final has = s.photo(id) != null;
+    final has = s.hasPhoto(id);
     return Material(
       color: C.line,
       borderRadius: BorderRadius.circular(18),
@@ -248,4 +263,3 @@ Future<void> openMap(BuildContext context, {String? query, double? lat, double? 
   if (!ok && context.mounted) snack(context, 'Harita açılamadı.');
 }
 
-Uint8List? photoBytes(BuildContext context, String? id) => AppScope.read(context).photo(id);
