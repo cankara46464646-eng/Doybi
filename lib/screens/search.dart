@@ -131,7 +131,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               Text('${r.name} · ${s.zoneFor(r)!.eta} dk${m.available ? '' : ' · bugün tükendi'}', style: body(13, color: C.muted)),
                             ]),
                           ),
-                          Text(tl(m.price), style: body(15, weight: FontWeight.w800)),
+                          PriceText(m, badge: false),
                         ]),
                       ),
                     )

@@ -8,6 +8,7 @@ import 'admin/admin_shell.dart';
 import 'apply.dart';
 import 'business/business_shell.dart';
 import 'coupons.dart';
+import 'home.dart';
 import 'invite.dart';
 import 'shell.dart';
 import 'verify.dart';
@@ -182,6 +183,8 @@ class AccountScreen extends StatelessWidget {
               LinkRow(Icons.confirmation_number_outlined, 'Kuponlarım', meta: '$usable kupon', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen()))),
               const Divider(color: C.line, height: 1),
               LinkRow(Icons.receipt_long_outlined, 'Siparişlerim', onTap: () => shellTab.value = 3),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.favorite_border_rounded, 'Favori restoranlarım', meta: '${s.favorites.length}', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
             ]),
           ),
           const SectionLabel('Bildirimler'),
@@ -280,6 +283,31 @@ class TestSettingsScreen extends StatelessWidget {
           Text('Restoran paneli ve yönetim bu telefondan açılır; gerçek kullanımda her biri kendi hesabıyla girer.', style: body(13, color: C.muted)),
         ],
       ),
+    );
+  }
+}
+
+
+class FavoritesScreen extends StatelessWidget {
+  const FavoritesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final list = s.favRestaurants;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Favorilerim')),
+      body: list.isEmpty
+          ? const Center(
+              child: EmptyState(icon: Icons.favorite_border_rounded, title: 'Henüz favorin yok', text: 'Restoran kartındaki kalbe dokununca burada görürsün.'),
+            )
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              children: [
+                for (final r in list)
+                  if (s.zoneFor(r) != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: RestaurantCard(r)),
+              ],
+            ),
     );
   }
 }

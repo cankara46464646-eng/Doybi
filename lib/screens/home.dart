@@ -86,6 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (again.length == 6) break;
     }
     final a = s.address;
+    final deals = s.dealItems;
+    final favs = s.favRestaurants.where((r) => s.zoneFor(r) != null).toList();
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -261,6 +263,56 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // ---------------- fırsat ürünleri ----------------
+            if (s.firsatWindow && deals.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 8, 10),
+                  child: Row(children: [
+                    const Icon(Icons.bolt_rounded, color: C.red),
+                    const SizedBox(width: 4),
+                    Expanded(child: Text('Fırsat ürünleri', style: display(20))),
+                    const FirsatTimer(size: 13),
+                    TextButton(onPressed: () => showFirsatSheet(context), child: const Text('Tümü')),
+                  ]),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 196,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: deals.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (context, i) => _DealTile(deals[i].$1, deals[i].$2),
+                  ),
+                ),
+              ),
+            ],
+
+            // ---------------- favoriler ----------------
+            if (favs.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 16, 10),
+                  child: Text('Favorilerin', style: display(20)),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 64,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: favs.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) => _AgainCard(favs[i]),
+                  ),
+                ),
+              ),
+            ],
+
             // ---------------- yeniden sipariş ----------------
             if (again.isNotEmpty) ...[
               SliverToBoxAdapter(
@@ -401,6 +453,59 @@ class _FilterChip extends StatelessWidget {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             if (selected) ...[const Icon(Icons.check_rounded, size: 16, color: Colors.white), const SizedBox(width: 4)],
             Text(label, style: body(13, color: selected ? Colors.white : C.ink, weight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keşfet'teki küçük fırsat ürünü kartı.
+class _DealTile extends StatelessWidget {
+  final MenuItem m;
+  final Restaurant r;
+  const _DealTile(this.m, this.r);
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final img = s.photo(m.photo) != null ? m.photo : r.cover;
+    return SizedBox(
+      width: 156,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Stack(children: [
+              s.photo(img) != null
+                  ? PhotoBox(img, width: 156, height: 100, radius: 0)
+                  : Container(width: 156, height: 100, color: r.bg, alignment: Alignment.center, child: Text(r.initials, style: display(26, color: r.fg))),
+              Positioned(
+                left: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.circular(6)),
+                  child: Text('%${s.dealPct(m)} İNDİRİM', style: body(10.5, color: Colors.white, weight: FontWeight.w800, height: 1.2)),
+                ),
+              ),
+            ]),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(m.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, weight: FontWeight.w800)),
+                Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: C.muted)),
+                const SizedBox(height: 2),
+                Row(children: [
+                  Text(tl(s.priceOf(m)), style: body(16, color: C.red, weight: FontWeight.w800)),
+                  const SizedBox(width: 6),
+                  Text(tl(m.price), style: body(12.5, color: C.muted, weight: FontWeight.w600).copyWith(decoration: TextDecoration.lineThrough)),
+                ]),
+              ]),
+            ),
           ]),
         ),
       ),
@@ -611,10 +716,27 @@ class _Thumb extends StatelessWidget {
     final img = id != null
         ? PhotoBox(id, width: size, height: size, radius: 16)
         : MiniAvatar(r.initials, r.bg, r.fg, size: size, square: true);
-    if (!month) return img;
+    final fav = s.isFav(r.id);
     return Stack(clipBehavior: Clip.none, children: [
       img,
       Positioned(
+        right: 4,
+        top: 4,
+        child: Semantics(
+          button: true,
+          label: fav ? 'Favorilerden çıkar' : 'Favorilere ekle',
+          child: GestureDetector(
+            onTap: () => s.toggleFav(r.id),
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
+              child: Icon(fav ? Icons.favorite_rounded : Icons.favorite_border_rounded, size: 17, color: fav ? C.red : C.ink),
+            ),
+          ),
+        ),
+      ),
+      if (month) Positioned(
         left: -4,
         top: -4,
         child: Container(

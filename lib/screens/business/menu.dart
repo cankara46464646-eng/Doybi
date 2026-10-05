@@ -67,7 +67,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           Flexible(child: Text(m.name, style: body(15, weight: FontWeight.w800))),
                           if (m.featured) ...[const SizedBox(width: 6), const Icon(Icons.star_rounded, size: 16, color: Color(0xFFE79A00))],
                         ]),
-                        Text('${tl(m.price)} · ${m.groups.isEmpty ? 'Seçenek yok' : '${m.groups.length} seçenek grubu'}', style: body(13, color: C.muted)),
+                        Text('${tl(m.price)}${m.deal != null ? ' · fırsatta ${tl(m.deal!)}' : ''} · ${m.groups.isEmpty ? 'Seçenek yok' : '${m.groups.length} seçenek grubu'}', style: body(13, color: m.deal != null ? C.red : C.muted)),
                       ]),
                     ),
                     if (s.photo(m.photo) != null) ...[PhotoBox(m.photo, width: 48, height: 48, radius: 10), const SizedBox(width: 8)] else ...[
@@ -111,6 +111,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   late bool _available = widget.item?.available ?? true;
   late bool _featured = widget.item?.featured ?? false;
   late String? _photo = widget.item?.photo;
+  late int? _deal = widget.item?.deal;
   late final List<OptGroup> _groups = [
     for (final g in widget.item?.groups ?? <OptGroup>[]) OptGroup(g.name, [for (final o in g.opts) Opt(o.label, o.add)], required: g.required),
   ];
@@ -197,6 +198,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       ..available = _available
       ..featured = _featured
       ..photo = _photo
+      ..deal = _deal != null && _deal! < _price ? _deal : null
       ..groups = List.of(_groups);
     s.saveItem(widget.r, m);
     setState(() {
@@ -261,7 +263,19 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
           TextField(controller: _newCat, onChanged: (_) => _dirty(), decoration: const InputDecoration(hintText: 'ya da yeni kategori yaz')),
           const SizedBox(height: 12),
           Box(
-            child: StepRow('Fiyat', tl(_price), sub: 'Dükkândaki fiyatınla aynı olmalı', onDec: _price > 5 ? () => setState(() { _price -= 5; _saved = false; }) : null, onInc: () => setState(() { _price += 5; _saved = false; })),
+            child: Column(children: [
+              StepRow('Fiyat', tl(_price), sub: 'Dükkândaki fiyatınla aynı olmalı', onDec: _price > 5 ? () => setState(() { _price -= 5; _saved = false; }) : null, onInc: () => setState(() { _price += 5; _saved = false; })),
+              const Divider(color: C.line),
+              SwitchRow('Fırsat Saati\'nde indirimli sat', sub: 'Müşteri eski fiyatı üstü çizili, yeni fiyatı kırmızı görür', value: _deal != null, onChanged: (v) => setState(() {
+                    _deal = v ? (_price * 0.8 / 5).round() * 5 : null;
+                    _saved = false;
+                  })),
+              if (_deal != null)
+                StepRow('Fırsat fiyatı', tl(_deal!),
+                    sub: '%${((_price - _deal!) * 100 / _price).round()} indirim · indirimi restoran karşılar',
+                    onDec: _deal! > 5 ? () => setState(() { _deal = _deal! - 5; _saved = false; }) : null,
+                    onInc: _deal! + 5 < _price ? () => setState(() { _deal = _deal! + 5; _saved = false; }) : null),
+            ]),
           ),
           const SectionLabel('Seçenekler'),
           Text('Müşteri sepete eklerken seçer', style: body(13, color: C.muted)),

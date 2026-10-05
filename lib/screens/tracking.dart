@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../data/models.dart';
+import '../logic/location.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -74,13 +77,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   const SizedBox(height: 12),
                 ],
                 if (!bad && o.status != OrderStatus.bekliyor) ..._progress(context, o),
+                if (o.status == OrderStatus.hazirlaniyor || o.status == OrderStatus.yolda) ...[
+                  _RouteMap(o),
+                  const SizedBox(height: 12),
+                ],
                 _payCard(o),
                 const SizedBox(height: 12),
-                if (!bad && o.status != OrderStatus.bekliyor && o.status != OrderStatus.teslim) ...[
+                if (!bad && o.status != OrderStatus.bekliyor && o.status != OrderStatus.teslim && (s.restaurant(o.restaurantId)?.phone ?? '').isNotEmpty) ...[
                   Row(children: [
-                    Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: o.status == OrderStatus.yolda && (s.restaurant(o.restaurantId)?.phone ?? '').isNotEmpty ? () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Kuryenin numarası') : null)),
-                    const SizedBox(width: 10),
-                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: (s.restaurant(o.restaurantId)?.phone ?? '').isEmpty ? null : () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Restoranın numarası'))),
+                    if (o.status == OrderStatus.yolda) ...[
+                      Expanded(child: BigButton('Kuryeyi ara', outlined: true, icon: Icons.call, onPressed: () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Kuryenin numarası'))),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(child: BigButton('Restoranı ara', outlined: true, icon: Icons.storefront, onPressed: () => callPhone(context, s.restaurant(o.restaurantId)?.phone, who: 'Restoranın numarası'))),
                   ]),
                   const SizedBox(height: 12),
                 ],
@@ -311,5 +320,71 @@ class _TrackingScreenState extends State<TrackingScreen> {
       case OrderStatus.edilemedi:
         return 'Restoranın kuryesi siparişi teslim edemedi.';
     }
+  }
+}
+
+
+/// Restoran ile teslimat adresi arasında harita; yoldayken kuryenin tahmini konumu.
+class _RouteMap extends StatelessWidget {
+  final Order o;
+  const _RouteMap(this.o);
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final r = s.restaurant(o.restaurantId);
+    if (r?.lat == null || r?.lng == null || o.lat == null || o.lng == null) return const SizedBox.shrink();
+    final a = LatLng(r!.lat!, r.lng!);
+    final b = LatLng(o.lat!, o.lng!);
+    final km = distanceKm(LatLngPoint(a.latitude, a.longitude), LatLngPoint(b.latitude, b.longitude));
+    final travel = (km * 4 + 6).clamp(8, 30); // dakika
+    Widget pin(IconData icon, Color bg) => Container(
+          decoration: BoxDecoration(color: bg, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 3), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
+          child: Icon(icon, color: Colors.white, size: 18),
+        );
+    return EverySecond(builder: (context) {
+      LatLng? courier;
+      if (o.status == OrderStatus.yolda && o.roadAt != null) {
+        final t = (s.now.difference(o.roadAt!).inSeconds / (travel * 60)).clamp(0.0, 0.95);
+        courier = LatLng(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t);
+      }
+      return Container(
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SizedBox(
+            height: 190,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCameraFit: CameraFit.bounds(bounds: LatLngBounds(a, b), padding: const EdgeInsets.all(48)),
+                interactionOptions: const InteractionOptions(flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag),
+              ),
+              children: [
+                TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', userAgentPackageName: 'app.doybi', maxZoom: 19),
+                PolylineLayer(polylines: [Polyline(points: [a, b], color: C.red.withValues(alpha: 0.7), strokeWidth: 4)]),
+                MarkerLayer(markers: [
+                  Marker(point: a, width: 38, height: 38, child: pin(Icons.storefront, C.ink)),
+                  Marker(point: b, width: 38, height: 38, child: pin(Icons.home_rounded, C.red)),
+                  if (courier != null) Marker(point: courier, width: 42, height: 42, child: pin(Icons.delivery_dining, C.green)),
+                ]),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            child: Row(children: [
+              Icon(o.status == OrderStatus.yolda ? Icons.delivery_dining : Icons.soup_kitchen_outlined, color: C.red, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  o.status == OrderStatus.yolda ? 'Kurye yolda · ${kmText(km)} · konum tahminidir' : '${r.name} siparişini hazırlıyor · ${kmText(km)} uzakta',
+                  style: body(13.5, weight: FontWeight.w700),
+                ),
+              ),
+            ]),
+          ),
+        ]),
+      );
+    });
   }
 }

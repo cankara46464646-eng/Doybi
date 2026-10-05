@@ -27,3 +27,6 @@ dondurma2.jpg  https://www.pexels.com/photo/29031331/
 helva.jpg  https://www.pexels.com/photo/37336729/
 afis_durum.jpg  https://www.pexels.com/photo/11286814/
 afis_dondurma.jpg  https://www.pexels.com/photo/34267736/
+su.jpg  https://www.pexels.com/photo/11860559/
+kola.jpg  https://www.pexels.com/photo/8879617/
+salgam.jpg  https://www.pexels.com/photo/5946647/

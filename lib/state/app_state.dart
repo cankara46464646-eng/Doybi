@@ -13,7 +13,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 5;
+const _dataVersion = 6;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -29,6 +29,7 @@ class AppState extends ChangeNotifier {
   bool ikramNotify = false;
   List<String> recentSearches = ['lahmacun', 'adana dürüm', 'künefe'];
   List<String> wallet = []; // eklenmiş kupon kodları
+  List<String> favorites = []; // favori restoranlar
   String? chosenCoupon;
   String? cartRestaurantId;
   final List<CartLine> cart = [];
@@ -93,8 +94,8 @@ class AppState extends ChangeNotifier {
         final j = jsonDecode(raw) as Map<String, dynamic>;
         if (j['v'] == _dataVersion) {
           _fromJson(j);
-        } else if (j['v'] == 4) {
-          // 0.3 öncesi: veriler korunur, hazır yemek fotoğrafları eklenir
+        } else if (j['v'] == 4 || j['v'] == 5) {
+          // önceki 0.3: veriler korunur, hazır fotoğraflar, logolar ve fırsat fiyatları eklenir
           _fromJson(j);
           _fillDemoPhotos();
         } else {
@@ -173,10 +174,12 @@ class AppState extends ChangeNotifier {
       final d = demo[r.id];
       if (d == null) continue;
       r.cover ??= d.cover;
+      r.logo ??= d.logo;
       for (final m in r.menu) {
-        if (m.photo != null) continue;
         for (final dm in d.menu) {
-          if (dm.id == m.id) m.photo = dm.photo;
+          if (dm.id != m.id) continue;
+          m.photo ??= dm.photo;
+          m.deal ??= dm.deal;
         }
       }
     }
@@ -232,6 +235,7 @@ class AppState extends ChangeNotifier {
         'recent': recentSearches,
         'wallet': wallet,
         'chosen': chosenCoupon,
+        'fav': favorites,
         'firsat': {'on': firsatOn, 'tiers': firsatTiers, 'end': firsatEndMin, 'hidden': firsatHiddenDay},
         'cartR': cartRestaurantId,
         'cart': cart.map((l) => l.toJson()).toList(),
@@ -275,6 +279,7 @@ class AppState extends ChangeNotifier {
     recentSearches = List<String>.from(j['recent'] ?? const []);
     wallet = List<String>.from(j['wallet'] ?? const []);
     chosenCoupon = j['chosen'];
+    favorites = List<String>.from(j['fav'] ?? const []);
     if (j['firsat'] is Map) {
       final f = m(j['firsat']);
       firsatOn = f['on'] ?? true;
@@ -632,7 +637,7 @@ class AppState extends ChangeNotifier {
       opts.add(g.opts.first.label);
       add += g.opts.first.add;
     }
-    return addLine(r, CartLine(itemId: i.id, name: i.name, unit: i.price + add, optAdd: add, qty: 1, opts: opts.join(' · ')));
+    return addLine(r, CartLine(itemId: i.id, name: i.name, unit: priceOf(i) + add, optAdd: add, qty: 1, opts: opts.join(' · ')));
   }
 
   void incLine(CartLine l) {
@@ -676,7 +681,7 @@ class AppState extends ChangeNotifier {
         missing++;
         continue;
       }
-      cart.add(CartLine(itemId: i.id, name: i.name, unit: i.price + l.optAdd, optAdd: l.optAdd, qty: l.qty, opts: l.opts, note: l.note));
+      cart.add(CartLine(itemId: i.id, name: i.name, unit: priceOf(i) + l.optAdd, optAdd: l.optAdd, qty: l.qty, opts: l.opts, note: l.note));
     }
     if (cart.isEmpty) cartRestaurantId = null;
     notifyListeners();
@@ -733,6 +738,16 @@ class AppState extends ChangeNotifier {
     return chk.ok ? chk.discount : 0;
   }
 
+  // ---------- favoriler ----------
+  bool isFav(String rid) => favorites.contains(rid);
+
+  void toggleFav(String rid) {
+    if (!favorites.remove(rid)) favorites.insert(0, rid);
+    notifyListeners();
+  }
+
+  List<Restaurant> get favRestaurants => favorites.map((id) => restaurant(id)).whereType<Restaurant>().toList();
+
   // ---------- Fırsat Saati ----------
   DateTime get firsatEnd {
     final t = now;
@@ -748,6 +763,33 @@ class AppState extends ChangeNotifier {
         o.createdAt.year == t.year &&
         o.createdAt.month == t.month &&
         o.createdAt.day == t.day);
+  }
+
+  /// Fırsat Saati'nin saat aralığı sürüyor mu? (Fırsat ürünleri bu sürede indirimli satılır.)
+  bool get firsatWindow => firsatOn && now.isBefore(firsatEnd);
+
+  /// Ürünün şu anki fiyatı (fırsattaysa fırsat fiyatı).
+  int priceOf(MenuItem m) => firsatWindow && m.deal != null && m.deal! < m.price ? m.deal! : m.price;
+
+  bool onDeal(MenuItem m) => priceOf(m) < m.price;
+
+  /// Yüzde indirim (yuvarlanmış).
+  int dealPct(MenuItem m) => m.price == 0 ? 0 : ((m.price - priceOf(m)) * 100 / m.price).round();
+
+  /// Fırsat ürünleri: açık restoranlar önce, en büyük indirim önce.
+  List<(MenuItem, Restaurant)> get dealItems {
+    final out = <(MenuItem, Restaurant)>[];
+    for (final r in nearby) {
+      for (final m in r.menu) {
+        if (m.available && onDeal(m)) out.add((m, r));
+      }
+    }
+    out.sort((a, b) {
+      final o = (isOpen(a.$2) ? 0 : 1).compareTo(isOpen(b.$2) ? 0 : 1);
+      if (o != 0) return o;
+      return dealPct(b.$1).compareTo(dealPct(a.$1));
+    });
+    return out;
   }
 
   /// Fırsat Saati şu an geçerli mi (açık, saati geçmemiş, bugün kullanılmamış)?
@@ -774,7 +816,7 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
-  bool get firsatCardVisible => firsatLive && firsatHiddenDay != ymd(now);
+  bool get firsatCardVisible => firsatWindow && (firsatLive || dealItems.isNotEmpty) && firsatHiddenDay != ymd(now);
 
   void hideFirsatCard() {
     firsatHiddenDay = ymd(now);

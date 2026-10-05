@@ -86,7 +86,16 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
     final hasCover = s.photo(r.cover) != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(r.name, style: display(22))),
+      appBar: AppBar(title: Text(r.name, style: display(22)), actions: [
+        IconButton(
+          tooltip: s.isFav(r.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
+          onPressed: () {
+            s.toggleFav(r.id);
+            snack(context, s.isFav(r.id) ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı');
+          },
+          icon: Icon(s.isFav(r.id) ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: s.isFav(r.id) ? C.red : C.ink),
+        ),
+      ]),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
         children: [
@@ -334,7 +343,7 @@ class _ItemRow extends StatelessWidget {
                     if (m.desc.isNotEmpty) Text(m.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
                     const SizedBox(height: 4),
                     Row(children: [
-                      Text(tl(m.price), style: body(15, weight: FontWeight.w800)),
+                      Flexible(child: PriceText(m)),
                       if (!m.available) ...[const SizedBox(width: 8), const Pill('Bugün tükendi', bg: C.tint, fg: C.redDeep, size: 11)],
                       if (m.available && m.groups.isNotEmpty) ...[const SizedBox(width: 8), Text('seçenekli', style: body(12, color: C.muted))],
                     ]),
@@ -391,7 +400,7 @@ class _FeaturedItem extends StatelessWidget {
                   Text(m.name, style: body(16, weight: FontWeight.w800)),
                   if (m.desc.isNotEmpty) Text(m.desc, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
                   const SizedBox(height: 4),
-                  Text(tl(m.price), style: body(16, weight: FontWeight.w800)),
+                  PriceText(m, size: 16),
                 ]),
               ),
               const SizedBox(width: 8),
