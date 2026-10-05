@@ -114,20 +114,108 @@ Future<void> showFirsatSheet(BuildContext context) => showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF3F1F0),
       clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
-        initialChildSize: 0.62,
-        minChildSize: 0.35,
-        maxChildSize: 0.94,
+        initialChildSize: 0.86,
+        minChildSize: 0.4,
+        maxChildSize: 0.96,
         builder: (ctx, controller) => _FirsatSheet(controller),
       ),
     );
 
-/// Saat : dakika : saniye kutuları.
-class _CountBoxes extends StatelessWidget {
-  const _CountBoxes();
+/// Üstteki afiş: Doybi kırmızısı, silik yemek desenleri ve katmanlı başlık.
+class _Hero extends StatelessWidget {
+  const _Hero();
+
+  @override
+  Widget build(BuildContext context) {
+    const icons = [
+      (Icons.kebab_dining_outlined, 0.04, 0.10, 54.0, -0.3),
+      (Icons.local_pizza_outlined, 0.80, 0.08, 46.0, 0.4),
+      (Icons.icecream_outlined, 0.88, 0.62, 58.0, -0.2),
+      (Icons.local_offer_outlined, 0.10, 0.66, 44.0, 0.5),
+      (Icons.bakery_dining_outlined, 0.30, 0.80, 40.0, -0.5),
+      (Icons.percent_rounded, 0.66, 0.78, 38.0, 0.2),
+      (Icons.lunch_dining_outlined, 0.22, 0.30, 30.0, 0.3),
+      (Icons.ramen_dining_outlined, 0.70, 0.30, 32.0, -0.4),
+    ];
+    return SizedBox(
+      height: 190,
+      child: LayoutBuilder(builder: (context, c) {
+        final w = c.maxWidth;
+        return Stack(children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [C.logoRed, Color.lerp(C.logoRed, const Color(0xFFFF8A00), 0.45)!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
+          for (final (icon, x, y, size, turn) in icons)
+            Positioned(
+              left: x * w,
+              top: y * 190,
+              child: Transform.rotate(angle: turn, child: Icon(icon, size: size, color: Colors.white.withValues(alpha: 0.18))),
+            ),
+          Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              _LayeredTitle('FIRSAT'),
+              _LayeredTitle('SAATİ'),
+            ]),
+          ),
+          Positioned(
+            left: w / 2 + 92,
+            top: 26,
+            child: Transform.rotate(angle: 0.3, child: const Icon(Icons.bolt_rounded, size: 40, color: C.saffron)),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              elevation: 2,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => Navigator.pop(context),
+                child: const SizedBox(width: 40, height: 40, child: Icon(Icons.close_rounded, color: C.ink)),
+              ),
+            ),
+          ),
+        ]);
+      }),
+    );
+  }
+}
+
+class _LayeredTitle extends StatelessWidget {
+  final String text;
+  const _LayeredTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final st = display(50, color: Colors.white, weight: FontWeight.w700, height: 0.95);
+    return Stack(children: [
+      for (var i = 4; i >= 1; i--)
+        Transform.translate(
+          offset: Offset(i * 2.0, i * 2.0),
+          child: Text(text, style: st.copyWith(color: Colors.white.withValues(alpha: 0.10 + 0.06 * (4 - i)))),
+        ),
+      Text(text, style: st.copyWith(shadows: const [Shadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2))])),
+    ]);
+  }
+}
+
+/// Büyük geri sayım kutuları (SA : DK : SN).
+class _BigCount extends StatelessWidget {
+  const _BigCount();
 
   @override
   Widget build(BuildContext context) {
@@ -135,17 +223,27 @@ class _CountBoxes extends StatelessWidget {
       final s = AppScope.read(context);
       var left = s.firsatEnd.difference(s.now);
       if (left.isNegative) left = Duration.zero;
-      Widget box(int v) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-            decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(6)),
-            child: Text(v.toString().padLeft(2, '0'),
-                style: body(13, color: Colors.white, weight: FontWeight.w800, height: 1.1).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+      Widget box(int v, String unit) => Container(
+            width: 50,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.circular(12)),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(v.toString().padLeft(2, '0'),
+                  style: body(22, color: Colors.white, weight: FontWeight.w800, height: 1.05).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+              Text(unit, style: body(10.5, color: Colors.white, weight: FontWeight.w800, height: 1.1)),
+            ]),
           );
-      Widget dot() => Padding(padding: const EdgeInsets.symmetric(horizontal: 1.5), child: Text(':', style: body(13, color: C.red, weight: FontWeight.w800)));
+      Widget dot() => Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: Text(':', style: body(18, color: C.muted, weight: FontWeight.w800)));
       return Semantics(
         label: '${left.inHours} saat ${left.inMinutes % 60} dakika kaldı',
         child: ExcludeSemantics(
-          child: Row(mainAxisSize: MainAxisSize.min, children: [box(left.inHours), dot(), box(left.inMinutes % 60), dot(), box(left.inSeconds % 60)]),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            box(left.inHours, 'SA'),
+            dot(),
+            box(left.inMinutes % 60, 'DK'),
+            dot(),
+            box(left.inSeconds % 60, 'SN'),
+          ]),
         ),
       );
     });
@@ -164,127 +262,137 @@ class _FirsatSheet extends StatelessWidget {
     final has = s.firsatOn && tiers.isNotEmpty;
     final used = has && s.firsatUsedToday;
     final over = has && !s.now.isBefore(s.firsatEnd);
-    final sub = !has
-        ? 'Şu an aktif fırsat yok'
-        : used
-            ? 'Bugünkü indirimini kullandın, yarın yine burada'
-            : over
-                ? 'Bugünkü süre bitti, yarın yine burada'
-                : 'Acele et, Fırsat Saati bitmeden sipariş ver';
     return ListView(
       controller: controller,
       padding: EdgeInsets.zero,
       children: [
-        // üst: açık pembe alan
+        const _Hero(),
+        // geri sayım şeridi
         Container(
           color: _soft,
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: C.ring, borderRadius: BorderRadius.circular(99))),
-            ),
-            const SizedBox(height: 16),
-            Row(children: [
-              const _Bolt(size: 46),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(has ? firsatTitle(s) : 'Fırsat Saati', style: display(19)),
-                  const SizedBox(height: 2),
-                  Text(sub, style: body(13.5, color: C.red, weight: FontWeight.w700)),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: s.firsatLive
+              ? Row(children: [
+                  const _BigCount(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Sana özel indirim', style: body(14, color: C.red, weight: FontWeight.w800)),
+                      Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: '${tl(s.firsatMax)}${dativeNum(s.firsatMax)} kadar', style: body(14, weight: FontWeight.w800)),
+                          TextSpan(text: ' indirimi kaçırma!', style: body(14)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+                ])
+              : Text(
+                  !has
+                      ? 'Şu an aktif fırsat yok. Yeni fırsat açılınca burada görürsün.'
+                      : used
+                          ? 'Bugünkü Fırsat Saati indirimini kullandın. Yarın yine burada!'
+                          : over
+                              ? 'Bugünkü Fırsat Saati bitti. Yarın yine burada!'
+                              : '',
+                  style: body(14, weight: FontWeight.w700),
+                ),
+        ),
+        if (has)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Container(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: IntrinsicHeight(
+                child: Row(children: [
+                  for (var i = 0; i < tiers.length; i++) ...[
+                    if (i > 0) const VerticalDivider(width: 1, thickness: 1, color: C.line),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          FittedBox(child: Text('${tl(tiers[i][1])} indirim', style: body(17, color: C.red, weight: FontWeight.w800))),
+                          const SizedBox(height: 2),
+                          Text('Min. sepet\n${tl(tiers[i][0])}', textAlign: TextAlign.center, style: body(12, color: C.muted, height: 1.25)),
+                        ]),
+                      ),
+                    ),
+                  ],
                 ]),
               ),
-              if (s.firsatLive) ...[const SizedBox(width: 8), const _CountBoxes()],
-            ]),
-            if (has) ...[
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-                child: IntrinsicHeight(
-                  child: Row(children: [
-                    for (var i = 0; i < tiers.length; i++) ...[
-                      if (i > 0) const VerticalDivider(width: 1, thickness: 1, color: C.line),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                            FittedBox(child: Text('${tl(tiers[i][1])} indirim', style: body(17, color: C.red, weight: FontWeight.w800))),
-                            const SizedBox(height: 2),
-                            Text('Min. sipariş tutarı\n${tl(tiers[i][0])}', textAlign: TextAlign.center, style: body(12, color: C.muted, height: 1.25)),
-                          ]),
-                        ),
-                      ),
-                    ],
-                  ]),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Kod gerekmez, sepette kendiliğinden düşer · günde 1 sipariş · indirimi Doybi karşılar',
-                textAlign: TextAlign.center,
-                style: body(11.5, color: C.muted),
-              ),
-            ],
-          ]),
-        ),
-        // alt: restoranlar
+            ),
+          ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (open.isEmpty) Text('Şu an açık restoran yok.', style: body(14, color: C.muted)),
-            for (final Restaurant r in open) Padding(padding: const EdgeInsets.only(bottom: 20), child: BigRestaurantCard(r)),
-          ]),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+          child: Text('Katılan restoranlar', style: display(19)),
+        ),
+        for (final Restaurant r in open)
+          Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 12), child: _FirsatRestCard(r)),
+        if (open.isEmpty)
+          Padding(padding: const EdgeInsets.all(16), child: Text('Şu an açık restoran yok.', style: body(14, color: C.muted))),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
+          child: Text(
+            '* Fırsat Saati indirimi sepet tutarına göre kendiliğinden uygulanır, kod gerekmez. Günde 1 siparişte, bugün ${hhmm(s.firsatEndMin)}${dativeTime(s.firsatEndMin)} kadar geçerlidir. İndirimi Doybi karşılar; restoran menü fiyatının tamamını alır.',
+            textAlign: TextAlign.center,
+            style: body(12, color: C.muted),
+          ),
         ),
       ],
     );
   }
 }
 
-/// Büyük fotoğraflı restoran kartı.
-class BigRestaurantCard extends StatelessWidget {
+/// Fırsat penceresindeki restoran kartı: solda fotoğraf, sağda bilgi ve indirim etiketi.
+class _FirsatRestCard extends StatelessWidget {
   final Restaurant r;
-  const BigRestaurantCard(this.r, {super.key});
+  const _FirsatRestCard(this.r);
 
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final z = s.zoneFor(r)!;
-    final open = s.isOpen(r);
-    final cuisine = r.cuisine.split(' · ').first;
-    return InkWell(
+    return Material(
+      color: Colors.white,
+      elevation: 1.5,
+      shadowColor: Colors.black12,
       borderRadius: BorderRadius.circular(16),
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Dim(
-          dim: !open,
-          radius: 16,
-          child: SizedBox(
-            height: 170,
-            width: double.infinity,
-            child: s.photo(r.cover) != null
-                ? PhotoBox(r.cover, height: 170, width: double.infinity, radius: 16)
-                : Container(
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: r.bg, borderRadius: BorderRadius.circular(16)),
-                    child: Text(r.initials, style: display(44, color: r.fg)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+        child: SizedBox(
+          height: 108,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SizedBox(
+              width: 104,
+              child: s.photo(r.cover) != null
+                  ? PhotoBox(r.cover, width: 104, height: 108, radius: 0)
+                  : Container(color: r.bg, alignment: Alignment.center, child: Text(r.initials, style: display(30, color: r.fg))),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(16, weight: FontWeight.w800)),
+                  Text(r.cuisine, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
+                  Text('${z.eta} dk · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.circular(6)),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.south_rounded, size: 13, color: Colors.white),
+                      const SizedBox(width: 3),
+                      Text('${tl(s.firsatMax)}${dativeNum(s.firsatMax).toUpperCase().replaceAll('I', 'İ')} KADAR İNDİRİM',
+                          style: body(11, color: Colors.white, weight: FontWeight.w800, height: 1.2)),
+                    ]),
                   ),
-          ),
+                ]),
+              ),
+            ),
+          ]),
         ),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(17, weight: FontWeight.w800))),
-          const Icon(Icons.star_rounded, color: C.red, size: 18),
-          Text(' ${r.rating.toStringAsFixed(1).replaceAll('.', ',')}', style: body(14.5, weight: FontWeight.w800)),
-          Text(' (${r.ratingCount > 999 ? '1000+' : '${r.ratingCount}+'})', style: body(14, color: C.muted)),
-        ]),
-        Text(open ? '${z.eta} dk. · $cuisine' : s.closedText(r), style: body(14, color: open ? C.muted : C.redDeep)),
-        Row(children: [
-          const Icon(Icons.delivery_dining_outlined, size: 17, color: C.muted),
-          const SizedBox(width: 4),
-          Text(z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat', style: body(14, color: z.fee == 0 ? C.greenInk : C.muted, weight: FontWeight.w700)),
-          Text(' · Min. sepet ${tl(z.min)}', style: body(14, color: C.muted)),
-        ]),
-      ]),
+      ),
     );
   }
 }
