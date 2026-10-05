@@ -156,19 +156,15 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                     _stat(z.fee == 0 ? 'Ücretsiz' : tl(z.fee), 'Teslimat ücreti'),
                   ]),
                 ],
-                const SizedBox(height: 10),
-                Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                  Text('Teslimatta ödeme:', style: body(13, color: C.muted, weight: FontWeight.w700)),
-                  if (r.cash) const Pill('Nakit'),
-                  if (r.card) const Pill('Kart (POS)'),
-                ]),
-                const SizedBox(height: 6),
+                const Divider(color: C.line, height: 22),
+                _line(Icons.verified_outlined, 'Dükkân fiyatı · servis ücreti yok', color: C.greenInk),
+                _line(Icons.payments_outlined, 'Kapıda ödeme: ${[if (r.cash) 'nakit', if (r.card) 'kart (POS)'].join(' ya da ')}'),
                 Row(children: [
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => openMap(context, query: r.address, lat: r.lat, lng: r.lng),
-                      icon: const Icon(Icons.place_outlined, size: 18),
-                      label: Text(r.address, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => openMap(context, query: r.address, lat: r.lat, lng: r.lng),
+                      child: _line(Icons.place_outlined, r.address, color: C.red, trailing: const Icon(Icons.north_east_rounded, size: 16, color: C.red)),
                     ),
                   ),
                   if (r.phone.isNotEmpty)
@@ -177,10 +173,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          NoteBox('Dükkân fiyatı. Menüdeki fiyatlar dükkândakiyle aynı, teslimatı restoranın kendi kuryesi yapıyor.', icon: Icons.verified_outlined),
           if (r.promo != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             NoteBox(r.promo!, icon: Icons.local_offer_outlined, color: C.saffronTint, ink: C.saffronInk),
           ],
           if (!open) ...[
@@ -234,6 +228,16 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
             ),
     );
   }
+
+  Widget _line(IconData icon, String text, {Color color = C.ink, Widget? trailing}) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(children: [
+          Icon(icon, size: 18, color: color == C.ink ? C.muted : color),
+          const SizedBox(width: 8),
+          Flexible(child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(14, color: color, weight: FontWeight.w700))),
+          if (trailing != null) ...[const SizedBox(width: 4), trailing],
+        ]),
+      );
 
   List<Widget> _reviews(AppState s) {
     final rated = s.orders.where((o) => o.restaurantId == r.id && o.rating != null).toList();
@@ -358,19 +362,16 @@ class _FeaturedItem extends StatelessWidget {
       child: Dim(
         dim: !m.available,
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SizedBox(
-            height: s.photo(m.photo) != null ? 170 : 96,
-            child: Stack(fit: StackFit.expand, children: [
-              if (s.photo(m.photo) != null)
-                PhotoBox(m.photo, radius: 0)
-              else
-                ColoredBox(
-                  color: r.bg.computeLuminance() > 0.8 ? C.tint : r.bg.withValues(alpha: 0.14),
-                  child: Center(child: Icon(Icons.restaurant, size: 44, color: r.bg.computeLuminance() > 0.8 ? C.red : r.bg)),
-                ),
-              const Positioned(left: 12, top: 12, child: Pill('Çok satan', bg: C.saffron, size: 11)),
-            ]),
-          ),
+          if (s.photo(m.photo) != null)
+            SizedBox(
+              height: 170,
+              child: Stack(fit: StackFit.expand, children: [
+                PhotoBox(m.photo, radius: 0),
+                const Positioned(left: 12, top: 12, child: Pill('Çok satan', bg: C.saffron, size: 11)),
+              ]),
+            )
+          else
+            const Padding(padding: EdgeInsets.fromLTRB(14, 14, 14, 0), child: Align(alignment: Alignment.centerLeft, child: Pill('Çok satan', bg: C.saffron, size: 11))),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
