@@ -58,7 +58,7 @@
       margin-top: 18px; color: #fff; opacity: 0; animation: fade .5s 1.05s both;
       font: 600 18px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    #dots { margin-top: 26px; height: 8px; opacity: 0; animation: fade .4s 2.4s both; }
+    #dots { margin-top: 30px; height: 8px; opacity: 0; animation: fade .4s 2.4s both; }
     #dots i { display: inline-block; width: 7px; height: 7px; margin: 0 4px; border-radius: 50%; background: rgba(255,255,255,.75); animation: blink 1s infinite; }
     #dots i:nth-child(2) { animation-delay: .2s; }
     #dots i:nth-child(3) { animation-delay: .4s; }
@@ -75,7 +75,6 @@
       <img alt="" src="assets/assets/brand/letter-b.png" style="left:164.13px;top:0.97px;width:55.68px;height:74.16px">
       <img alt="" src="assets/assets/brand/letter-i.png" style="left:219.33px;top:1.22px;width:19.94px;height:72.95px">
     </div>
-    <div id="tag">Mahallenin lezzeti, dükkân fiyatına.</div>
     <div id="dots"><i></i><i></i><i></i></div>
   </div>
   <script>
@@ -83,7 +82,7 @@
     window.addEventListener('flutter-first-frame', function () {
       var s = document.getElementById('splash');
       if (!s) return;
-      var wait = Math.max(0, 1700 - (Date.now() - window.__doybiStart));
+      var wait = Math.max(0, 1400 - (Date.now() - window.__doybiStart));
       setTimeout(function () {
         s.style.opacity = '0';
         setTimeout(function () { s.remove(); }, 320);
