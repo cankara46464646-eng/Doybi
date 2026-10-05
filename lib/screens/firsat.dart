@@ -34,7 +34,7 @@ class FirsatTimer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EverySecond(builder: (context) {
+    return RepaintBoundary(child: EverySecond(builder: (context) {
       final s = AppScope.read(context);
       var left = s.firsatEnd.difference(s.now);
       if (left.isNegative) left = Duration.zero;
@@ -48,7 +48,7 @@ class FirsatTimer extends StatelessWidget {
           ),
         ),
       );
-    });
+    }));
   }
 }
 
@@ -76,7 +76,7 @@ class FirsatBar extends StatelessWidget {
     final s = AppScope.of(context);
     return Material(
       color: Colors.white,
-      elevation: 6,
+      elevation: 3,
       shadowColor: Colors.black26,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(

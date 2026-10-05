@@ -44,6 +44,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Görselleri kullanıcı kaydırmadan önce çöz; ilk kaydırmada takılma olmasın.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        final s = AppScope.read(context);
+        for (final r in s.nearby.take(8)) {
+          final img = photoImage(context, s.hasPhoto(r.cover) ? r.cover : r.logo, width: 88);
+          if (img != null) precacheImage(img, context);
+        }
+        for (final b in s.banners.where((b) => b.on)) {
+          final img = photoImage(context, b.photo, width: 340);
+          if (img != null) precacheImage(img, context);
+        }
+      });
+    });
     // Afişler kendiliğinden kayar.
     _auto = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || !_pages.hasClients) return;
@@ -162,7 +177,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(children: [
                     SizedBox(
                       height: 116,
-                      child: PageView.builder(
+                      child: RepaintBoundary(
+                        child: PageView.builder(
                         controller: _pages,
                         padEnds: banners.length == 1,
                         itemCount: banners.length,
@@ -171,6 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: EdgeInsets.only(left: i == 0 ? 16 : 5, right: i == banners.length - 1 ? 16 : 5),
                           child: _BannerCard(banners[i]),
                         ),
+                      ),
                       ),
                     ),
                     if (banners.length > 1) ...[
@@ -306,8 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 110)),
           ],
         ),
-        if (s.firsatCardVisible && s.cart.isEmpty && !dbgFlag('nobar'))
-          const Positioned(left: 12, right: 12, bottom: 10, child: FirsatBar()),
+        if (s.firsatCardVisible && s.cart.isEmpty)
+          const Positioned(left: 12, right: 12, bottom: 10, child: RepaintBoundary(child: FirsatBar())),
       ]),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: s.cart.isEmpty ? null : const CartFab(),
@@ -410,7 +427,6 @@ class _CouponTile extends StatelessWidget {
     return Material(
       color: C.saffron,
       shape: shape,
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
         customBorder: shape,
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen())),
