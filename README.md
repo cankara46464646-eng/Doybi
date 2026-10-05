@@ -4,6 +4,7 @@ Mahallenin lezzeti, dükkân fiyatına. Komisyonsuz, kapıda ödemeli yerel yeme
 
 - **Web sitesi:** https://cankara46464646-eng.github.io/Doybi/
 - **Uygulama (iPhone / tarayıcı):** https://cankara46464646-eng.github.io/Doybi/app/ — Safari'de aç, Paylaş → Ana Ekrana Ekle.
+- **İşletme girişi (restoran paneli):** https://cankara46464646-eng.github.io/Doybi/app/panel.html (deneme şifresi 1234, yönetim 4646). Uygulamada Hesabım'daki sürüm yazısına 5 kez dokunarak da açılır.
 - **Android APK:** https://github.com/cankara46464646-eng/Doybi/releases/latest/download/doybi.apk
 
 ## Sürüm 0.3 (deneme)
