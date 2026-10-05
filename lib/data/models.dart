@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../logic/pricing.dart' show customOver, isFreePeriod;
+
 DateTime? _dt(dynamic v) => v == null ? null : DateTime.fromMillisecondsSinceEpoch(v as int);
 int? _ms(DateTime? d) => d?.millisecondsSinceEpoch;
 Map<String, dynamic> _m(dynamic v) => Map<String, dynamic>.from(v as Map);
@@ -841,7 +843,7 @@ class Subscription {
   final String restaurantId;
   List<int> history; // tamamlanmış dönemlerin teslim sayıları
   int baseNow; // bu dönem uygulama dışında (önceden) teslim edilen sipariş (deneme verisi)
-  int fee; // bu dönemin ücreti (kuruş, KDV hariç); ilk ay 0
+  int fee; // bu dönemin ücreti (kuruş, KDV hariç); ücretsiz dönemde 0
   String periodStart;
   String periodEnd;
   int daysLeft;
@@ -869,6 +871,15 @@ class Subscription {
   }) : bills = bills ?? [];
 
   bool get firstPeriod => history.isEmpty;
+
+  /// Kaçıncı dönemde (1'den başlar).
+  int get periodNo => history.length + 1;
+
+  /// İlk 3 dönemden biri mi (ücret alınmaz).
+  bool get freePeriod => isFreePeriod(periodNo);
+
+  /// Geçen dönem 1.200'ü aştı ve ücretli dönemde: özel teklif gerekir.
+  bool get overLimit => !freePeriod && history.isNotEmpty && history.last > customOver;
 
   Map<String, dynamic> toJson() => {
         'rid': restaurantId,

@@ -155,7 +155,7 @@ class _AdminCouponsState extends State<AdminCoupons> {
               const SizedBox(height: 6),
               Text(
                 _payer == 'doybi'
-                    ? 'İndirim tutarı, restoranın bir sonraki abonelik faturasından mahsup edilir. Doybi yemek parasını tahsil etmez.'
+                    ? 'İndirim tutarı, restoranın bir sonraki abonelik faturasından mahsup edilir (ücretsiz dönemdeyse ilk ücretli faturasından). Doybi yemek parasını tahsil etmez.'
                     : 'İndirimi restoran karşılar; abonelik faturası değişmez.',
                 style: body(12, color: C.muted),
               ),

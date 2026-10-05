@@ -155,7 +155,7 @@ class AccountScreen extends StatelessWidget {
               group([
                 LinkRow(Icons.notifications_none_rounded, 'Bildirimler', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
                 LinkRow(Icons.card_giftcard_rounded, 'Arkadaşını davet et', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InviteScreen()))),
-                LinkRow(Icons.storefront_outlined, 'Restoranını ekle', sub: '%0 komisyon, ilk ay ücretsiz', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplyScreen()))),
+                LinkRow(Icons.storefront_outlined, 'Restoranını ekle', sub: '%0 komisyon, ilk 3 ay ücretsiz', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplyScreen()))),
               ]),
               const SizedBox(height: 12),
               group([
