@@ -19,7 +19,7 @@ OptGroup _extras() => OptGroup('Ekstralar', [Opt('Ekstra lavaş', 20), Opt('Köz
 
 List<Restaurant> demoRestaurants() => [
       Restaurant(
-        id: 'UD',
+        id: 'UD', cover: 'a:ud_kapak',
         name: 'Usta Dürüm Evi',
         initials: 'UD',
         color: 0xFFA8200A,
@@ -47,21 +47,21 @@ List<Restaurant> demoRestaurants() => [
         lng: 36.9165,
         specialDays: [SpecialDay('2026-10-29', open: 720, close: 1200, note: 'Cumhuriyet Bayramı')],
         menu: [
-          MenuItem('adana', 'Adana Dürüm', 320, 'Dürümler',
+          MenuItem('adana', 'Adana Dürüm', 320, 'Dürümler', photo: 'a:adana',
               desc: 'Zırhla çekilmiş acılı Adana, lavaş, közlenmiş domates, sumaklı soğan.', featured: true, groups: [_portion(), _spicy(), _extras()]),
-          MenuItem('urfa', 'Urfa Dürüm', 300, 'Dürümler', desc: 'Acısız zırh kıyması, lavaş, sumaklı soğan.', groups: [_portion(100), _extras()]),
-          MenuItem('tavuk', 'Tavuk Dürüm', 220, 'Dürümler', desc: 'Kekikli tavuk şiş, lavaş, turşu.', groups: [_portion(80), _extras()]),
-          MenuItem('tava', 'Maraş Tava', 480, 'Tava', desc: 'Kuzu eti, biber, domates ve sarımsak; bakır tavada fırından gelir.', groups: [_portion(160)]),
-          MenuItem('eli', 'Eli Böğründe', 420, 'Tava', desc: 'Közlenmiş patlıcan yatağında kuzu, üzerine tereyağlı yoğurt.', available: false),
-          MenuItem('lah', 'Lahmacun (2 adet)', 180, 'Lahmacun', desc: 'İnce hamur, zırh kıyması, yeşillik ve limon.'),
-          MenuItem('ayran', 'Ayran', 40, 'İçecekler', desc: '300 ml'),
+          MenuItem('urfa', 'Urfa Dürüm', 300, 'Dürümler', desc: 'Acısız zırh kıyması, lavaş, sumaklı soğan.', groups: [_portion(100), _extras()], photo: 'a:urfa'),
+          MenuItem('tavuk', 'Tavuk Dürüm', 220, 'Dürümler', desc: 'Kekikli tavuk şiş, lavaş, turşu.', groups: [_portion(80), _extras()], photo: 'a:tavuk'),
+          MenuItem('tava', 'Maraş Tava', 480, 'Tava', desc: 'Kuzu eti, biber, domates ve sarımsak; bakır tavada fırından gelir.', groups: [_portion(160)], photo: 'a:tava'),
+          MenuItem('eli', 'Eli Böğründe', 420, 'Tava', desc: 'Közlenmiş patlıcan yatağında kuzu, üzerine tereyağlı yoğurt.', available: false, photo: 'a:eli'),
+          MenuItem('lah', 'Lahmacun (2 adet)', 180, 'Lahmacun', desc: 'İnce hamur, zırh kıyması, yeşillik ve limon.', photo: 'a:lahmacun'),
+          MenuItem('ayran', 'Ayran', 40, 'İçecekler', desc: '300 ml', photo: 'a:ayran'),
           MenuItem('salgam', 'Şalgam', 40, 'İçecekler', desc: 'Acılı ya da acısız'),
           MenuItem('su', 'Su', 15, 'İçecekler', desc: '500 ml'),
           MenuItem('kola', 'Kola', 50, 'İçecekler', desc: '330 ml kutu'),
         ],
       ),
       Restaurant(
-        id: 'LD',
+        id: 'LD', cover: 'a:ld_kapak',
         name: 'Lahmacun Durağı',
         initials: 'LD',
         color: 0xFF1C1917,
@@ -84,16 +84,16 @@ List<Restaurant> demoRestaurants() => [
         lat: 37.5752,
         lng: 36.9348,
         menu: [
-          MenuItem('kiymali', 'Kıymalı Lahmacun', 85, 'Lahmacun', desc: 'Bol yeşillik ve limonla.', featured: true, groups: [_spicy()]),
-          MenuItem('acili', 'Acılı Lahmacun', 90, 'Lahmacun', desc: 'Acı biberli, Maraş usulü.'),
-          MenuItem('kasarli', 'Kaşarlı Pide', 210, 'Pide'),
-          MenuItem('kusbasi', 'Kuşbaşılı Pide', 260, 'Pide'),
+          MenuItem('kiymali', 'Kıymalı Lahmacun', 85, 'Lahmacun', desc: 'Bol yeşillik ve limonla.', featured: true, groups: [_spicy()], photo: 'a:lah_kiymali'),
+          MenuItem('acili', 'Acılı Lahmacun', 90, 'Lahmacun', desc: 'Acı biberli, Maraş usulü.', photo: 'a:lah_acili'),
+          MenuItem('kasarli', 'Kaşarlı Pide', 210, 'Pide', photo: 'a:pide_kasarli'),
+          MenuItem('kusbasi', 'Kuşbaşılı Pide', 260, 'Pide', photo: 'a:pide_kusbasi'),
           MenuItem('salgam', 'Şalgam', 40, 'İçecekler'),
-          MenuItem('ayran', 'Ayran', 35, 'İçecekler'),
+          MenuItem('ayran', 'Ayran', 35, 'İçecekler', photo: 'a:ayran2'),
         ],
       ),
       Restaurant(
-        id: 'FP',
+        id: 'FP', cover: 'a:fp_kapak',
         name: 'Fırın Pide Salonu',
         initials: 'FP',
         color: 0xFFFFC53D,
@@ -116,15 +116,15 @@ List<Restaurant> demoRestaurants() => [
         lat: 37.5973,
         lng: 36.9262,
         menu: [
-          MenuItem('karisik', 'Karışık Pide', 280, 'Pide', desc: 'Kıyma, kaşar, sucuk.', featured: true),
-          MenuItem('kasarli', 'Kaşarlı Pide', 240, 'Pide'),
-          MenuItem('yumurtali', 'Yumurtalı Kaşarlı Pide', 230, 'Pide'),
-          MenuItem('lahmenu', 'Lahmacun ve Ayran Menü', 150, 'Menüler', desc: '1 lahmacun, 1 ayran'),
-          MenuItem('ayran', 'Ayran', 40, 'İçecekler'),
+          MenuItem('karisik', 'Karışık Pide', 280, 'Pide', desc: 'Kıyma, kaşar, sucuk.', featured: true, photo: 'a:pide_karisik'),
+          MenuItem('kasarli', 'Kaşarlı Pide', 240, 'Pide', photo: 'a:pide_kasarli'),
+          MenuItem('yumurtali', 'Yumurtalı Kaşarlı Pide', 230, 'Pide', photo: 'a:pide_yumurtali'),
+          MenuItem('lahmenu', 'Lahmacun ve Ayran Menü', 150, 'Menüler', desc: '1 lahmacun, 1 ayran', photo: 'a:lah_menu'),
+          MenuItem('ayran', 'Ayran', 40, 'İçecekler', photo: 'a:ayran'),
         ],
       ),
       Restaurant(
-        id: 'CK',
+        id: 'CK', cover: 'a:ck_kapak',
         name: 'Çiğköfte Köşesi',
         initials: 'ÇK',
         color: 0xFFF1EDEA,
@@ -146,13 +146,13 @@ List<Restaurant> demoRestaurants() => [
         lat: 37.5838,
         lng: 36.9312,
         menu: [
-          MenuItem('ckdurum', 'Çiğköfte Dürüm', 90, 'Dürümler', desc: 'Nar ekşili, yeşillikli.', featured: true, groups: [_spicy()]),
-          MenuItem('ckporsiyon', 'Porsiyon Çiğköfte', 160, 'Porsiyon', desc: 'Marul, limon, nar ekşisi ile.'),
-          MenuItem('ayran', 'Ayran', 35, 'İçecekler'),
+          MenuItem('ckdurum', 'Çiğköfte Dürüm', 90, 'Dürümler', desc: 'Nar ekşili, yeşillikli.', featured: true, groups: [_spicy()], photo: 'a:cig_durum'),
+          MenuItem('ckporsiyon', 'Porsiyon Çiğköfte', 160, 'Porsiyon', desc: 'Marul, limon, nar ekşisi ile.', photo: 'a:cig_porsiyon'),
+          MenuItem('ayran', 'Ayran', 35, 'İçecekler', photo: 'a:ayran2'),
         ],
       ),
       Restaurant(
-        id: 'KD',
+        id: 'KD', cover: 'a:kd_kapak',
         name: 'Kaymaklı Dondurmacı',
         initials: 'KD',
         color: 0xFFFFE9E4,
@@ -176,9 +176,9 @@ List<Restaurant> demoRestaurants() => [
         lat: 37.5895,
         lng: 36.9120,
         menu: [
-          MenuItem('d250', 'Kaymaklı Dondurma (250 g)', 220, 'Dondurma', desc: 'Keçi sütü, salep; bıçakla kesilir.', featured: true),
-          MenuItem('d500', 'Kaymaklı Dondurma (500 g)', 400, 'Dondurma'),
-          MenuItem('irmik', 'Dondurmalı İrmik Helvası', 180, 'Tatlı'),
+          MenuItem('d250', 'Kaymaklı Dondurma (250 g)', 220, 'Dondurma', desc: 'Keçi sütü, salep; bıçakla kesilir.', featured: true, photo: 'a:dondurma'),
+          MenuItem('d500', 'Kaymaklı Dondurma (500 g)', 400, 'Dondurma', photo: 'a:dondurma2'),
+          MenuItem('irmik', 'Dondurmalı İrmik Helvası', 180, 'Tatlı', photo: 'a:helva'),
         ],
       ),
     ];
@@ -342,8 +342,8 @@ List<ShareReq> demoShares(DateTime now) => [
 
 List<PromoBanner> demoBanners() => [
       PromoBanner('a', 'Dükkân fiyatı garantisi', 'Doybi · süresiz', 0xFFA8200A),
-      PromoBanner('b', '2 dürüme ayran bizden', 'Usta Dürüm Evi · bugün 23:00\'e kadar', 0xFFFFC53D),
-      PromoBanner('c', '2. porsiyon dondurma %50', 'Kaymaklı Dondurmacı · hafta sonu', 0xFF1C1917, on: false),
+      PromoBanner('b', '2 dürüme ayran bizden', 'Usta Dürüm Evi · bugün 23:00\'e kadar', 0xFFFFC53D, photo: 'a:afis_durum'),
+      PromoBanner('c', '2. porsiyon dondurma %50', 'Kaymaklı Dondurmacı · hafta sonu', 0xFF1C1917, on: true, photo: 'a:afis_dondurma'),
     ];
 
 List<BlockedNumber> demoBlocked(DateTime now) => [
@@ -366,6 +366,7 @@ List<Campaign> demoCampaigns(DateTime now) {
       start: base.subtract(const Duration(hours: 1)),
       end: base.add(const Duration(hours: 3)),
       delivered: 1,
+      photo: 'a:tavuk',
     ),
     Campaign(
       id: 'demo-LD',
@@ -378,6 +379,7 @@ List<Campaign> demoCampaigns(DateTime now) {
       start: base.subtract(const Duration(hours: 2)),
       end: base.add(const Duration(hours: 1)),
       delivered: 15,
+      photo: 'a:lah_kiymali',
     ),
     Campaign(
       id: 'demo-CK',
@@ -389,6 +391,7 @@ List<Campaign> demoCampaigns(DateTime now) {
       quota: 20,
       start: base.add(const Duration(hours: 2)),
       end: base.add(const Duration(hours: 4)),
+      photo: 'a:cig_durum',
     ),
   ];
 }

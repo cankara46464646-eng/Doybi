@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,7 +13,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 4;
+const _dataVersion = 5;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -92,6 +93,10 @@ class AppState extends ChangeNotifier {
         final j = jsonDecode(raw) as Map<String, dynamic>;
         if (j['v'] == _dataVersion) {
           _fromJson(j);
+        } else if (j['v'] == 4) {
+          // 0.3 öncesi: veriler korunur, hazır yemek fotoğrafları eklenir
+          _fromJson(j);
+          _fillDemoPhotos();
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
@@ -161,6 +166,26 @@ class AppState extends ChangeNotifier {
     firsatHiddenDay = '';
   }
 
+  /// Deneme restoranlarına, ürünlerine ve afişlerine hazır fotoğrafları ekle (kullanıcının eklediklerine dokunmaz).
+  void _fillDemoPhotos() {
+    final demo = {for (final r in demoRestaurants()) r.id: r};
+    for (final r in restaurants) {
+      final d = demo[r.id];
+      if (d == null) continue;
+      r.cover ??= d.cover;
+      for (final m in r.menu) {
+        if (m.photo != null) continue;
+        for (final dm in d.menu) {
+          if (dm.id == m.id) m.photo = dm.photo;
+        }
+      }
+    }
+    final db = {for (final b in demoBanners()) b.id: b};
+    for (final b in banners) {
+      b.photo ??= db[b.id]?.photo;
+    }
+  }
+
   /// Gün değişince deneme ikramlarını bugüne göre yeniden kur.
   void _refreshDemoIkram() {
     final today = trDay(now);
@@ -173,6 +198,9 @@ class AppState extends ChangeNotifier {
     seedOtherReservations(ikram, now);
     ikramDay = today;
   }
+
+  /// Kaydetmeden ekranı yenile.
+  void _refresh() => super.notifyListeners();
 
   @override
   void notifyListeners() {
@@ -410,7 +438,25 @@ class AppState extends ChangeNotifier {
   // ---------- fotoğraflar ----------
   final Map<String, Uint8List> photos = {};
 
-  Uint8List? photo(String? id) => id == null ? null : photos[id];
+  final Set<String> _assetLoading = {};
+
+  /// Fotoğrafın baytları. "a:isim" kimlikleri uygulamayla gelen hazır görsellerdir
+  /// (assets/photos/isim.jpg); ilk istendiğinde yüklenir, hazır olunca ekran yenilenir.
+  Uint8List? photo(String? id) {
+    if (id == null || id.isEmpty) return null;
+    final b = photos[id];
+    if (b != null || !id.startsWith('a:')) return b;
+    if (_assetLoading.add(id)) {
+      rootBundle.load('assets/photos/${id.substring(2)}.jpg').then((d) {
+        photos[id] = d.buffer.asUint8List(d.offsetInBytes, d.lengthInBytes);
+        _refresh();
+      }).catchError((_) {});
+    }
+    return null;
+  }
+
+  /// Fotoğraf var mı (hazır görseller yüklenmemiş olsa da var sayılır).
+  bool hasPhoto(String? id) => id != null && id.isNotEmpty && (id.startsWith('a:') || photos.containsKey(id));
 
   /// Fotoğrafı telefona kaydeder, kimliğini döner.
   Future<String> addPhoto(Uint8List bytes) async {
@@ -425,7 +471,7 @@ class AppState extends ChangeNotifier {
   }
 
   void removePhoto(String? id) {
-    if (id == null) return;
+    if (id == null || id.startsWith('a:')) return;
     photos.remove(id);
     SharedPreferences.getInstance().then((p) => p.remove('ph_$id')).catchError((_) => false);
   }

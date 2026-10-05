@@ -4,6 +4,7 @@ import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'home.dart';
 import 'restaurant.dart';
 import 'shell.dart';
@@ -122,7 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id)));
                         },
                         child: Row(children: [
-                          Avatar(r, size: 44),
+                          if (s.photo(m.photo) != null) PhotoBox(m.photo, width: 52, height: 52, radius: 12) else Avatar(r, size: 52),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

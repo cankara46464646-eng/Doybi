@@ -83,14 +83,26 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
       _keys.putIfAbsent(c, () => GlobalKey());
     }
     final t = s.now;
+    final hasCover = s.photo(r.cover) != null;
 
     return Scaffold(
       appBar: AppBar(title: Text(r.name, style: display(22))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
         children: [
-          if (s.photo(r.cover) != null) ...[
-            PhotoBox(r.cover, height: 150, width: double.infinity, radius: 18),
+          if (hasCover) ...[
+            Stack(children: [
+              PhotoBox(r.cover, height: 180, width: double.infinity, radius: 20),
+              Positioned(
+                left: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: Avatar(r, size: 50),
+                ),
+              ),
+            ]),
             const SizedBox(height: 10),
           ],
           Box(
@@ -99,8 +111,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               children: [
                 Row(
                   children: [
-                    Avatar(r, size: 56),
-                    const SizedBox(width: 12),
+                    if (!hasCover) ...[Avatar(r, size: 56), const SizedBox(width: 12)],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

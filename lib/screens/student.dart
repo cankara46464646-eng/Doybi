@@ -117,12 +117,15 @@ class _CampaignCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (s.photo(c.photo) != null) PhotoBox(c.photo, height: 150, width: double.infinity, radius: 0),
           Container(
-            height: 84,
-            color: sold ? C.line : (later ? C.greenTint : C.tint),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            color: s.photo(c.photo) != null ? Colors.white : (sold ? C.line : (later ? C.greenTint : C.tint)),
             child: Row(children: [
               const SizedBox(width: 16),
-              Icon(Icons.lunch_dining, size: 46, color: sold ? C.muted : (later ? C.greenInk : C.red)),
-              const SizedBox(width: 14),
+              if (s.photo(c.photo) == null) ...[
+                Icon(Icons.lunch_dining, size: 46, color: sold ? C.muted : (later ? C.greenInk : C.red)),
+                const SizedBox(width: 14),
+              ] else
+                const SizedBox(width: 0),
               Expanded(
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('${r?.name ?? ''} · ${r?.branch ?? ''} şubesi', style: body(12, color: C.muted, weight: FontWeight.w800)),

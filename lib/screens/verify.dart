@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,7 +11,7 @@ import 'apply.dart';
 import 'cart.dart';
 
 /// Siparişten (ya da ikram ayırtmadan) önce telefon doğrulama.
-/// Deneme sürümünde SMS gönderilmez; herhangi 6 rakam kabul edilir.
+/// SMS sağlayıcısı bağlanana kadar kod, gelen mesaj gibi uygulamanın içinde gösterilir.
 class VerifyScreen extends StatefulWidget {
   final String reason;
   const VerifyScreen({super.key, this.reason = 'Ödeme kapıda yapıldığı için restoranın sana ulaşabilmesi gerekiyor. Bir kez doğrulaman yeter; menülere bakmak için gerekmez.'});
@@ -21,12 +24,46 @@ class _VerifyScreenState extends State<VerifyScreen> {
   final _phone = TextEditingController();
   final _code = TextEditingController();
   bool _codeSent = false;
+  String _sent = '';
+  bool _sms = false;
+  String? _err;
+  Timer? _smsTimer;
 
   @override
   void dispose() {
+    _smsTimer?.cancel();
     _phone.dispose();
     _code.dispose();
     super.dispose();
+  }
+
+  void _send() {
+    _smsTimer?.cancel();
+    setState(() {
+      _codeSent = true;
+      _sent = (100000 + Random().nextInt(900000)).toString();
+      _sms = false;
+      _err = null;
+      _code.clear();
+    });
+    _smsTimer = Timer(const Duration(milliseconds: 1400), () {
+      if (mounted) setState(() => _sms = true);
+    });
+  }
+
+  void _fill() => setState(() {
+        _code.text = _sent;
+        _sms = false;
+        _err = null;
+      });
+
+  void _check() {
+    if (_code.text != _sent) {
+      setState(() => _err = 'Kod hatalı. Mesajdaki 6 haneyi yaz.');
+      return;
+    }
+    AppScope.read(context).verifyPhone(_digits);
+    Navigator.pop(context, true);
   }
 
   String get _digits => _phone.text.replaceAll(RegExp(r'\D'), '');
@@ -38,7 +75,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_codeSent ? 'Kodu gir' : 'Numaranı doğrula')),
       body: SafeArea(
-        child: ListView(
+        child: Stack(children: [
+        ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
             if (!_codeSent) ...[
@@ -56,7 +94,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 decoration: const InputDecoration(prefixText: '+90  ', hintText: '5XX XXX XX XX'),
               ),
               const SizedBox(height: 12),
-              BigButton('Kod gönder', onPressed: phoneOk ? () => setState(() => _codeSent = true) : null),
+              BigButton('Kod gönder', onPressed: phoneOk ? _send : null),
               const SizedBox(height: 12),
               Wrap(children: [
                 Text('Devam ederek ', style: body(12, color: C.muted)),
@@ -95,24 +133,74 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 autofocus: true,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                onChanged: (_) => setState(() {}),
+                onChanged: (_) => setState(() => _err = null),
                 textAlign: TextAlign.center,
                 style: display(30).copyWith(letterSpacing: 8),
-                decoration: const InputDecoration(hintText: '••••••'),
+                decoration: InputDecoration(hintText: '••••••', errorText: _err),
               ),
-              const SizedBox(height: 6),
-              const NoteBox('Deneme sürümü: SMS gönderilmiyor, herhangi 6 rakam yazabilirsin.', icon: Icons.info_outline),
+              if (_sent.isNotEmpty && _code.text.isEmpty && !_sms) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: ActionChip(
+                    avatar: const Icon(Icons.sms_outlined, size: 18, color: C.green),
+                    label: Text('Mesajlardan: $_sent', style: body(14, weight: FontWeight.w800)),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: C.border),
+                    onPressed: _fill,
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
-              BigButton('Doğrula', onPressed: codeOk
-                  ? () {
-                      AppScope.read(context).verifyPhone(_digits);
-                      Navigator.pop(context, true);
-                    }
-                  : null),
-              TextButton(onPressed: () => setState(() => _codeSent = false), child: const Text('Numarayı değiştir')),
+              BigButton('Doğrula', onPressed: codeOk ? _check : null),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                TextButton(onPressed: () => setState(() => _codeSent = false), child: const Text('Numarayı değiştir')),
+                TextButton(onPressed: _send, child: const Text('Kodu tekrar gönder')),
+              ]),
             ],
           ],
         ),
+        // gelen mesaj
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+          left: 10,
+          right: 10,
+          top: _sms ? 8 : -140,
+          child: Material(
+            color: Colors.white,
+            elevation: 10,
+            shadowColor: Colors.black38,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _fill,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(color: const Color(0xFF34C759), borderRadius: BorderRadius.circular(9)),
+                    child: const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(child: Text('DOYBI', style: body(13, weight: FontWeight.w800))),
+                        Text('şimdi', style: body(12, color: C.muted)),
+                      ]),
+                      Text('Doybi doğrulama kodun: $_sent. Bu kodu kimseyle paylaşma.', style: body(13.5)),
+                      const SizedBox(height: 2),
+                      Text('Dokun, kod yazılsın', style: body(12, color: C.green, weight: FontWeight.w800)),
+                    ]),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ),
+        ]),
       ),
     );
   }

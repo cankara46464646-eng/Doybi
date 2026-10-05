@@ -227,35 +227,57 @@ class AccountScreen extends StatelessWidget {
               LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
             ]),
           ),
-          const SectionLabel('Deneme'),
+          const SectionLabel('İşletme girişi'),
           Box(
-            color: C.note,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
             child: Column(children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text('Tek telefonla her tarafı deneyebilmen için. Gerçek sürümde restoran ve yönetim ayrı hesaplarla girer.',
-                    style: body(13, color: C.noteInk, weight: FontWeight.w600)),
-              ),
-              LinkRow(Icons.storefront_outlined, 'Restoran paneli', sub: 'Siparişler, menü, öğrenciye ikram, abonelik', iconColor: C.ink, onTap: () => _openPanel(context, s)),
-              const Divider(color: C.border, height: 1),
-              LinkRow(Icons.admin_panel_settings_outlined, 'Yönetim paneli', sub: 'Başvurular, kuponlar, abonelikler, vitrin', iconColor: C.ink,
+              LinkRow(Icons.storefront_outlined, 'Restoran paneli', sub: 'Siparişler, menü, ikram, abonelik', iconColor: C.ink, onTap: () => _openPanel(context, s)),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.admin_panel_settings_outlined, 'Doybi yönetimi', sub: 'Başvurular, kuponlar, vitrin', iconColor: C.ink,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminShell()))),
-              const Divider(color: C.border, height: 1),
-              SwitchRow('Restoran kendiliğinden ilerletsin', sub: 'Sipariş birkaç saniyede onaylanır, yola çıkar, teslim edilir', value: s.autoRestaurant, onChanged: s.setAuto),
-              SwitchRow('Çalışma saatlerini uygula', sub: 'Kapalıyken restoranlar sipariş almaz', value: s.enforceHours, onChanged: s.setEnforceHours),
-              LinkRow(Icons.restart_alt, 'Deneme verisini sıfırla', iconColor: C.ink, onTap: () async {
-                if (await confirmDialog(context, 'Her şey sıfırlansın mı?', 'Siparişler, kuponlar, panel ayarları ve ikramlar ilk hâline döner. Adresin kalır.', ok: 'Sıfırla')) {
-                  s.resetAll(keepAddress: true);
-                  if (context.mounted) snack(context, 'Deneme verisi sıfırlandı.');
-                }
-              }),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.tune_rounded, 'Test ayarları', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestSettingsScreen()))),
             ]),
           ),
           const SizedBox(height: 16),
           if (s.phone != null) BigButton('Çıkış yap', outlined: true, onPressed: s.signOut),
           TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
-          Center(child: Text('Doybi 0.3 · deneme sürümü', style: body(12, color: C.placeholder))),
+          Center(child: Text('Doybi 0.3', style: body(12, color: C.placeholder))),
+        ],
+      ),
+    );
+  }
+}
+
+
+/// Tek telefonla denerken işe yarayan ayarlar.
+class TestSettingsScreen extends StatelessWidget {
+  const TestSettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Test ayarları')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          Box(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            child: Column(children: [
+              SwitchRow('Restoran kendiliğinden ilerletsin', sub: 'Sipariş birkaç saniyede onaylanır, yola çıkar, teslim edilir', value: s.autoRestaurant, onChanged: s.setAuto),
+              SwitchRow('Çalışma saatlerini uygula', sub: 'Kapalıyken restoranlar sipariş almaz', value: s.enforceHours, onChanged: s.setEnforceHours),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.restart_alt, 'Verileri sıfırla', sub: 'Siparişler, kuponlar ve panel ayarları ilk hâline döner', iconColor: C.ink, onTap: () async {
+                if (await confirmDialog(context, 'Her şey sıfırlansın mı?', 'Siparişler, kuponlar, panel ayarları ve ikramlar ilk hâline döner. Adresin kalır.', ok: 'Sıfırla')) {
+                  s.resetAll(keepAddress: true);
+                  if (context.mounted) snack(context, 'Veriler sıfırlandı.');
+                }
+              }),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          Text('Restoran paneli ve yönetim bu telefondan açılır; gerçek kullanımda her biri kendi hesabıyla girer.', style: body(13, color: C.muted)),
         ],
       ),
     );
