@@ -90,7 +90,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
         children: [
           if (s.photo(r.cover) != null) ...[
-            PhotoBox(r.cover, height: 150, width: double.infinity, radius: 18),
+            PhotoBox(r.cover, height: 180, width: double.infinity, radius: 20),
             const SizedBox(height: 10),
           ],
           Box(

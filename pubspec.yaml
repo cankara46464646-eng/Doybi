@@ -33,6 +33,7 @@ flutter:
   assets:
     - assets/brand/
     - assets/sounds/
+    - assets/photos/
   fonts:
     - family: Figtree
       fonts:

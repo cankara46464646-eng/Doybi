@@ -336,6 +336,6 @@ class _ApplyScreenState extends State<ApplyScreen> {
             ]),
           ),
         const SizedBox(height: 8),
-        const NoteBox('Deneme: Başvurun Hesabım > Yönetim paneli > Başvurular\'da görünür; oradan onaylayabilirsin.', icon: Icons.info_outline),
+        const NoteBox('Başvurun Doybi ekibine iletildi. Genelde 1 iş günü içinde seni arayıp kurulumu birlikte yapıyoruz.', icon: Icons.info_outline),
       ];
 }

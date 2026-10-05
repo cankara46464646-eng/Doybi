@@ -1,0 +1,29 @@
+Uygulamadaki hazır yemek fotoğrafları Pexels'ten alınmıştır (Pexels Lisansı: ücretsiz kullanım, atıf zorunlu değil).
+
+ud_kapak.jpg  https://www.pexels.com/photo/31587880/
+ld_kapak.jpg  https://www.pexels.com/photo/7545572/
+fp_kapak.jpg  https://www.pexels.com/photo/36445045/
+ck_kapak.jpg  https://www.pexels.com/photo/29838484/
+kd_kapak.jpg  https://www.pexels.com/photo/2842138/
+adana.jpg  https://www.pexels.com/photo/7439809/
+urfa.jpg  https://www.pexels.com/photo/16260570/
+tavuk.jpg  https://www.pexels.com/photo/27744717/
+tava.jpg  https://www.pexels.com/photo/8963961/
+eli.jpg  https://www.pexels.com/photo/7462776/
+lahmacun.jpg  https://www.pexels.com/photo/9394521/
+ayran.jpg  https://www.pexels.com/photo/26648792/
+ayran2.jpg  https://www.pexels.com/photo/26648793/
+lah_kiymali.jpg  https://www.pexels.com/photo/7813738/
+lah_acili.jpg  https://www.pexels.com/photo/38718372/
+pide_kasarli.jpg  https://www.pexels.com/photo/7813740/
+pide_kusbasi.jpg  https://www.pexels.com/photo/7813739/
+pide_karisik.jpg  https://www.pexels.com/photo/7813736/
+pide_yumurtali.jpg  https://www.pexels.com/photo/5639218/
+lah_menu.jpg  https://www.pexels.com/photo/32562202/
+cig_durum.jpg  https://www.pexels.com/photo/32968451/
+cig_porsiyon.jpg  https://www.pexels.com/photo/9181649/
+dondurma.jpg  https://www.pexels.com/photo/2842138/
+dondurma2.jpg  https://www.pexels.com/photo/29031331/
+helva.jpg  https://www.pexels.com/photo/37336729/
+afis_durum.jpg  https://www.pexels.com/photo/11286814/
+afis_dondurma.jpg  https://www.pexels.com/photo/34267736/
