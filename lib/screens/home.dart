@@ -218,15 +218,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-            // ---------------- öne çıkanlar (ücretli vitrin) ----------------
+            // ---------------- öne çıkanlar (vitrin) ----------------
             if (promoted.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 16, 10),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                    Expanded(child: Text('Öne çıkanlar', style: display(20))),
-                    const Pill('Sponsorlu', bg: C.field, fg: C.muted, size: 11),
-                  ]),
+                  child: Text('Öne çıkanlar', style: display(20)),
                 ),
               ),
               SliverToBoxAdapter(
