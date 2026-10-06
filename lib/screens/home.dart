@@ -425,7 +425,7 @@ class _CouponTile extends StatelessWidget {
     final best = ok.isEmpty ? null : (ok..sort((a, b) => (b.kind == 'tl' ? b.amount : 0).compareTo(a.kind == 'tl' ? a.amount : 0))).first;
     const shape = TicketBorder(radius: 20, notch: 9, at: 0.62);
     return Material(
-      color: C.tint,
+      color: const Color(0xFFFFE8E0),
       shape: shape,
       child: InkWell(
         customBorder: shape,

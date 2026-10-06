@@ -241,7 +241,7 @@ class SelChip extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          child: Text(label, style: body(14, color: fg, weight: FontWeight.w800)),
+          child: Align(widthFactor: 1, heightFactor: 1, child: Text(label, style: body(14, color: fg, weight: FontWeight.w800))),
         ),
       ),
     );
