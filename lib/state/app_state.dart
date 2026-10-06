@@ -12,7 +12,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 8;
+const _dataVersion = 9;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -98,6 +98,7 @@ class AppState extends ChangeNotifier {
           _fromJson(j);
           if (v <= 6) _migrateFreePeriods(); // ilk 3 ay ücretsiz kuralı
           if (v <= 7) _fillDemoPhotos(); // hazır fotoğraflar, logolar, fırsat fiyatları, afiş görselleri
+          if (v <= 8) _dropRetiredCoupons(); // Doybi'nin eklemediği eski deneme kuponları
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
@@ -136,7 +137,7 @@ class AppState extends ChangeNotifier {
     restaurants = demoRestaurants();
     orders = [];
     coupons = demoCoupons();
-    wallet = ['HOSGELDIN', 'USTA15', 'TESLIMAT0', 'EYLUL25'];
+    wallet = ['HOSGELDIN'];
     complaints = [];
     applications = demoApplications(t);
     shares = demoShares(t);
@@ -165,6 +166,13 @@ class AppState extends ChangeNotifier {
     ];
     firsatEndMin = 23 * 60 + 59;
     firsatHiddenDay = '';
+  }
+
+  /// Eski deneme kuponlarını (restoran kuponları, süresi dolmuş) kupon listesinden ve cüzdandan kaldırır.
+  void _dropRetiredCoupons() {
+    coupons.removeWhere((c) => retiredDemoCoupons.contains(c.code));
+    wallet.removeWhere(retiredDemoCoupons.contains);
+    if (chosenCoupon != null && retiredDemoCoupons.contains(chosenCoupon)) chosenCoupon = null;
   }
 
   /// İlk 3 dönem ücretsiz kuralına geçiş: deneme aboneliklerinin geçmişi ve ücretsiz dönem faturaları yenilenir,
