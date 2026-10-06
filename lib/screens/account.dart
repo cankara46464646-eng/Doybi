@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/photo.dart';
 import 'address.dart';
 import 'apply.dart';
 import 'coupons.dart';
@@ -108,14 +109,39 @@ class AccountScreen extends StatelessWidget {
             decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
             padding: EdgeInsets.fromLTRB(16, top + 18, 8, 20),
             child: Row(children: [
-              Container(
-                width: 58,
-                height: 58,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(color: C.tint, shape: BoxShape.circle),
-                child: s.name.isEmpty
-                    ? const Icon(Icons.person_rounded, color: C.red, size: 32)
-                    : Text(trUpper(s.name.substring(0, 1)), style: display(26, color: C.red)),
+              Semantics(
+                button: true,
+                label: s.hasPhoto(s.avatar) ? 'Profil fotoğrafını değiştir' : 'Profil fotoğrafı ekle',
+                child: GestureDetector(
+                  onTap: () async {
+                    final id = await pickPhoto(context, title: 'Profil fotoğrafı', allowRemove: s.hasPhoto(s.avatar));
+                    if (id == null) return;
+                    s.setAvatar(id.isEmpty ? null : id);
+                  },
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    Container(
+                      width: 62,
+                      height: 62,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(color: C.tint, shape: BoxShape.circle),
+                      child: s.hasPhoto(s.avatar)
+                          ? PhotoBox(s.avatar, width: 62, height: 62, radius: 31)
+                          : (s.name.isEmpty
+                              ? const Icon(Icons.person_rounded, color: C.red, size: 34)
+                              : Text(trUpper(s.name.substring(0, 1)), style: display(28, color: C.red))),
+                    ),
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                        child: const Icon(Icons.photo_camera_rounded, size: 12, color: Colors.white),
+                      ),
+                    ),
+                  ]),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

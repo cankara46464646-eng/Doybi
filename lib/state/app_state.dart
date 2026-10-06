@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
   Set<String> cityVotes = {};
   String? phone; // SMS ile doğrulanmış numara
   String name = '';
+  String? avatar; // profil fotoğrafı (kayıtlı fotoğraf kimliği)
   bool notifPush = true;
   bool notifSms = false;
   bool ikramNotify = false;
@@ -243,6 +244,7 @@ class AppState extends ChangeNotifier {
         'address': addressLine,
         'phone': phone,
         'name': name,
+        'avatar': avatar,
         'np': notifPush,
         'ns': notifSms,
         'in': ikramNotify,
@@ -287,6 +289,7 @@ class AppState extends ChangeNotifier {
     cityVotes = Set<String>.from(j['votes'] ?? const []);
     phone = j['phone'];
     name = j['name'] ?? '';
+    avatar = j['avatar'];
     notifPush = j['np'] ?? true;
     notifSms = j['ns'] ?? false;
     ikramNotify = j['in'] ?? false;
@@ -390,6 +393,7 @@ class AppState extends ChangeNotifier {
     chosenCoupon = null;
     phone = null;
     name = '';
+    avatar = null;
     addresses = keepAddress ? keep : [];
     addressId = keepAddress ? keepId : null;
     if (!keepAddress) {
@@ -510,6 +514,13 @@ class AppState extends ChangeNotifier {
 
   void setName(String n) {
     name = n.trim();
+    notifyListeners();
+  }
+
+  /// Profil fotoğrafını değiştirir ya da kaldırır (null); eskisini telefondan siler.
+  void setAvatar(String? id) {
+    if (avatar != null && avatar != id) removePhoto(avatar);
+    avatar = id;
     notifyListeners();
   }
 
@@ -1341,7 +1352,11 @@ class AppState extends ChangeNotifier {
       periodStart: '${_shortDate(now)} · 00:00',
       periodEnd: '${_shortDate(now.add(const Duration(days: 30)))} · 23:59',
       daysLeft: 30,
-      bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(1), detail: 'giriş paketi', state: 'free')],
+      bills: [
+        Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(1), detail: 'giriş paketi', state: 'free'),
+        if (a.menuWay == 'ekip')
+          Bill(id: '${a.id}-cekim', kind: 'cekim', net: shootFee, gross: false, title: 'Menü çekimi (tek seferlik)', detail: '$shootItems ürüne kadar fotoğraf', state: 'unpaid'),
+      ],
     );
     if (restaurant(a.id) == null) {
       final words = a.name.split(' ').where((w) => w.isNotEmpty).toList();

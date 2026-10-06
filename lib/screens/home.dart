@@ -359,66 +359,62 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Öğrenciye ikram kısayolu: yemek fotoğrafı üstünde, bugün ikram veren restoranların logolarıyla.
+/// Öğrenciye ikram kısayolu: açık şeftali zemin, silik ikram simgesi, bugün ikram veren esnafın logoları.
 class _IkramTile extends StatelessWidget {
   final List<Restaurant> rests;
   const _IkramTile({required this.rests});
 
   @override
   Widget build(BuildContext context) {
-    final img = photoImage(context, 'a:tavuk', width: 240);
     return Material(
-      color: C.ink,
+      color: C.tint,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
-      child: Ink(
-        decoration: BoxDecoration(
-          image: img == null ? null : DecorationImage(image: img, fit: BoxFit.cover, filterQuality: FilterQuality.low),
-        ),
-        child: InkWell(
-          onTap: () => shellTab.value = 2,
-          child: Container(
-            height: 128,
-            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xB3000000), Color(0x40000000), Color(0x99000000)],
-              ),
+      child: InkWell(
+        onTap: () => shellTab.value = 2,
+        child: SizedBox(
+          height: 128,
+          child: Stack(children: [
+            Positioned(
+              right: -16,
+              bottom: -20,
+              child: Icon(Icons.volunteer_activism_rounded, size: 100, color: C.red.withValues(alpha: 0.12)),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Öğrenciye ikram', style: display(18, color: Colors.white)),
-              const SizedBox(height: 2),
-              Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
-                  maxLines: 2, style: body(12.5, color: Colors.white, weight: FontWeight.w600, height: 1.25)),
-              const Spacer(),
-              if (rests.isNotEmpty)
-                SizedBox(
-                  height: 30,
-                  child: Stack(children: [
-                    for (var i = 0; i < rests.length && i < 4; i++)
-                      Positioned(
-                        left: i * 20.0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: Avatar(rests[i], size: 26),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Öğrenciye ikram', style: display(18)),
+                const SizedBox(height: 2),
+                Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
+                    maxLines: 2, style: body(12.5, color: C.redDeep, weight: FontWeight.w700, height: 1.25)),
+                const Spacer(),
+                if (rests.isNotEmpty)
+                  SizedBox(
+                    height: 30,
+                    child: Stack(children: [
+                      for (var i = 0; i < rests.length && i < 4; i++)
+                        Positioned(
+                          left: i * 20.0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            child: Avatar(rests[i], size: 26),
+                          ),
                         ),
-                      ),
-                  ]),
-                )
-              else
-                Text('Göz at', style: body(13, color: Colors.white, weight: FontWeight.w800)),
-            ]),
-          ),
+                    ]),
+                  )
+                else
+                  Text('Göz at', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
+              ]),
+            ),
+          ]),
         ),
       ),
     );
   }
 }
 
-/// Kupon kısayolu: kenarları oyulmuş bilet görünümü.
+/// Kupon kısayolu: kenarları oyulmuş bilet, Fırsat Saati'yle aynı turuncu geçiş.
 class _CouponTile extends StatelessWidget {
   const _CouponTile();
 
@@ -429,39 +425,51 @@ class _CouponTile extends StatelessWidget {
     final best = ok.isEmpty ? null : (ok..sort((a, b) => (b.kind == 'tl' ? b.amount : 0).compareTo(a.kind == 'tl' ? a.amount : 0))).first;
     const shape = TicketBorder(radius: 20, notch: 9, at: 0.62);
     return Material(
-      color: C.ticket,
+      type: MaterialType.transparency,
       shape: shape,
-      child: InkWell(
-        customBorder: shape,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen())),
-        child: SizedBox(
-          height: 128,
-          child: CustomPaint(
-            painter: const DashLinePainter(at: 0.62, color: C.ticketDash),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Kuponlarım', style: display(18)),
-                const SizedBox(height: 2),
-                Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: C.muted, weight: FontWeight.w600)),
-                const Spacer(),
-                if (best != null)
-                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(best.big, style: display(24, color: C.red, height: 1)),
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: C.redDeep, weight: FontWeight.w700)),
-                    ),
-                  ])
-                else
-                  Row(children: [
-                    const Icon(Icons.add_circle_outline_rounded, size: 20, color: C.redDeep),
-                    const SizedBox(width: 4),
-                    Text('Kupon ekle', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
-                  ]),
-              ]),
-            ),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: const ShapeDecoration(
+          shape: shape,
+          gradient: LinearGradient(colors: [C.logoRed, C.event2], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        ),
+        child: InkWell(
+          customBorder: shape,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen())),
+          child: SizedBox(
+            height: 128,
+            child: Stack(children: [
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Icon(Icons.local_offer_rounded, size: 40, color: Colors.white.withValues(alpha: 0.22)),
+              ),
+              Positioned.fill(child: CustomPaint(painter: DashLinePainter(at: 0.62, color: Colors.white.withValues(alpha: 0.55)))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Kuponlarım', style: display(18, color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: Colors.white, weight: FontWeight.w600)),
+                  const Spacer(),
+                  if (best != null)
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text(best.big, style: display(26, color: Colors.white, height: 1)),
+                      const SizedBox(width: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: Colors.white, weight: FontWeight.w800)),
+                      ),
+                    ])
+                  else
+                    Row(children: [
+                      const Icon(Icons.add_circle_outline_rounded, size: 20, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text('Kupon ekle', style: body(13, color: Colors.white, weight: FontWeight.w800)),
+                    ]),
+                ]),
+              ),
+            ]),
           ),
         ),
       ),
