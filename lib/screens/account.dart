@@ -25,18 +25,30 @@ class AccountScreen extends StatelessWidget {
 
   Future<void> _editName(BuildContext context, AppState s) async {
     final c = TextEditingController(text: s.name);
-    final v = await showDialog<String>(
+    final e = TextEditingController(text: s.email);
+    final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Adın', style: display(20)),
-        content: TextField(controller: c, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'Örn. Ayşe K.')),
+        title: Text('Bilgilerin', style: display(20)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: c, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Ad soyad', hintText: 'Örn. Ayşe Kaya')),
+          const SizedBox(height: 10),
+          TextField(controller: e, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: const InputDecoration(labelText: 'E-posta', hintText: 'ornek@mail.com')),
+        ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, c.text), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
         ],
       ),
     );
-    if (v != null) s.setName(v);
+    if (ok != true) return;
+    final mail = e.text.trim();
+    if (mail.isNotEmpty && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(mail)) {
+      if (context.mounted) snack(context, 'E-posta adresi geçersiz, kaydedilmedi.');
+    } else {
+      s.setEmail(mail);
+    }
+    s.setName(c.text);
   }
 
   Future<void> _delete(BuildContext context, AppState s) async {
@@ -148,21 +160,23 @@ class AccountScreen extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22)),
                   const SizedBox(height: 2),
-                  if (s.phone != null)
+                  if (s.phone != null) ...[
                     Row(children: [
                       Text(s.maskPhone(s.phone), style: body(14, color: C.muted, weight: FontWeight.w600)),
                       const SizedBox(width: 6),
                       const Icon(Icons.verified_rounded, size: 16, color: C.green),
-                    ])
+                    ]),
+                    if (s.email.isNotEmpty) Text(s.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
+                  ]
                   else
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyScreen())),
-                      child: Text('Telefonunu doğrula', style: body(14, color: C.red, weight: FontWeight.w800)),
+                      child: Text('Kayıt ol', style: body(14, color: C.red, weight: FontWeight.w800)),
                     ),
                 ]),
               ),
               IconButton(
-                tooltip: 'Adını düzenle',
+                tooltip: 'Bilgilerini düzenle',
                 onPressed: () => _editName(context, s),
                 icon: const Icon(Icons.edit_outlined, color: C.ink),
               ),

@@ -9,7 +9,8 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'cart.dart';
 
-/// Siparişten (ya da ikram ayırtmadan) önce telefon doğrulama.
+/// Kayıt: ad soyad, telefon (SMS ile doğrulanır), e-posta ve isteğe bağlı ileti izni.
+/// Siparişten (ya da ikram ayırtmadan) önce ve Hesabım'dan açılır.
 /// SMS sağlayıcısı bağlanana kadar kod, gelen mesaj gibi uygulamanın içinde gösterilir.
 class VerifyScreen extends StatefulWidget {
   final String reason;
@@ -20,8 +21,12 @@ class VerifyScreen extends StatefulWidget {
 }
 
 class _VerifyScreenState extends State<VerifyScreen> {
+  final _name = TextEditingController();
   final _phone = TextEditingController();
+  final _email = TextEditingController();
   final _code = TextEditingController();
+  bool _mkt = false;
+  bool _inited = false;
   bool _codeSent = false;
   String _sent = '';
   bool _sms = false;
@@ -29,11 +34,33 @@ class _VerifyScreenState extends State<VerifyScreen> {
   Timer? _smsTimer;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_inited) return;
+    _inited = true;
+    final s = AppScope.read(context);
+    _name.text = s.name;
+    _email.text = s.email;
+    _mkt = s.marketingOk;
+  }
+
+  @override
   void dispose() {
     _smsTimer?.cancel();
+    _name.dispose();
     _phone.dispose();
+    _email.dispose();
     _code.dispose();
     super.dispose();
+  }
+
+  /// Ad ve soyad: en az iki kelime.
+  bool get _nameOk => _name.text.trim().split(RegExp(r'\s+')).where((p) => p.length >= 2).length >= 2;
+
+  /// E-posta isteğe bağlı; yazıldıysa geçerli olmalı.
+  bool get _emailOk {
+    final e = _email.text.trim();
+    return e.isEmpty || RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
   }
 
   void _send() {
@@ -61,7 +88,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       setState(() => _err = 'Kod hatalı. Mesajdaki 6 haneyi yaz.');
       return;
     }
-    AppScope.read(context).verifyPhone(_digits);
+    AppScope.read(context).register(phone: _digits, name: _name.text, email: _email.text, marketing: _mkt);
     Navigator.pop(context, true);
   }
 
@@ -72,7 +99,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final phoneOk = _digits.length == 10 && _digits.startsWith('5');
     final codeOk = _code.text.replaceAll(RegExp(r'\D'), '').length == 6;
     return Scaffold(
-      appBar: AppBar(title: Text(_codeSent ? 'Kodu gir' : 'Numaranı doğrula')),
+      appBar: AppBar(title: Text(_codeSent ? 'Kodu gir' : 'Kayıt ol')),
       body: SafeArea(
         child: Stack(children: [
         ListView(
@@ -81,19 +108,50 @@ class _VerifyScreenState extends State<VerifyScreen> {
             if (!_codeSent) ...[
               Text(widget.reason, style: body(15, color: C.muted)),
               const SizedBox(height: 16),
+              Text('Ad soyad', style: body(14, weight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _name,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+                style: body(17, weight: FontWeight.w700),
+                decoration: const InputDecoration(hintText: 'Örn. Ayşe Kaya'),
+              ),
+              const SizedBox(height: 14),
               Text('Telefon numaran', style: body(14, weight: FontWeight.w800)),
               const SizedBox(height: 6),
               TextField(
                 controller: _phone,
-                autofocus: true,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
                 onChanged: (_) => setState(() {}),
                 style: body(18, weight: FontWeight.w700),
                 decoration: const InputDecoration(prefixText: '+90  ', hintText: '5XX XXX XX XX'),
               ),
-              const SizedBox(height: 12),
-              BigButton('Kod gönder', onPressed: phoneOk ? _send : null),
+              const SizedBox(height: 14),
+              Text('E-posta (isteğe bağlı)', style: body(14, weight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                onChanged: (_) => setState(() {}),
+                style: body(17, weight: FontWeight.w700),
+                decoration: InputDecoration(
+                  hintText: 'ornek@mail.com',
+                  errorText: _emailOk ? null : 'E-posta adresini kontrol et.',
+                ),
+              ),
+              const SizedBox(height: 6),
+              CheckRow(
+                'Kampanya ve fırsatlardan SMS ve e-postayla haberdar olmak istiyorum (isteğe bağlı)',
+                checked: _mkt,
+                onTap: () => setState(() => _mkt = !_mkt),
+              ),
+              const SizedBox(height: 8),
+              BigButton('Kod gönder', onPressed: phoneOk && _nameOk && _emailOk ? _send : null),
               const SizedBox(height: 12),
               Wrap(children: [
                 Text('Devam ederek ', style: body(12, color: C.muted)),
