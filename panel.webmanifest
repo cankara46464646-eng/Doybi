@@ -1,0 +1,16 @@
+{
+  "name": "Doybi İşletme",
+  "short_name": "Doybi İşletme",
+  "start_url": "panel.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1C1917",
+  "theme_color": "#1C1917",
+  "description": "Siparişler, menü, öğrenciye ikram ve abonelik.",
+  "lang": "tr",
+  "icons": [
+    { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/Icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
