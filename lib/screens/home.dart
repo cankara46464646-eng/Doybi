@@ -425,7 +425,7 @@ class _CouponTile extends StatelessWidget {
     final best = ok.isEmpty ? null : (ok..sort((a, b) => (b.kind == 'tl' ? b.amount : 0).compareTo(a.kind == 'tl' ? a.amount : 0))).first;
     const shape = TicketBorder(radius: 20, notch: 9, at: 0.62);
     return Material(
-      color: const Color(0xFFFFE8E0),
+      color: C.ticket,
       shape: shape,
       child: InkWell(
         customBorder: shape,
@@ -433,7 +433,7 @@ class _CouponTile extends StatelessWidget {
         child: SizedBox(
           height: 128,
           child: CustomPaint(
-            painter: const DashLinePainter(at: 0.62, color: Color(0x4DB4210F)),
+            painter: const DashLinePainter(at: 0.62, color: C.ticketDash),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -1,0 +1,38 @@
+name: Tema
+
+# Renk teması denemesi: 'tema' dalına gönderilen sürüm pembe ve yeşil temayla derlenir,
+# her biri ci-web-tema-<ad> dalına konur (ekran görüntüsü almak için).
+on:
+  push:
+    branches: [tema]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        tema: [pembe, yesil]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+          cache: true
+
+      - name: Derle
+        shell: bash
+        run: |
+          flutter pub get
+          flutter build web --release --base-href "/Doybi/app/" --dart-define=TEMA=${{ matrix.tema }}
+          cd build/web
+          git init -q -b ci-web-tema-${{ matrix.tema }}
+          git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "tema ${{ matrix.tema }} ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ci-web-tema-${{ matrix.tema }}
