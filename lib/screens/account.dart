@@ -103,6 +103,7 @@ class AccountScreen extends StatelessWidget {
     final s = AppScope.of(context);
     final usable = s.walletCoupons.where((c) => !c.expired && !s.couponUsed(c.code)).length;
     final top = MediaQuery.of(context).padding.top;
+    final signedIn = s.phone != null;
     Widget group(List<Widget> rows) => Box(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           child: Column(children: [
@@ -124,9 +125,13 @@ class AccountScreen extends StatelessWidget {
             child: Row(children: [
               Semantics(
                 button: true,
-                label: s.hasPhoto(s.avatar) ? 'Profil fotoğrafını değiştir' : 'Profil fotoğrafı ekle',
+                label: !signedIn ? 'Üye ol veya giriş yap' : (s.hasPhoto(s.avatar) ? 'Profil fotoğrafını değiştir' : 'Profil fotoğrafı ekle'),
                 child: GestureDetector(
                   onTap: () async {
+                    if (!signedIn) {
+                      await openLogin(context);
+                      return;
+                    }
                     final id = await pickPhoto(context, title: 'Profil fotoğrafı', allowRemove: s.hasPhoto(s.avatar));
                     if (id == null) return;
                     s.setAvatar(id.isEmpty ? null : id);
@@ -137,52 +142,56 @@ class AccountScreen extends StatelessWidget {
                       height: 62,
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(color: C.tint, shape: BoxShape.circle),
-                      child: s.hasPhoto(s.avatar)
+                      child: signedIn && s.hasPhoto(s.avatar)
                           ? PhotoBox(s.avatar, width: 62, height: 62, radius: 31)
-                          : (s.name.isEmpty
+                          : (!signedIn || s.name.isEmpty
                               ? const Icon(Icons.person_rounded, color: C.red, size: 34)
                               : Text(trUpper(s.name.substring(0, 1)), style: display(28, color: C.red))),
                     ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
-                        child: const Icon(Icons.photo_camera_rounded, size: 12, color: Colors.white),
+                    if (signedIn)
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(color: C.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                          child: const Icon(Icons.photo_camera_rounded, size: 12, color: Colors.white),
+                        ),
                       ),
-                    ),
                   ]),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22)),
+                  Text(signedIn && s.name.isNotEmpty ? s.name : 'Merhaba!', style: display(22)),
                   const SizedBox(height: 2),
-                  if (s.phone != null) ...[
+                  if (signedIn) ...[
                     Row(children: [
                       Text(s.maskPhone(s.phone), style: body(14, color: C.muted, weight: FontWeight.w600)),
                       const SizedBox(width: 6),
                       const Icon(Icons.verified_rounded, size: 16, color: C.green),
                     ]),
                     if (s.email.isNotEmpty) Text(s.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
-                  ]
-                  else
-                    GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyScreen())),
-                      child: Text('Kayıt ol', style: body(14, color: C.red, weight: FontWeight.w800)),
-                    ),
+                  ] else
+                    Text('Sipariş vermek için telefon numaranla giriş yap.', style: body(14, color: C.muted)),
                 ]),
               ),
-              IconButton(
-                tooltip: 'Bilgilerini düzenle',
-                onPressed: () => _editName(context, s),
-                icon: const Icon(Icons.edit_outlined, color: C.ink),
-              ),
+              if (signedIn)
+                IconButton(
+                  tooltip: 'Bilgilerini düzenle',
+                  onPressed: () => _editName(context, s),
+                  icon: const Icon(Icons.edit_outlined, color: C.ink),
+                ),
             ]),
           ),
+          if (!signedIn)
+            Container(
+              color: C.bg,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: BigButton('Üye ol veya giriş yap', onPressed: () => openLogin(context)),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -206,8 +215,10 @@ class AccountScreen extends StatelessWidget {
                 LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
               ]),
               const SizedBox(height: 20),
-              if (s.phone != null) BigButton('Çıkış yap', outlined: true, height: 48, onPressed: s.signOut),
-              TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
+              if (signedIn) ...[
+                BigButton('Çıkış yap', outlined: true, height: 48, onPressed: s.signOut),
+                TextButton(onPressed: () => _delete(context, s), child: Text('Hesabımı sil', style: body(14, color: C.redDeep, weight: FontWeight.w800))),
+              ],
               const _VersionTap(),
             ]),
           ),
@@ -277,7 +288,7 @@ class NotificationsScreen extends StatelessWidget {
               ]),
               const Divider(color: C.line),
               SwitchRow('Kampanya bildirimleri', sub: 'Yakınındaki indirimler', value: s.notifPush, onChanged: (v) => s.setNotif(push: v)),
-              SwitchRow('Kampanya SMS\'leri', sub: 'İstediğin zaman kapatabilirsin', value: s.notifSms, onChanged: (v) => s.setNotif(sms: v)),
+              SwitchRow('Kampanya SMS ve e-postaları', sub: 'İzin verdiysen gönderilir. İstediğin zaman kapatabilirsin.', value: s.marketingOk, onChanged: s.setMarketing),
             ]),
           ),
         ],

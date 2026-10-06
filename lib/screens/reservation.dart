@@ -24,11 +24,8 @@ class _ReservationScreenState extends State<ReservationScreen> {
 
   Future<void> _reserve(AppState s, Campaign c) async {
     if (s.phone == null) {
-      final ok = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(builder: (_) => const VerifyScreen(reason: 'İkramı ayırtmak için numaranı bir kez doğrulaman gerekiyor. Kimlik bilgisi istemiyoruz.')),
-      );
-      if (ok != true || !mounted) return;
+      final ok = await openLogin(context, reason: 'İkramı ayırtmak için telefon numaranla devam et. Kimlik bilgisi istemiyoruz.');
+      if (!ok || !mounted) return;
     }
     final r = s.reserveIkram(c);
     setState(() {

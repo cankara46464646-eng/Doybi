@@ -21,7 +21,8 @@ class AppState extends ChangeNotifier {
   List<SavedAddress> addresses = [];
   String? addressId;
   Set<String> cityVotes = {};
-  String? phone; // SMS ile doğrulanmış numara
+  String? phone; // SMS ile doğrulanmış numara (giriş yapılmışsa)
+  String memberPhone = ''; // bu cihazdaki üyeliğin numarası; çıkış yapınca da kalır
   String name = '';
   String? avatar; // profil fotoğrafı (kayıtlı fotoğraf kimliği)
   String email = '';
@@ -106,6 +107,7 @@ class AppState extends ChangeNotifier {
           _seed();
           _migrateAddress(j['mahalle'], j['address']);
           phone = j['phone'];
+          memberPhone = phone ?? '';
           name = j['name'] ?? '';
         }
       } else {
@@ -113,6 +115,7 @@ class AppState extends ChangeNotifier {
         // 0.1 sürümünden kalan adres ve telefon
         _migrateAddress(p.getString('mahalle'), p.getString('address'));
         phone = p.getString('phone');
+        memberPhone = phone ?? '';
       }
       for (final k in p.getKeys()) {
         if (!k.startsWith('ph_')) continue;
@@ -253,6 +256,7 @@ class AppState extends ChangeNotifier {
         'mahalle': mahalle,
         'address': addressLine,
         'phone': phone,
+        'mp': memberPhone,
         'name': name,
         'avatar': avatar,
         'email': email,
@@ -300,6 +304,7 @@ class AppState extends ChangeNotifier {
     addressId = j['addressId'];
     cityVotes = Set<String>.from(j['votes'] ?? const []);
     phone = j['phone'];
+    memberPhone = j['mp'] ?? (j['phone'] ?? '');
     name = j['name'] ?? '';
     avatar = j['avatar'];
     email = j['email'] ?? '';
@@ -406,6 +411,7 @@ class AppState extends ChangeNotifier {
     cartRestaurantId = null;
     chosenCoupon = null;
     phone = null;
+    memberPhone = '';
     name = '';
     avatar = null;
     email = '';
@@ -528,12 +534,33 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Bu numara bu cihazdaki üyeye mi ait? (Sunucu bağlanınca üyelik sunucudan sorulacak.)
+  bool isMember(String p) => p.isNotEmpty && p == memberPhone && name.isNotEmpty;
+
+  /// Kayıtlı üyenin girişi: SMS kodu doğrulandı, bilgiler zaten var.
+  void signIn(String p) {
+    phone = p;
+    notifyListeners();
+  }
+
   /// Kayıt: telefon SMS ile doğrulanınca ad soyad, e-posta ve ileti izni birlikte kaydedilir.
   void register({required String phone, required String name, String email = '', bool marketing = false}) {
+    if (memberPhone.isNotEmpty && memberPhone != phone && avatar != null) {
+      // başka bir üyenin fotoğrafı yeni üyeye geçmesin
+      removePhoto(avatar!);
+      avatar = null;
+    }
     this.phone = phone;
+    memberPhone = phone;
     this.name = name.trim();
     this.email = email.trim();
     marketingOk = marketing;
+    notifyListeners();
+  }
+
+  /// Kampanya SMS ve e-postası izni (kayıtta ya da Bildirimler'den).
+  void setMarketing(bool v) {
+    marketingOk = v;
     notifyListeners();
   }
 
