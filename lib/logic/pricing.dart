@@ -28,6 +28,13 @@ int tierFor(int count) {
   return -1; // 1.200 üstü: özel teklif
 }
 
+/// Keşfet'te "Öne çıkanlar" bölümünde görünme (30 gün, kuruş, KDV hariç).
+const featureFee = 250000;
+
+/// Doybi ekibinin dükkâna gidip menüyü hazırlaması ve ürün fotoğraflarını çekmesi (tek seferlik, kuruş, KDV hariç).
+const shootFee = 250000;
+const shootItems = 20; // bu ücrete dahil ürün fotoğrafı
+
 /// Yeni işletmenin ilk kaç dönemi ücretsiz (1 dönem = 30 gün, yani ilk 3 ay).
 const freePeriods = 3;
 

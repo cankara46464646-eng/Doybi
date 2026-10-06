@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models.dart';
+import '../../logic/pricing.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
@@ -58,7 +59,7 @@ class _AdminApplicationsState extends State<AdminApplications> {
     final flag = !a.taxUploaded ? ('Belge eksik', C.tint, C.redDeep) : (!a.courier ? ('Kuryesi yok', C.note, C.noteInk) : null);
     final st = {'bekliyor': ('Bekliyor', C.note, C.noteInk), 'onay': ('Onaylandı', C.greenTint, C.greenInk), 'red': ('Reddedildi', C.line, C.ink)}[a.status]!;
     final canApprove = a.checks.contains('ara') && a.checks.contains('vergi');
-    const menuText = {'ekip': 'Doybi ekibi gelsin · çekim planlanacak', 'foto': 'Fotoğrafı yüklenecek', 'kendim': 'Kendisi ekleyecek'};
+    final menuText = {'ekip': 'Doybi ekibi gelsin · ücretli çekim (${shortMoney(shootFee)} + KDV)', 'foto': 'Fotoğrafı yüklenecek', 'kendim': 'Kendisi ekleyecek'};
     return Box(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         InkWell(

@@ -34,7 +34,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
   final Set<String> _hoods = {};
   bool _cash = true;
   bool _card = true;
-  String _menu = 'ekip';
+  String _menu = 'foto';
   final Set<String> _checks = {};
   String? _msg;
 
@@ -252,9 +252,13 @@ class _ApplyScreenState extends State<ApplyScreen> {
         Box(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Column(children: [
-            RadioRow('Doybi ekibi gelsin', sub: 'Dükkânına gelip menünü ve fotoğrafları biz hazırlarız. Önerilen.', selected: _menu == 'ekip', onTap: () => setState(() => _menu = 'ekip')),
-            RadioRow('Menünün fotoğrafını çek', sub: 'Biz yazıya dökeriz, sen onaylarsın.', selected: _menu == 'foto', onTap: () => setState(() => _menu = 'foto')),
-            RadioRow('Kendim eklerim', sub: 'Onaydan sonra panelden ürün ürün eklersin.', selected: _menu == 'kendim', onTap: () => setState(() => _menu = 'kendim')),
+            RadioRow('Menünün fotoğrafını çek', sub: 'Ücretsiz. Biz yazıya dökeriz, sen onaylarsın.', selected: _menu == 'foto', onTap: () => setState(() => _menu = 'foto')),
+            RadioRow('Kendim eklerim', sub: 'Ücretsiz. Onaydan sonra panelden ürün ürün eklersin.', selected: _menu == 'kendim', onTap: () => setState(() => _menu = 'kendim')),
+            RadioRow('Doybi ekibi gelsin',
+                sub: 'Dükkânına gelip menünü hazırlarız, $shootItems ürüne kadar fotoğraf çekeriz. Tek seferlik ${shortMoney(shootFee)} + KDV.',
+                trailing: shortMoney(shootFee),
+                selected: _menu == 'ekip',
+                onTap: () => setState(() => _menu = 'ekip')),
           ]),
         ),
         if (_menu == 'foto') ...[
@@ -296,6 +300,13 @@ class _ApplyScreenState extends State<ApplyScreen> {
             ),
           ]),
         ),
+        if (_menu == 'ekip') ...[
+          const SizedBox(height: 10),
+          NoteBox(
+            'Menü çekimi: ${shortMoney(shootFee)} + KDV, tek seferlik ($shootItems ürüne kadar). Ücretsiz aylardan ayrıdır; onaydan sonra ayrı fatura edilir.',
+            icon: Icons.photo_camera_outlined,
+          ),
+        ],
         const SizedBox(height: 10),
         const NoteBox(
           'İlk 3 ay ücretsiz: ilk üç dönem (30\'ar gün) ücret alınmaz; ilk dönem giriş paketiyle başlar. 4. dönemden itibaren paketin, bir önceki dönemde teslim ettiğin siparişe göre belirlenir. Yemek parası kapıda doğrudan sana ödenir; Doybi siparişten pay almaz.',
@@ -317,7 +328,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
             const SizedBox(height: 8),
             Text('Başvurun alındı!', style: display(24)),
             const SizedBox(height: 4),
-            Text('Ekibimiz 48 saat içinde ${maskTr(_phone.text.replaceAll(RegExp(r'\D'), ''))} numarasından seni arayacak.', style: body(14, color: C.muted)),
+            Text('Doybi ekibi 1–3 iş günü içinde ${maskTr(_phone.text.replaceAll(RegExp(r'\D'), ''))} numarasından sana dönüş yapacak.', style: body(14, color: C.muted)),
           ]),
         ),
         const SectionLabel('Sırada ne var?'),
@@ -336,6 +347,6 @@ class _ApplyScreenState extends State<ApplyScreen> {
             ]),
           ),
         const SizedBox(height: 8),
-        const NoteBox('Başvurun Doybi ekibine iletildi. Genelde 1 iş günü içinde seni arayıp kurulumu birlikte yapıyoruz.', icon: Icons.info_outline),
+        const NoteBox('Başvurun Doybi ekibine iletildi. 1–3 iş günü içinde sana dönüp kurulumu birlikte yapıyoruz.', icon: Icons.info_outline),
       ];
 }

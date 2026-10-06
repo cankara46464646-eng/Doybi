@@ -122,7 +122,7 @@ class AdminSubscriptions extends StatelessWidget {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${b.kind == 'sosyal' ? 'Sosyal medya' : 'Abonelik'} · ${money(billTotal(s, rid, b))}', style: body(13, weight: FontWeight.w800)),
+                  Text('${b.kind == 'sosyal' ? 'Sosyal medya' : (b.kind == 'cekim' ? 'Menü çekimi' : (b.kind == 'one' ? 'Öne çıkma' : 'Abonelik'))} · ${money(billTotal(s, rid, b))}', style: body(13, weight: FontWeight.w800)),
                   Text(b.state == 'paid' ? 'Ödendi ${b.paidAt ?? ''}' : (b.detail.isEmpty ? b.title : b.detail), style: body(11, color: C.muted)),
                 ]),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models.dart';
+import '../../logic/pricing.dart';
 import '../../state/app_state.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
@@ -156,7 +157,8 @@ class AdminVitrin extends StatelessWidget {
             },
             child: const Text('+ Ekle'),
           )),
-          Text('"Sana en yakın" ve aramada bu sırayla en üstte çıkar.', style: body(12, color: C.muted)),
+          Text('Keşfet\'te "Öne çıkanlar" satırında bu sırayla görünür, listede de üstte çıkar. Ücretli: 30 gün ${shortMoney(featureFee)} + KDV. Restoran panelden talep eder; ödemeyi onaylayınca buraya kendiliğinden eklenir.',
+              style: body(12, color: C.muted)),
           const SizedBox(height: 8),
           for (var i = 0; i < s.featured.length; i++)
             if (s.restaurant(s.featured[i]) != null)

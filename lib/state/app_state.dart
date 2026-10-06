@@ -23,6 +23,7 @@ class AppState extends ChangeNotifier {
   Set<String> cityVotes = {};
   String? phone; // SMS ile doğrulanmış numara
   String name = '';
+  String? avatar; // profil fotoğrafı (kayıtlı fotoğraf kimliği)
   bool notifPush = true;
   bool notifSms = false;
   bool ikramNotify = false;
@@ -243,6 +244,7 @@ class AppState extends ChangeNotifier {
         'address': addressLine,
         'phone': phone,
         'name': name,
+        'avatar': avatar,
         'np': notifPush,
         'ns': notifSms,
         'in': ikramNotify,
@@ -287,6 +289,7 @@ class AppState extends ChangeNotifier {
     cityVotes = Set<String>.from(j['votes'] ?? const []);
     phone = j['phone'];
     name = j['name'] ?? '';
+    avatar = j['avatar'];
     notifPush = j['np'] ?? true;
     notifSms = j['ns'] ?? false;
     ikramNotify = j['in'] ?? false;
@@ -390,6 +393,7 @@ class AppState extends ChangeNotifier {
     chosenCoupon = null;
     phone = null;
     name = '';
+    avatar = null;
     addresses = keepAddress ? keep : [];
     addressId = keepAddress ? keepId : null;
     if (!keepAddress) {
@@ -510,6 +514,13 @@ class AppState extends ChangeNotifier {
 
   void setName(String n) {
     name = n.trim();
+    notifyListeners();
+  }
+
+  /// Profil fotoğrafını değiştirir ya da kaldırır (null); eskisini telefondan siler.
+  void setAvatar(String? id) {
+    if (avatar != null && avatar != id) removePhoto(avatar);
+    avatar = id;
     notifyListeners();
   }
 
@@ -988,10 +999,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toRoad(Order o) {
+  /// Paket yola çıktı. Kurye kendi ekranından aldıysa adı siparişe yazılır.
+  void toRoad(Order o, {String? courier}) {
     if (o.status != OrderStatus.hazirlaniyor) return;
     o.status = OrderStatus.yolda;
     o.roadAt = now;
+    o.courier = courier;
     if (autoRestaurant) _autoStep(o, autoRoadSeconds);
     notifyListeners();
   }
@@ -1216,8 +1229,24 @@ class AppState extends ChangeNotifier {
       s.social = 'aktif';
       s.socialStart = _shortDate(now);
     }
+    // Öne çıkma ödemesi gelince restoran Keşfet'teki "Öne çıkanlar"a girer.
+    if (b.kind == 'one') {
+      if (s != null) s.feature = 'yok';
+      if (!featured.contains(rid)) featured.add(rid);
+    }
     final amount = b.gross ? b.net : (b.kind == 'abonelik' && b.id.endsWith('-cur') ? invoiceNow(rid).money.total : fromNet(b.net, vat).total);
-    addLog('${restaurant(rid)?.name ?? rid} · ${b.kind == 'sosyal' ? 'Sosyal Medya Desteği' : 'abonelik'} ödemesi onaylandı (${money(amount)})');
+    const what = {'sosyal': 'Sosyal Medya Desteği', 'one': 'öne çıkma', 'cekim': 'menü çekimi'};
+    addLog('${restaurant(rid)?.name ?? rid} · ${what[b.kind] ?? 'abonelik'} ödemesi onaylandı (${money(amount)})');
+    notifyListeners();
+  }
+
+  /// Restoran Keşfet'te öne çıkmak ister: 30 günlük fatura açılır, ödeme onaylanınca öne çıkar.
+  void requestFeature(String rid) {
+    final s = subs[rid];
+    if (s == null || s.feature == 'talep' || featured.contains(rid)) return;
+    s.feature = 'talep';
+    s.bills.insert(0, Bill(id: '$rid-one${now.millisecondsSinceEpoch}', kind: 'one', net: featureFee, gross: false, title: 'Keşfet\'te öne çıkma · 30 gün', state: 'unpaid'));
+    addLog('${restaurant(rid)?.name ?? rid} · Keşfet\'te öne çıkma talebi (${shortMoney(featureFee)} + KDV)', actor: 'restoran:$rid');
     notifyListeners();
   }
 
@@ -1339,7 +1368,11 @@ class AppState extends ChangeNotifier {
       periodStart: '${_shortDate(now)} · 00:00',
       periodEnd: '${_shortDate(now.add(const Duration(days: 30)))} · 23:59',
       daysLeft: 30,
-      bills: [Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(1), detail: 'giriş paketi', state: 'free')],
+      bills: [
+        Bill(id: '${a.id}-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(1), detail: 'giriş paketi', state: 'free'),
+        if (a.menuWay == 'ekip')
+          Bill(id: '${a.id}-cekim', kind: 'cekim', net: shootFee, gross: false, title: 'Menü çekimi (tek seferlik)', detail: '$shootItems ürüne kadar fotoğraf', state: 'unpaid'),
+      ],
     );
     if (restaurant(a.id) == null) {
       final words = a.name.split(' ').where((w) => w.isNotEmpty).toList();

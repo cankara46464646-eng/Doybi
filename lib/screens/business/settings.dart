@@ -33,7 +33,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(ctx).viewInsets.bottom + 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text('Kuryeler', style: display(22)),
-            Text('Kurye modu telefonda 4 haneli kodla açılır. Kuryeler yalnızca yoldaki paketleri ve tahsilatı görür.', style: body(13, color: C.muted)),
+            Text('Kurye, işletme girişinde "Kurye" sekmesinden restoranı seçip kendi 4 haneli koduyla girer. Yalnızca paketleri, adresleri ve kendi tahsilatını görür; ciro, menü ve abonelik görünmez.', style: body(13, color: C.muted)),
             const SizedBox(height: 8),
             for (final k in List.of(r.couriers))
               ListTile(

@@ -396,6 +396,7 @@ class Order {
   bool fullRefund; // tamamen iade edildi: paket sayısına girmez
   final double? lat; // teslimat noktası (haritada işaretlendiyse)
   final double? lng;
+  String? courier; // paketi yola çıkaran kurye
 
   Order({
     required this.id,
@@ -427,6 +428,7 @@ class Order {
     this.fullRefund = false,
     this.lat,
     this.lng,
+    this.courier,
   });
 
   int get total => subtotal + deliveryFee - discount;
@@ -464,6 +466,7 @@ class Order {
         'refund': fullRefund,
         'lat': lat,
         'lng': lng,
+        'cr': courier,
       };
 
   factory Order.fromJson(Map<String, dynamic> j) => Order(
@@ -496,6 +499,7 @@ class Order {
         fullRefund: j['refund'] ?? false,
         lat: (j['lat'] as num?)?.toDouble(),
         lng: (j['lng'] as num?)?.toDouble(),
+        courier: j['cr'],
       );
 }
 
@@ -850,6 +854,7 @@ class Subscription {
   int creditBase; // bu dönem Doybi kuponlarından doğan mahsup (kuruş, deneme verisi)
   String social; // yok | talep | aktif
   String? socialStart;
+  String feature; // Keşfet'te öne çıkma talebi: yok | talep (etkin olanlar AppState.featured listesinde)
   int? offer; // özel teklif (kuruş)
   String offerState; // yok | gonderildi | onaylandi | reddedildi
   List<Bill> bills;
@@ -865,6 +870,7 @@ class Subscription {
     this.creditBase = 0,
     this.social = 'yok',
     this.socialStart,
+    this.feature = 'yok',
     this.offer,
     this.offerState = 'yok',
     List<Bill>? bills,
@@ -892,6 +898,7 @@ class Subscription {
         'credit': creditBase,
         'social': social,
         'socialStart': socialStart,
+        'feat': feature,
         'offer': offer,
         'offerState': offerState,
         'bills': bills.map((b) => b.toJson()).toList(),
@@ -907,6 +914,7 @@ class Subscription {
         creditBase: j['credit'] ?? 0,
         social: j['social'] ?? 'yok',
         socialStart: j['socialStart'],
+        feature: j['feat'] ?? 'yok',
         offer: j['offer'],
         offerState: j['offerState'] ?? 'yok',
         bills: (j['bills'] as List? ?? const []).map((e) => Bill.fromJson(_m(e))).toList(),

@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Doybi renkleri. Tek kırmızı: yalnızca marka alanı, ana buton ve seçili durumlar.
+/// Renk teması derlemede seçilir: --dart-define=TEMA=kirmizi | pembe | yesil (varsayılan kırmızı).
+const tema = String.fromEnvironment('TEMA', defaultValue: 'kirmizi');
+const _pembe = tema == 'pembe';
+const _yesil = tema == 'yesil';
+
+/// Doybi renkleri. Tek marka rengi: yalnızca marka alanı, ana buton ve seçili durumlar.
 /// Zemin sakin kalır; rengi yemek fotoğrafları getirir.
 class C {
-  static const red = Color(0xFFE0301C); // marka kırmızısı (beyaz yazı 4.6:1)
-  static const logoRed = Color(0xFFFC361B); // yalnızca logo, açılış ve Fırsat Saati
-  static const redDeep = Color(0xFFB4210F); // açık zeminde kırmızı yazı
-  static const tint = Color(0xFFFFF1EC);
+  // marka rengi (adı tarihsel olarak "red"): Fırsat Saati geçişinin orta tonu
+  static const red = _pembe ? Color(0xFFD81F63) : (_yesil ? Color(0xFF0B7F57) : Color(0xFFFC4915));
+  // logo, açılış ve Fırsat Saati için canlı ton
+  static const logoRed = _pembe ? Color(0xFFF0306F) : (_yesil ? Color(0xFF12A36D) : Color(0xFFFC361B));
+  static const event2 = _pembe ? Color(0xFFFF5A8C) : (_yesil ? Color(0xFF27B57E) : Color(0xFFFD5C0F)); // Fırsat geçişinin ikinci rengi
+  static const redDeep = _pembe ? Color(0xFFA3134A) : (_yesil ? Color(0xFF075C3F) : Color(0xFFC2360F)); // açık zeminde marka yazısı
+  static const tint = _pembe ? Color(0xFFFDEBF1) : (_yesil ? Color(0xFFE6F4EE) : Color(0xFFFFF0EA));
+  static const ticket = _pembe ? Color(0xFFFCE1EA) : (_yesil ? Color(0xFFDDF0E7) : Color(0xFFFFE6DB)); // kupon bileti
+  static const ticketDash = _pembe ? Color(0x4DA3134A) : (_yesil ? Color(0x4D075C3F) : Color(0x4DC2360F));
   static const saffron = Color(0xFFFFC53D);
   static const saffronTint = Color(0xFFFFF4D6);
   static const saffronInk = Color(0xFF5A4100);

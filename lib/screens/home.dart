@@ -101,6 +101,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final a = s.address;
     final favs = s.favRestaurants.where((r) => s.zoneFor(r) != null).toList();
     final mine = [...favs, ...again.where((r) => !favs.contains(r))].take(8).toList();
+    // Öne çıkanlar (ücretli vitrin): yönetimin sırasıyla, bu adrese teslimat yapanlar
+    final promoted = [
+      for (final id in s.featured)
+        for (final r in s.nearby)
+          if (r.id == id) r,
+    ];
     final ikramList = <Restaurant>[];
     for (final c in s.todaysCampaigns) {
       final r = s.restaurant(c.branchId);
@@ -115,7 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
             // ---------------- üst: adres + arama ----------------
             SliverToBoxAdapter(
               child: Container(
-                decoration: const BoxDecoration(color: C.red, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
+                // Fırsat Saati ile aynı ton: logo kırmızısından turuncuya geçiş
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [C.logoRed, C.event2], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(26)),
+                ),
                 padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 12, 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
@@ -207,6 +217,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   ]),
                 ),
               ),
+
+            // ---------------- öne çıkanlar (ücretli vitrin) ----------------
+            if (promoted.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 16, 10),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Expanded(child: Text('Öne çıkanlar', style: display(20))),
+                    const Pill('Sponsorlu', bg: C.field, fg: C.muted, size: 11),
+                  ]),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 222,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: promoted.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, i) => _PromotedCard(promoted[i]),
+                  ),
+                ),
+              ),
+            ],
 
             // ---------------- iki kısayol ----------------
             SliverToBoxAdapter(
@@ -355,66 +390,62 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Öğrenciye ikram kısayolu: yemek fotoğrafı üstünde, bugün ikram veren restoranların logolarıyla.
+/// Öğrenciye ikram kısayolu: açık şeftali zemin, silik ikram simgesi, bugün ikram veren esnafın logoları.
 class _IkramTile extends StatelessWidget {
   final List<Restaurant> rests;
   const _IkramTile({required this.rests});
 
   @override
   Widget build(BuildContext context) {
-    final img = photoImage(context, 'a:tavuk', width: 240);
     return Material(
-      color: C.ink,
+      color: C.tint,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
-      child: Ink(
-        decoration: BoxDecoration(
-          image: img == null ? null : DecorationImage(image: img, fit: BoxFit.cover, filterQuality: FilterQuality.low),
-        ),
-        child: InkWell(
-          onTap: () => shellTab.value = 2,
-          child: Container(
-            height: 128,
-            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xB3000000), Color(0x40000000), Color(0x99000000)],
-              ),
+      child: InkWell(
+        onTap: () => shellTab.value = 2,
+        child: SizedBox(
+          height: 128,
+          child: Stack(children: [
+            Positioned(
+              right: -16,
+              bottom: -20,
+              child: Icon(Icons.volunteer_activism_rounded, size: 100, color: C.red.withValues(alpha: 0.12)),
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Öğrenciye ikram', style: display(18, color: Colors.white)),
-              const SizedBox(height: 2),
-              Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
-                  maxLines: 2, style: body(12.5, color: Colors.white, weight: FontWeight.w600, height: 1.25)),
-              const Spacer(),
-              if (rests.isNotEmpty)
-                SizedBox(
-                  height: 30,
-                  child: Stack(children: [
-                    for (var i = 0; i < rests.length && i < 4; i++)
-                      Positioned(
-                        left: i * 20.0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: Avatar(rests[i], size: 26),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Öğrenciye ikram', style: display(18)),
+                const SizedBox(height: 2),
+                Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
+                    maxLines: 2, style: body(12.5, color: C.redDeep, weight: FontWeight.w700, height: 1.25)),
+                const Spacer(),
+                if (rests.isNotEmpty)
+                  SizedBox(
+                    height: 30,
+                    child: Stack(children: [
+                      for (var i = 0; i < rests.length && i < 4; i++)
+                        Positioned(
+                          left: i * 20.0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            child: Avatar(rests[i], size: 26),
+                          ),
                         ),
-                      ),
-                  ]),
-                )
-              else
-                Text('Göz at', style: body(13, color: Colors.white, weight: FontWeight.w800)),
-            ]),
-          ),
+                    ]),
+                  )
+                else
+                  Text('Göz at', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
+              ]),
+            ),
+          ]),
         ),
       ),
     );
   }
 }
 
-/// Kupon kısayolu: kenarları oyulmuş bilet görünümü.
+/// Kupon kısayolu: kenarları oyulmuş bilet, Fırsat Saati'yle aynı turuncu geçiş.
 class _CouponTile extends StatelessWidget {
   const _CouponTile();
 
@@ -425,40 +456,119 @@ class _CouponTile extends StatelessWidget {
     final best = ok.isEmpty ? null : (ok..sort((a, b) => (b.kind == 'tl' ? b.amount : 0).compareTo(a.kind == 'tl' ? a.amount : 0))).first;
     const shape = TicketBorder(radius: 20, notch: 9, at: 0.62);
     return Material(
-      color: const Color(0xFFFFE8E0),
+      type: MaterialType.transparency,
       shape: shape,
-      child: InkWell(
-        customBorder: shape,
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen())),
-        child: SizedBox(
-          height: 128,
-          child: CustomPaint(
-            painter: const DashLinePainter(at: 0.62, color: Color(0x4DB4210F)),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Kuponlarım', style: display(18)),
-                const SizedBox(height: 2),
-                Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: C.muted, weight: FontWeight.w600)),
-                const Spacer(),
-                if (best != null)
-                  Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(best.big, style: display(24, color: C.red, height: 1)),
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: C.redDeep, weight: FontWeight.w700)),
-                    ),
-                  ])
-                else
-                  Row(children: [
-                    const Icon(Icons.add_circle_outline_rounded, size: 20, color: C.redDeep),
-                    const SizedBox(width: 4),
-                    Text('Kupon ekle', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
-                  ]),
-              ]),
-            ),
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: const ShapeDecoration(
+          shape: shape,
+          gradient: LinearGradient(colors: [C.logoRed, C.event2], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        ),
+        child: InkWell(
+          customBorder: shape,
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsScreen())),
+          child: SizedBox(
+            height: 128,
+            child: Stack(children: [
+              Positioned(
+                right: 10,
+                top: 10,
+                child: Icon(Icons.local_offer_rounded, size: 40, color: Colors.white.withValues(alpha: 0.22)),
+              ),
+              Positioned.fill(child: CustomPaint(painter: DashLinePainter(at: 0.62, color: Colors.white.withValues(alpha: 0.55)))),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Kuponlarım', style: display(18, color: Colors.white)),
+                  const SizedBox(height: 2),
+                  Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: Colors.white, weight: FontWeight.w600)),
+                  const Spacer(),
+                  if (best != null)
+                    Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text(best.big, style: display(26, color: Colors.white, height: 1)),
+                      const SizedBox(width: 6),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: Colors.white, weight: FontWeight.w800)),
+                      ),
+                    ])
+                  else
+                    Row(children: [
+                      const Icon(Icons.add_circle_outline_rounded, size: 20, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text('Kupon ekle', style: body(13, color: Colors.white, weight: FontWeight.w800)),
+                    ]),
+                ]),
+              ),
+            ]),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Öne çıkan (ücretli vitrin) restoran kartı: kapak fotoğrafı, logo, puan, süre ve kampanya.
+class _PromotedCard extends StatelessWidget {
+  final Restaurant r;
+  const _PromotedCard(this.r);
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final z = s.zoneFor(r)!;
+    final open = s.isOpen(r);
+    final cover = s.hasPhoto(r.cover) ? r.cover : null;
+    return SizedBox(
+      width: 262,
+      child: Dim(
+        dim: !open,
+        radius: 18,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Stack(clipBehavior: Clip.none, children: [
+              cover != null
+                  ? PhotoBox(cover, width: 262, height: 118, radius: 18)
+                  : Container(width: 262, height: 118, decoration: BoxDecoration(color: r.bg, borderRadius: BorderRadius.circular(18))),
+              Positioned(
+                left: 10,
+                bottom: -14,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: Avatar(r, size: 36),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 18),
+            Row(children: [
+              Expanded(child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w800))),
+              if (r.ratingCount > 0) ...[
+                const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 16),
+                Text(r.rating.toStringAsFixed(1).replaceAll('.', ','), style: body(13, weight: FontWeight.w800)),
+              ],
+            ]),
+            Text(
+              open ? '${z.eta} dk · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'} · Min. ${tl(z.min)}' : s.closedText(r),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: body(12.5, color: open ? C.muted : C.redDeep, weight: FontWeight.w600),
+            ),
+            if (r.promo != null && open) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: C.tint, borderRadius: BorderRadius.circular(99)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_offer_rounded, size: 13, color: C.red),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text(r.promo!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: C.redDeep, weight: FontWeight.w800))),
+                ]),
+              ),
+            ],
+          ]),
         ),
       ),
     );

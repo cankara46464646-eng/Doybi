@@ -65,7 +65,7 @@ class _Bolt extends StatelessWidget {
       );
 }
 
-const _soft = Color(0xFFFFF3EF);
+const _soft = C.tint;
 
 /// Keşfet'in altındaki küçük kart; dokununca yukarı doğru açılır.
 class FirsatBar extends StatelessWidget {
@@ -151,7 +151,7 @@ class _Hero extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [C.logoRed, Color.lerp(C.logoRed, const Color(0xFFFF8A00), 0.45)!],
+                  colors: [C.logoRed, C.event2],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
