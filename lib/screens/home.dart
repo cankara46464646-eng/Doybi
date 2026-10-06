@@ -101,6 +101,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final a = s.address;
     final favs = s.favRestaurants.where((r) => s.zoneFor(r) != null).toList();
     final mine = [...favs, ...again.where((r) => !favs.contains(r))].take(8).toList();
+    // Öne çıkanlar (ücretli vitrin): yönetimin sırasıyla, bu adrese teslimat yapanlar
+    final promoted = [
+      for (final id in s.featured)
+        for (final r in s.nearby)
+          if (r.id == id) r,
+    ];
     final ikramList = <Restaurant>[];
     for (final c in s.todaysCampaigns) {
       final r = s.restaurant(c.branchId);
@@ -211,6 +217,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   ]),
                 ),
               ),
+
+            // ---------------- öne çıkanlar (ücretli vitrin) ----------------
+            if (promoted.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 16, 10),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    Expanded(child: Text('Öne çıkanlar', style: display(20))),
+                    const Pill('Sponsorlu', bg: C.field, fg: C.muted, size: 11),
+                  ]),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 222,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: promoted.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, i) => _PromotedCard(promoted[i]),
+                  ),
+                ),
+              ),
+            ],
 
             // ---------------- iki kısayol ----------------
             SliverToBoxAdapter(
@@ -471,6 +502,73 @@ class _CouponTile extends StatelessWidget {
               ),
             ]),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Öne çıkan (ücretli vitrin) restoran kartı: kapak fotoğrafı, logo, puan, süre ve kampanya.
+class _PromotedCard extends StatelessWidget {
+  final Restaurant r;
+  const _PromotedCard(this.r);
+
+  @override
+  Widget build(BuildContext context) {
+    final s = AppScope.of(context);
+    final z = s.zoneFor(r)!;
+    final open = s.isOpen(r);
+    final cover = s.hasPhoto(r.cover) ? r.cover : null;
+    return SizedBox(
+      width: 262,
+      child: Dim(
+        dim: !open,
+        radius: 18,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Stack(clipBehavior: Clip.none, children: [
+              cover != null
+                  ? PhotoBox(cover, width: 262, height: 118, radius: 18)
+                  : Container(width: 262, height: 118, decoration: BoxDecoration(color: r.bg, borderRadius: BorderRadius.circular(18))),
+              Positioned(
+                left: 10,
+                bottom: -14,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: Avatar(r, size: 36),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 18),
+            Row(children: [
+              Expanded(child: Text(r.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(15, weight: FontWeight.w800))),
+              if (r.ratingCount > 0) ...[
+                const Icon(Icons.star_rounded, color: Color(0xFFE79A00), size: 16),
+                Text(r.rating.toStringAsFixed(1).replaceAll('.', ','), style: body(13, weight: FontWeight.w800)),
+              ],
+            ]),
+            Text(
+              open ? '${z.eta} dk · ${z.fee == 0 ? 'Ücretsiz teslimat' : '${tl(z.fee)} teslimat'} · Min. ${tl(z.min)}' : s.closedText(r),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: body(12.5, color: open ? C.muted : C.redDeep, weight: FontWeight.w600),
+            ),
+            if (r.promo != null && open) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: C.tint, borderRadius: BorderRadius.circular(99)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_offer_rounded, size: 13, color: C.red),
+                  const SizedBox(width: 4),
+                  Flexible(child: Text(r.promo!, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: C.redDeep, weight: FontWeight.w800))),
+                ]),
+              ),
+            ],
+          ]),
         ),
       ),
     );

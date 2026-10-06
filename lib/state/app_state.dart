@@ -1229,8 +1229,24 @@ class AppState extends ChangeNotifier {
       s.social = 'aktif';
       s.socialStart = _shortDate(now);
     }
+    // Öne çıkma ödemesi gelince restoran Keşfet'teki "Öne çıkanlar"a girer.
+    if (b.kind == 'one') {
+      if (s != null) s.feature = 'yok';
+      if (!featured.contains(rid)) featured.add(rid);
+    }
     final amount = b.gross ? b.net : (b.kind == 'abonelik' && b.id.endsWith('-cur') ? invoiceNow(rid).money.total : fromNet(b.net, vat).total);
-    addLog('${restaurant(rid)?.name ?? rid} · ${b.kind == 'sosyal' ? 'Sosyal Medya Desteği' : 'abonelik'} ödemesi onaylandı (${money(amount)})');
+    const what = {'sosyal': 'Sosyal Medya Desteği', 'one': 'öne çıkma', 'cekim': 'menü çekimi'};
+    addLog('${restaurant(rid)?.name ?? rid} · ${what[b.kind] ?? 'abonelik'} ödemesi onaylandı (${money(amount)})');
+    notifyListeners();
+  }
+
+  /// Restoran Keşfet'te öne çıkmak ister: 30 günlük fatura açılır, ödeme onaylanınca öne çıkar.
+  void requestFeature(String rid) {
+    final s = subs[rid];
+    if (s == null || s.feature == 'talep' || featured.contains(rid)) return;
+    s.feature = 'talep';
+    s.bills.insert(0, Bill(id: '$rid-one${now.millisecondsSinceEpoch}', kind: 'one', net: featureFee, gross: false, title: 'Keşfet\'te öne çıkma · 30 gün', state: 'unpaid'));
+    addLog('${restaurant(rid)?.name ?? rid} · Keşfet\'te öne çıkma talebi (${shortMoney(featureFee)} + KDV)', actor: 'restoran:$rid');
     notifyListeners();
   }
 

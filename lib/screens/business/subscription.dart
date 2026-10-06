@@ -299,6 +299,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               const Icon(Icons.chevron_right, color: C.muted),
             ]),
           ),
+          const SizedBox(height: 12),
+          _featureCard(context, s, r, sub),
           const SectionLabel('Faturalar'),
           for (final b in sub.bills)
             Padding(
@@ -318,6 +320,43 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  /// Keşfet'te öne çıkma: ücretli, 30 gün. Ödeme onaylanınca "Öne çıkanlar" satırında görünür.
+  Widget _featureCard(BuildContext context, AppState s, Restaurant r, Subscription sub) {
+    final on = s.featured.contains(r.id);
+    final asked = sub.feature == 'talep';
+    return Box(
+      child: Row(children: [
+        const Icon(Icons.trending_up_rounded, color: C.red),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Keşfet\'te öne çık', style: body(15, weight: FontWeight.w800)),
+            Text(
+              on
+                  ? 'Aktif · Keşfet\'te "Öne çıkanlar"dasın, listede de üstte görünürsün'
+                  : (asked ? 'Talep gönderildi · ödeme onayı bekleniyor' : 'İsteğe bağlı · 30 gün · ${shortMoney(featureFee)} + KDV'),
+              style: body(13, color: C.muted),
+            ),
+          ]),
+        ),
+        if (!on && !asked)
+          TextButton(
+            onPressed: () async {
+              final ok = await confirmDialog(
+                context,
+                'Keşfet\'te öne çık',
+                '30 gün boyunca restoranın Keşfet\'te "Öne çıkanlar" bölümünde ve listenin üstünde görünür. Ücret ${shortMoney(featureFee)} + KDV; havaleyle ödenir, ödeme onaylanınca başlar.',
+                ok: 'Talep et',
+                danger: false,
+              );
+              if (ok) s.requestFeature(r.id);
+            },
+            child: Text('Talep et', style: body(14, color: C.red, weight: FontWeight.w800)),
+          ),
+      ]),
     );
   }
 
