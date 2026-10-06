@@ -24,6 +24,8 @@ class AppState extends ChangeNotifier {
   String? phone; // SMS ile doğrulanmış numara
   String name = '';
   String? avatar; // profil fotoğrafı (kayıtlı fotoğraf kimliği)
+  String email = '';
+  bool marketingOk = false; // kampanya iletisi izni (SMS / e-posta, isteğe bağlı)
   bool notifPush = true;
   bool notifSms = false;
   bool ikramNotify = false;
@@ -253,6 +255,8 @@ class AppState extends ChangeNotifier {
         'phone': phone,
         'name': name,
         'avatar': avatar,
+        'email': email,
+        'mkt': marketingOk,
         'np': notifPush,
         'ns': notifSms,
         'in': ikramNotify,
@@ -298,6 +302,8 @@ class AppState extends ChangeNotifier {
     phone = j['phone'];
     name = j['name'] ?? '';
     avatar = j['avatar'];
+    email = j['email'] ?? '';
+    marketingOk = j['mkt'] ?? false;
     notifPush = j['np'] ?? true;
     notifSms = j['ns'] ?? false;
     ikramNotify = j['in'] ?? false;
@@ -402,6 +408,8 @@ class AppState extends ChangeNotifier {
     phone = null;
     name = '';
     avatar = null;
+    email = '';
+    marketingOk = false;
     addresses = keepAddress ? keep : [];
     addressId = keepAddress ? keepId : null;
     if (!keepAddress) {
@@ -517,6 +525,20 @@ class AppState extends ChangeNotifier {
 
   void verifyPhone(String p) {
     phone = p;
+    notifyListeners();
+  }
+
+  /// Kayıt: telefon SMS ile doğrulanınca ad soyad, e-posta ve ileti izni birlikte kaydedilir.
+  void register({required String phone, required String name, String email = '', bool marketing = false}) {
+    this.phone = phone;
+    this.name = name.trim();
+    this.email = email.trim();
+    marketingOk = marketing;
+    notifyListeners();
+  }
+
+  void setEmail(String v) {
+    email = v.trim();
     notifyListeners();
   }
 

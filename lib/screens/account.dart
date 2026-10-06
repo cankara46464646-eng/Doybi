@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -17,7 +18,7 @@ const helpText = [
   ('Siparişim gecikti', 'Takip ekranından restoranı arayabilirsin. Restoran onaylamadan önce siparişini ücretsiz iptal edebilirsin.'),
   ('Eksik ya da yanlış geldi', 'Siparişlerim > Sorun bildir. Ödemeyi restorana yaptığın için iadeyi restoran yapar; 24 saat içinde dönmezse Doybi ekibi devreye girer.'),
   ('Ödeme', 'Doybi\'de ödeme yalnızca kapıda yapılır: nakit ya da kuryenin getirdiği POS ile kart. Uygulamada kart bilgisi istemeyiz.'),
-  ('Bize ulaş', 'Siparişlerim > Sorun bildir ile yaz; fotoğraf da ekleyebilirsin. Bildirimin önce restorana, 24 saatte çözülmezse Doybi ekibine düşer.'),
+  ('Bize ulaş', 'Siparişle ilgili sorunları Siparişlerim > Sorun bildir ile yaz; fotoğraf da ekleyebilirsin. Bildirimin önce restorana, 24 saatte çözülmezse Doybi ekibine düşer. Diğer her konuda $supportEmail adresine yazabilirsin.'),
 ];
 
 class AccountScreen extends StatelessWidget {
@@ -25,18 +26,30 @@ class AccountScreen extends StatelessWidget {
 
   Future<void> _editName(BuildContext context, AppState s) async {
     final c = TextEditingController(text: s.name);
-    final v = await showDialog<String>(
+    final e = TextEditingController(text: s.email);
+    final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Adın', style: display(20)),
-        content: TextField(controller: c, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'Örn. Ayşe K.')),
+        title: Text('Bilgilerin', style: display(20)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: c, autofocus: true, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Ad soyad', hintText: 'Örn. Ayşe Kaya')),
+          const SizedBox(height: 10),
+          TextField(controller: e, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: const InputDecoration(labelText: 'E-posta', hintText: 'ornek@mail.com')),
+        ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, c.text), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
         ],
       ),
     );
-    if (v != null) s.setName(v);
+    if (ok != true) return;
+    final mail = e.text.trim();
+    if (mail.isNotEmpty && !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(mail)) {
+      if (context.mounted) snack(context, 'E-posta adresi geçersiz, kaydedilmedi.');
+    } else {
+      s.setEmail(mail);
+    }
+    s.setName(c.text);
   }
 
   Future<void> _delete(BuildContext context, AppState s) async {
@@ -148,21 +161,23 @@ class AccountScreen extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22)),
                   const SizedBox(height: 2),
-                  if (s.phone != null)
+                  if (s.phone != null) ...[
                     Row(children: [
                       Text(s.maskPhone(s.phone), style: body(14, color: C.muted, weight: FontWeight.w600)),
                       const SizedBox(width: 6),
                       const Icon(Icons.verified_rounded, size: 16, color: C.green),
-                    ])
+                    ]),
+                    if (s.email.isNotEmpty) Text(s.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: body(13, color: C.muted)),
+                  ]
                   else
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyScreen())),
-                      child: Text('Telefonunu doğrula', style: body(14, color: C.red, weight: FontWeight.w800)),
+                      child: Text('Kayıt ol', style: body(14, color: C.red, weight: FontWeight.w800)),
                     ),
                 ]),
               ),
               IconButton(
-                tooltip: 'Adını düzenle',
+                tooltip: 'Bilgilerini düzenle',
                 onPressed: () => _editName(context, s),
                 icon: const Icon(Icons.edit_outlined, color: C.ink),
               ),
@@ -186,6 +201,8 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(height: 12),
               group([
                 LinkRow(Icons.help_outline, 'Yardım ve destek', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Yardım ve destek', helpText)))),
+                LinkRow(Icons.mail_outline_rounded, 'Bize e-posta gönder', sub: supportEmail, iconColor: C.ink,
+                    onTap: () => launchUrl(Uri(scheme: 'mailto', path: supportEmail, query: 'subject=Doybi destek'))),
                 LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
               ]),
               const SizedBox(height: 20),
