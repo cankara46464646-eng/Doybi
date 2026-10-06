@@ -288,7 +288,7 @@ class NotificationsScreen extends StatelessWidget {
               ]),
               const Divider(color: C.line),
               SwitchRow('Kampanya bildirimleri', sub: 'Yakınındaki indirimler', value: s.notifPush, onChanged: (v) => s.setNotif(push: v)),
-              SwitchRow('Kampanya SMS ve e-postaları', sub: 'İzin verdiysen gönderilir. İstediğin zaman kapatabilirsin.', value: s.marketingOk, onChanged: s.setMarketing),
+              SwitchRow('Kampanya SMS ve e-postaları', sub: '18 yaşından büyüksen açabilirsin. İstediğin zaman kapatabilirsin.', value: s.marketingOk, onChanged: s.setMarketing),
             ]),
           ),
         ],

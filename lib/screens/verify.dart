@@ -386,7 +386,7 @@ class _VerifyScreenState extends State<VerifyScreen> with SingleTickerProviderSt
       ),
       const SizedBox(height: 4),
       CheckRow(
-        'Kampanya ve fırsatlardan SMS ve e-postayla haberdar olmak istiyorum',
+        '18 yaşından büyüğüm; kampanya ve fırsatlardan SMS ve e-postayla haberdar olmak istiyorum',
         sub: 'İsteğe bağlı. İstediğin zaman Bildirimler\'den kapatabilirsin.',
         checked: _mkt,
         onTap: () => setState(() => _mkt = !_mkt),
@@ -444,7 +444,7 @@ class _VerifyScreenState extends State<VerifyScreen> with SingleTickerProviderSt
 /// Kullanım koşullarının uygulama içi özeti. Tam metin hukuki incelemeden sonra eklenecek.
 const termsText = [
   ('Doybi nedir?', 'Doybi, Kahramanmaraş\'taki restoranları listeleyen ve siparişini restorana ileten bir platformdur. Yemeği hazırlayan, satan ve teslim eden restorandır. Doybi yemek bedelini tahsil etmez, restoranlardan komisyon almaz.'),
-  ('Üyelik', 'Doybi\'ye yalnızca telefon numaranla üye olursun; numaran SMS koduyla doğrulanır. Bilgilerin doğru olmalı ve hesabını başkasına kullandırmamalısın.'),
+  ('Üyelik', 'Doybi\'ye yalnızca telefon numaranla üye olursun; numaran SMS koduyla doğrulanır. Bilgilerin doğru olmalı ve hesabını başkasına kullandırmamalısın. 18 yaşından küçüksen de üye olabilirsin; Doybi\'yi velinin bilgisiyle kullan.'),
   ('Sipariş', 'Ürünler, fiyatlar, teslimat ücreti ve toplam tutar siparişten önce sepette gösterilir. Siparişin restoran onaylayınca kesinleşir. Restoran 5 dakika içinde onaylamazsa sipariş kendiliğinden iptal olur.'),
   ('Ödeme', 'Ödemeyi teslimatta restoranın kuryesine nakit ya da restoranın POS cihazıyla kartla yaparsın. Uygulamada kart bilgisi istenmez.'),
   ('İptal ve sorunlar', 'Restoran onaylamadan önce siparişini ücretsiz iptal edebilirsin; sonrasında restoranı ara. Eksik, yanlış ya da kötü gelen siparişi Siparişlerim > Sorun bildir ile ilet. İadeyi restoran yapar; 24 saat içinde çözülmezse Doybi ekibi devreye girer. Yasal hakların saklıdır.'),
@@ -458,6 +458,6 @@ const kvkkText = [
   ('Hangi bilgileri işliyoruz?', 'Adın soyadın, telefon numaran, yazdıysan e-posta adresin, teslimat adresin (haritada işaretlediğin nokta dahil), siparişlerin, sorun bildirimlerin ve değerlendirmelerin. Profil fotoğrafı isteğe bağlıdır. Öğrenci ikramında kimlik bilgisi almıyoruz; kimliğine restoran yalnızca bakar.'),
   ('Neden?', 'Üyeliğini oluşturmak, siparişini restorana iletmek, restoranın sana ulaşabilmesi, sorunları çözmek ve sahte siparişleri önlemek için.'),
   ('Kimlerle paylaşıyoruz?', 'Siparişini hazırlayan restoranla ve kuryesiyle: adın, numaran, adresin ve sipariş içeriğin. Restoran, numarana daha önce kaç siparişin teslim edildiğini ve edilemediğini de sayı olarak görür. "Konumumu kullan" dediğinde adresi bulmak için konum noktası OpenStreetMap\'e gönderilir. Bilgilerini reklam için kimseyle paylaşmıyoruz.'),
-  ('Kampanya iletileri', 'Kampanya SMS\'i ve e-postası yalnızca izin verdiysen gönderilir. İzni Hesabım > Bildirimler\'den istediğin zaman geri alabilirsin.'),
+  ('Kampanya iletileri', 'Kampanya SMS\'i ve e-postası yalnızca 18 yaşından büyük olduğunu belirterek izin verdiysen gönderilir. İzni Hesabım > Bildirimler\'den istediğin zaman geri alabilirsin.'),
   ('Hakların', 'KVKK 11. maddedeki hakların için $supportEmail adresine yazabilirsin. Hesabım > Hesabımı sil ile hesabını silebilirsin; geçmiş sipariş kayıtları yalnızca yasal zorunluluk süresince saklanır.'),
 ];
