@@ -115,7 +115,11 @@ class _HomeScreenState extends State<HomeScreen> {
             // ---------------- üst: adres + arama ----------------
             SliverToBoxAdapter(
               child: Container(
-                decoration: const BoxDecoration(color: C.red, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
+                // Fırsat Saati ile aynı ton: logo kırmızısından turuncuya geçiş
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [C.logoRed, C.event2], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(26)),
+                ),
                 padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 12, 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
