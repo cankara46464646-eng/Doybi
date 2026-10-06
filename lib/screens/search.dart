@@ -157,7 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: InkWell(
                         onTap: () {
                           s.addRecent(_c.text);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id)));
+                          openRestaurant(context, r, item: m.id);
                         },
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10),

@@ -523,7 +523,7 @@ class _PromotedCard extends StatelessWidget {
         radius: 18,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+          onTap: () => openRestaurant(context, r),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Stack(clipBehavior: Clip.none, children: [
               cover != null
@@ -583,7 +583,7 @@ class _AgainCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+        onTap: () => openRestaurant(context, r),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -645,7 +645,7 @@ class _BannerCard extends StatelessWidget {
               : null,
           child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: r == null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r!))),
+          onTap: r == null ? null : () => openRestaurant(context, r!),
           child: Container(
             decoration: hasPhoto
                 ? const BoxDecoration(gradient: LinearGradient(colors: [Color(0xCC000000), Color(0x33000000)], begin: Alignment.centerLeft, end: Alignment.centerRight))
@@ -694,7 +694,7 @@ class RestaurantCard extends StatelessWidget {
       dim: !open,
       radius: 0,
       child: InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
+          onTap: () => openRestaurant(context, r),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

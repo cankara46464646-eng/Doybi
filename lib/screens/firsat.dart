@@ -333,7 +333,7 @@ class _DealCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id))),
+          onTap: () => openRestaurant(context, r, item: m.id),
           child: SizedBox(
             height: 112,
             child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
