@@ -317,7 +317,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
             const SizedBox(height: 8),
             Text('Başvurun alındı!', style: display(24)),
             const SizedBox(height: 4),
-            Text('Ekibimiz 48 saat içinde ${maskTr(_phone.text.replaceAll(RegExp(r'\D'), ''))} numarasından seni arayacak.', style: body(14, color: C.muted)),
+            Text('Doybi ekibi 1–3 iş günü içinde ${maskTr(_phone.text.replaceAll(RegExp(r'\D'), ''))} numarasından sana dönüş yapacak.', style: body(14, color: C.muted)),
           ]),
         ),
         const SectionLabel('Sırada ne var?'),
@@ -336,6 +336,6 @@ class _ApplyScreenState extends State<ApplyScreen> {
             ]),
           ),
         const SizedBox(height: 8),
-        const NoteBox('Başvurun Doybi ekibine iletildi. Genelde 1 iş günü içinde seni arayıp kurulumu birlikte yapıyoruz.', icon: Icons.info_outline),
+        const NoteBox('Başvurun Doybi ekibine iletildi. 1–3 iş günü içinde sana dönüp kurulumu birlikte yapıyoruz.', icon: Icons.info_outline),
       ];
 }

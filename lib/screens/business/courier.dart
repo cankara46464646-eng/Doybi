@@ -7,9 +7,12 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/photo.dart';
 
-/// Kurye modu: kuryenin telefonunda sade görünüm.
+/// Kurye modu: kuryenin telefonunda sade görünüm. Kurye yalnızca paketleri, adresleri ve
+/// kendi tahsilatını görür; ciro, menü, abonelik gibi işletme bilgileri burada yok.
+/// [standalone]: işletme girişindeki "Kurye" sekmesinden açıldı (işletme paneline geçiş yok).
 class CourierScreen extends StatefulWidget {
-  const CourierScreen({super.key});
+  final bool standalone;
+  const CourierScreen({super.key, this.standalone = false});
 
   @override
   State<CourierScreen> createState() => _CourierScreenState();
@@ -34,8 +37,9 @@ class _CourierScreenState extends State<CourierScreen> {
       backgroundColor: C.bg,
       appBar: AppBar(backgroundColor: C.ink, foregroundColor: Colors.white, title: Text('Kurye modu', style: display(21, color: Colors.white))),
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
+        Text(r.name, style: body(14, color: C.muted, weight: FontWeight.w700)),
         Text('Kim giriyor?', style: display(24)),
-        Text('Kurye kodu Ayarlar > Kuryeler\'de yazar.', style: body(14, color: C.muted)),
+        Text('Kodunu restoran sahibi verir (Ayarlar > Kuryeler).', style: body(14, color: C.muted)),
         const SizedBox(height: 12),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final k in r.couriers) SelChip(k, selected: _pick == k, onTap: () => setState(() => _pick = k)),
@@ -51,6 +55,11 @@ class _CourierScreenState extends State<CourierScreen> {
           decoration: const InputDecoration(hintText: '••••'),
         ),
         if (_pinMsg != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_pinMsg!, style: body(13, color: C.redDeep, weight: FontWeight.w800))),
+        if (_pick != null && r.courierPins[_pick] != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('Deneme kodu: ${r.courierPins[_pick]}', textAlign: TextAlign.center, style: body(12, color: C.muted)),
+          ),
         const SizedBox(height: 14),
         BigButton('Gir', color: C.ink, onPressed: _pick == null
             ? null
@@ -79,14 +88,18 @@ class _CourierScreenState extends State<CourierScreen> {
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final r = s.panelRestaurant;
-    final mine = s.ordersOf(r.id).where((o) => o.status == OrderStatus.yolda).toList();
-    final ready = s.ordersOf(r.id).where((o) => o.status == OrderStatus.hazirlaniyor).toList();
-    final now = DateTime.now();
-    final today = s.ordersOf(r.id).where((o) => o.status == OrderStatus.teslim && o.doneAt != null && o.doneAt!.day == now.day && o.doneAt!.month == now.month);
-    final cash = today.where((o) => o.collectedVia == 'nakit' || (!o.collected && o.payment == 'nakit')).fold(0, (a, o) => a + o.total);
-    final pos = today.where((o) => o.collectedVia == 'pos' || (!o.collected && o.payment == 'kart')).fold(0, (a, o) => a + o.total);
     if (r.couriers.isNotEmpty && (_courier == null || !r.couriers.contains(_courier))) return _login(s, r);
     final courier = _courier ?? 'Kurye';
+    // Kuryenin kendi paketleri: kendisinin yola çıkardıkları ve kimseye yazılmamış olanlar.
+    bool isMine(Order o) => _courier == null || o.courier == null || o.courier == _courier;
+    final mine = s.ordersOf(r.id).where((o) => o.status == OrderStatus.yolda && isMine(o)).toList();
+    final ready = s.ordersOf(r.id).where((o) => o.status == OrderStatus.hazirlaniyor).toList();
+    final now = DateTime.now();
+    // Kasaya teslim: yalnızca bu kuryenin bugün teslim ettikleri (restoranın cirosu değil).
+    final today = s.ordersOf(r.id).where((o) =>
+        o.status == OrderStatus.teslim && o.doneAt != null && o.doneAt!.day == now.day && o.doneAt!.month == now.month && (_courier == null || o.courier == _courier));
+    final cash = today.where((o) => o.collectedVia == 'nakit' || (!o.collected && o.payment == 'nakit')).fold(0, (a, o) => a + o.total);
+    final pos = today.where((o) => o.collectedVia == 'pos' || (!o.collected && o.payment == 'kart')).fold(0, (a, o) => a + o.total);
 
     return Scaffold(
       backgroundColor: C.bg,
@@ -97,6 +110,22 @@ class _CourierScreenState extends State<CourierScreen> {
           Text('$courier · kurye', style: body(11, color: C.saffron, weight: FontWeight.w800)),
           Text('Kurye modu', style: display(21, color: Colors.white)),
         ]),
+        actions: [
+          if (widget.standalone || r.couriers.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                if (widget.standalone) {
+                  Navigator.pop(context);
+                } else {
+                  setState(() {
+                    _courier = null;
+                    _pin.clear();
+                  });
+                }
+              },
+              child: Text('Çıkış', style: body(14, color: C.saffron, weight: FontWeight.w800)),
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -116,14 +145,15 @@ class _CourierScreenState extends State<CourierScreen> {
                 ]),
                 const SizedBox(height: 8),
                 Text(o.address, style: body(15, weight: FontWeight.w800)),
+                Text(o.itemsText, maxLines: 2, overflow: TextOverflow.ellipsis, style: body(13)),
                 Text(o.payment == 'kart' ? 'Kapıda kart · POS götür · ${tl(o.total)}' : 'Kapıda nakit · ${tl(o.total)}', style: body(13, color: C.muted)),
                 const SizedBox(height: 10),
-                BigButton('Paketi aldım, yola çıktım', color: C.ink, onPressed: () => s.toRoad(o)),
+                BigButton('Paketi aldım, yola çıktım', color: C.ink, onPressed: () => s.toRoad(o, courier: _courier)),
               ]),
             ),
             const SizedBox(height: 12),
           ],
-          const SectionLabel('Bugün kasaya teslim'),
+          SectionLabel(_courier == null ? 'Bugün kasaya teslim' : 'Bugün senin teslimatların'),
           Row(children: [
             Expanded(child: CounterTile('${today.length}', 'teslim')),
             const SizedBox(width: 8),
@@ -132,7 +162,7 @@ class _CourierScreenState extends State<CourierScreen> {
             Expanded(child: CounterTile(tl(pos), 'POS')),
           ]),
           const SizedBox(height: 8),
-          Text('Gün sonunda nakdi restorana teslim et; tutarlar panelde de görünür.', style: body(13, color: C.muted)),
+          Text('Gün sonunda topladığın nakdi restorana teslim et.', style: body(13, color: C.muted)),
         ],
       ),
     );
@@ -154,6 +184,8 @@ class _CourierScreenState extends State<CourierScreen> {
         const SizedBox(height: 10),
         Text(o.address, style: display(20)),
         Text('$name · ${maskTr(o.phone)}', style: body(13, color: C.muted)),
+        const SizedBox(height: 4),
+        Text(o.itemsText, style: body(14, weight: FontWeight.w600)),
         if (o.note.isNotEmpty) ...[
           const SizedBox(height: 6),
           Container(

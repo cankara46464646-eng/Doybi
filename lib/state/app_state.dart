@@ -988,10 +988,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toRoad(Order o) {
+  /// Paket yola çıktı. Kurye kendi ekranından aldıysa adı siparişe yazılır.
+  void toRoad(Order o, {String? courier}) {
     if (o.status != OrderStatus.hazirlaniyor) return;
     o.status = OrderStatus.yolda;
     o.roadAt = now;
+    o.courier = courier;
     if (autoRestaurant) _autoStep(o, autoRoadSeconds);
     notifyListeners();
   }

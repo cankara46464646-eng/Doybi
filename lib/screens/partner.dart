@@ -10,6 +10,7 @@ import '../widgets/common.dart';
 import 'account.dart';
 import 'admin/admin_shell.dart';
 import 'business/business_shell.dart';
+import 'business/courier.dart';
 
 /// İşletme girişi ayrı bir sayfadan açılır (web: /app/panel.html). Müşteri uygulamasında görünmez.
 bool get partnerEntry => kIsWeb && Uri.base.path.endsWith('panel.html');
@@ -18,9 +19,30 @@ bool get partnerEntry => kIsWeb && Uri.base.path.endsWith('panel.html');
 const _restaurantPin = '1234';
 const _adminPin = '4646';
 
-class PartnerEntryScreen extends StatelessWidget {
+/// İşletme girişi. Aynı yerden iki rol girer:
+/// işletme sahibi her şeyi görür (siparişler, ciro, menü, abonelik);
+/// kurye kendi koduyla girer, yalnızca paketleri ve adresleri görür.
+class PartnerEntryScreen extends StatefulWidget {
   final bool root;
   const PartnerEntryScreen({super.key, this.root = false});
+
+  @override
+  State<PartnerEntryScreen> createState() => _PartnerEntryScreenState();
+}
+
+class _PartnerEntryScreenState extends State<PartnerEntryScreen> {
+  bool _courier = false;
+
+  bool get root => widget.root;
+
+  void _enterCourier(BuildContext context, Restaurant r) {
+    if (r.couriers.isEmpty) {
+      snack(context, '${r.name} için kayıtlı kurye yok. Restoran sahibi Ayarlar > Kuryeler\'den ekleyebilir.');
+      return;
+    }
+    AppScope.read(context).setPanelRestaurant(r.id);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const CourierScreen(standalone: true)));
+  }
 
   Future<void> _enterRestaurant(BuildContext context, Restaurant r) async {
     final ok = await _askPin(context, title: r.name, pin: _restaurantPin);
@@ -54,9 +76,16 @@ class PartnerEntryScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          Text('Restoranına giriş yap', style: display(26, color: Colors.white)),
+          _RoleSwitch(courier: _courier, onChanged: (v) => setState(() => _courier = v)),
+          const SizedBox(height: 18),
+          Text(_courier ? 'Kurye girişi' : 'Restoranına giriş yap', style: display(26, color: Colors.white)),
           const SizedBox(height: 4),
-          Text('Siparişler, menü, öğrenciye ikram ve abonelik tek yerde.', style: body(14, color: Colors.white70)),
+          Text(
+            _courier
+                ? 'Çalıştığın restoranı seç, kendi kodunla gir. Yalnızca paketleri ve adresleri görürsün.'
+                : 'Siparişler, ciro, menü, öğrenciye ikram ve abonelik tek yerde.',
+            style: body(14, color: Colors.white70),
+          ),
           const SizedBox(height: 18),
           for (final r in s.restaurants)
             Padding(
@@ -66,7 +95,7 @@ class PartnerEntryScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(18),
-                  onTap: () => _enterRestaurant(context, r),
+                  onTap: () => _courier ? _enterCourier(context, r) : _enterRestaurant(context, r),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(children: [
@@ -75,7 +104,10 @@ class PartnerEntryScreen extends StatelessWidget {
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(r.name, style: body(16, color: Colors.white, weight: FontWeight.w800)),
-                          Text('${r.branch} şubesi', style: body(13, color: Colors.white60)),
+                          Text(
+                            _courier ? '${r.branch} şubesi · ${r.couriers.isEmpty ? 'kurye yok' : '${r.couriers.length} kurye'}' : '${r.branch} şubesi',
+                            style: body(13, color: Colors.white60),
+                          ),
                         ]),
                       ),
                       const Icon(Icons.chevron_right_rounded, color: Colors.white54),
@@ -85,8 +117,13 @@ class PartnerEntryScreen extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 18),
-          Text('Restoranın Doybi\'de değil mi? Hesabım > Restoranını ekle\'den başvur; onaylanınca giriş bilgilerin sana gönderilir.',
-              style: body(13, color: Colors.white54)),
+          Text(
+            _courier
+                ? 'Kodun yoksa restoran sahibinden iste; kodlar işletme panelinde Ayarlar > Kuryeler\'de.'
+                : 'Restoranın Doybi\'de değil mi? Hesabım > Restoranını ekle\'den başvur; onaylanınca giriş bilgilerin sana gönderilir.',
+            style: body(13, color: Colors.white54),
+          ),
+          if (!_courier) ...[
           const SizedBox(height: 28),
           const Divider(color: Color(0xFF3A3431)),
           ListTile(
@@ -103,6 +140,7 @@ class PartnerEntryScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white54),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TestSettingsScreen())),
           ),
+          ],
           if (root)
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -113,6 +151,43 @@ class PartnerEntryScreen extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// İşletme sahibi / kurye seçimi (koyu zeminde iki parçalı düğme).
+class _RoleSwitch extends StatelessWidget {
+  final bool courier;
+  final ValueChanged<bool> onChanged;
+  const _RoleSwitch({required this.courier, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget seg(String label, IconData icon, bool on, VoidCallback tap) => Expanded(
+          child: Material(
+            color: on ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: tap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(icon, size: 19, color: on ? C.ink : Colors.white70),
+                  const SizedBox(width: 6),
+                  Text(label, style: body(14, color: on ? C.ink : Colors.white70, weight: FontWeight.w800)),
+                ]),
+              ),
+            ),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: const Color(0xFF2A2523), borderRadius: BorderRadius.circular(16)),
+      child: Row(children: [
+        seg('İşletme sahibi', Icons.storefront_rounded, !courier, () => onChanged(false)),
+        seg('Kurye', Icons.delivery_dining_rounded, courier, () => onChanged(true)),
+      ]),
     );
   }
 }

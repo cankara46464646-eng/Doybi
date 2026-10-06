@@ -396,6 +396,7 @@ class Order {
   bool fullRefund; // tamamen iade edildi: paket sayısına girmez
   final double? lat; // teslimat noktası (haritada işaretlendiyse)
   final double? lng;
+  String? courier; // paketi yola çıkaran kurye
 
   Order({
     required this.id,
@@ -427,6 +428,7 @@ class Order {
     this.fullRefund = false,
     this.lat,
     this.lng,
+    this.courier,
   });
 
   int get total => subtotal + deliveryFee - discount;
@@ -464,6 +466,7 @@ class Order {
         'refund': fullRefund,
         'lat': lat,
         'lng': lng,
+        'cr': courier,
       };
 
   factory Order.fromJson(Map<String, dynamic> j) => Order(
@@ -496,6 +499,7 @@ class Order {
         fullRefund: j['refund'] ?? false,
         lat: (j['lat'] as num?)?.toDouble(),
         lng: (j['lng'] as num?)?.toDouble(),
+        courier: j['cr'],
       );
 }
 
