@@ -32,8 +32,26 @@ class PartnerEntryScreen extends StatefulWidget {
 
 class _PartnerEntryScreenState extends State<PartnerEntryScreen> {
   bool _courier = false;
+  final _q = TextEditingController();
 
   bool get root => widget.root;
+
+  @override
+  void dispose() {
+    _q.dispose();
+    super.dispose();
+  }
+
+  /// Arama için sadeleştirir: küçük harf, Türkçe harfler düz ("Çiğköfte" = "cigkofte").
+  static String _norm(String v) {
+    const map = {'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u'};
+    final low = trLower(v);
+    final b = StringBuffer();
+    for (final ch in low.split('')) {
+      b.write(map[ch] ?? ch);
+    }
+    return b.toString();
+  }
 
   void _enterCourier(BuildContext context, Restaurant r) {
     if (r.couriers.isEmpty) {
@@ -61,6 +79,8 @@ class _PartnerEntryScreenState extends State<PartnerEntryScreen> {
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
+    final q = _norm(_q.text.trim());
+    final hits = q.isEmpty ? <Restaurant>[] : s.restaurants.where((r) => _norm('${r.name} ${r.branch}').contains(q)).take(8).toList();
     return Scaffold(
       backgroundColor: C.ink,
       appBar: AppBar(
@@ -86,8 +106,42 @@ class _PartnerEntryScreenState extends State<PartnerEntryScreen> {
                 : 'Siparişler, ciro, menü, öğrenciye ikram ve abonelik tek yerde.',
             style: body(14, color: Colors.white70),
           ),
-          const SizedBox(height: 18),
-          for (final r in s.restaurants)
+          const SizedBox(height: 16),
+          TextField(
+            controller: _q,
+            onChanged: (_) => setState(() {}),
+            textInputAction: TextInputAction.search,
+            style: body(16, color: Colors.white, weight: FontWeight.w600),
+            cursorColor: C.saffron,
+            decoration: InputDecoration(
+              hintText: 'İşletme adını yaz',
+              hintStyle: body(16, color: Colors.white54),
+              filled: true,
+              fillColor: const Color(0xFF2A2523),
+              prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
+              suffixIcon: _q.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Temizle',
+                      onPressed: () => setState(_q.clear),
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                    ),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.saffron, width: 1.5)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (q.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text('İşletmenin adını yazmaya başla; çıkınca üstüne dokun.', style: body(13, color: Colors.white54)),
+            )
+          else if (hits.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Text('Bu adla kayıtlı işletme bulunamadı.', style: body(13, color: Colors.white54)),
+            ),
+          for (final r in hits)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Material(
