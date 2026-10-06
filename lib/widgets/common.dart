@@ -7,6 +7,9 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import 'photo.dart';
 
+/// Doybi destek e-postası (müşteri ve işletme soruları, KVKK başvuruları).
+const supportEmail = 'doybiyemek@gmail.com';
+
 class Avatar extends StatelessWidget {
   final Restaurant r;
   final double size;

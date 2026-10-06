@@ -248,8 +248,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
 }
 
 const kvkkText = [
-  ('Hangi bilgileri işliyoruz?', 'Telefon numaran, teslimat adresin ve sipariş geçmişin. Öğrenci ikramlarında kimlik bilgisi almıyoruz; kimliğini restoran yalnızca bakarak kontrol eder.'),
+  ('Hangi bilgileri işliyoruz?', 'Adın soyadın, telefon numaran, yazdıysan e-posta adresin, teslimat adresin ve sipariş geçmişin. Öğrenci ikramlarında kimlik bilgisi almıyoruz; kimliğini restoran yalnızca bakarak kontrol eder.'),
   ('Neden?', 'Siparişini restorana iletmek, restoranın sana ulaşabilmesi ve sahte siparişleri önlemek için.'),
   ('Kimlerle paylaşıyoruz?', 'Siparişini hazırlayan restoranla: adın, adresin ve numaran. Başka kimseyle paylaşmıyoruz.'),
-  ('Hakların', 'Hesabım > Hesabımı sil ile verilerini silebilirsin. Geçmiş sipariş kayıtları yalnızca yasal zorunluluk süresince saklanır.'),
+  ('Kampanya iletileri', 'Kampanya SMS\'i ve e-postası yalnızca kayıt olurken izin verdiysen gönderilir. İzni istediğin zaman geri alabilirsin.'),
+  ('Hakların', 'Hesabım > Hesabımı sil ile verilerini silebilirsin. Geçmiş sipariş kayıtları yalnızca yasal zorunluluk süresince saklanır. Soruların ve KVKK başvuruların için: $supportEmail'),
 ];
