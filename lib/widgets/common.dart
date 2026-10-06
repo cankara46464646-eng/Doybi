@@ -755,6 +755,14 @@ class LinkRow extends StatelessWidget {
 String maskTr(String p) => p.length == 10 ? '0${p.substring(0, 3)} *** ** ${p.substring(8)}' : p;
 
 
+/// "Ayşe Kaya" → "Ayşe K.": herkese açık yorumlarda soyadı gizlenir.
+String shortName(String full) {
+  final parts = full.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return '';
+  if (parts.length == 1) return parts.first;
+  return '${parts.first} ${trUpper(parts.last.substring(0, 1))}.';
+}
+
 /// "05321234567" → "0532 123 45 67". Tanınmazsa olduğu gibi döner.
 String formatPhone(String raw) {
   var d = raw.replaceAll(RegExp(r'[^0-9]'), '');

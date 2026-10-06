@@ -37,8 +37,8 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _order() async {
     final s = AppScope.read(context);
     if (s.phone == null) {
-      final ok = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const VerifyScreen()));
-      if (ok != true || !mounted) return;
+      final ok = await openLogin(context, reason: 'Siparişini tamamlamak için telefon numaranla devam et. Ödeme kapıda olduğu için restoran sana bu numaradan ulaşır.');
+      if (!ok || !mounted) return;
     }
     final r = s.cartRestaurant;
     if (r != null && s.phoneBlockedBy(r)) {

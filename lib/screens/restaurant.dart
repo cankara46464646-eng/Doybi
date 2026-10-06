@@ -287,7 +287,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
               Row(children: [
                 for (var i = 1; i <= 5; i++) Icon(i <= o.rating!.taste ? Icons.star_rounded : Icons.star_outline_rounded, size: 18, color: const Color(0xFFE79A00)),
                 const Spacer(),
-                Text(o.customerName.isEmpty ? 'Doybi müşterisi' : o.customerName, style: body(12, color: C.muted, weight: FontWeight.w700)),
+                Text(o.customerName.isEmpty ? 'Doybi müşterisi' : shortName(o.customerName), style: body(12, color: C.muted, weight: FontWeight.w700)),
               ]),
               if (o.rating!.tags.isNotEmpty) ...[
                 const SizedBox(height: 6),
