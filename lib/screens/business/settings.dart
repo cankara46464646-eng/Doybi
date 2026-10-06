@@ -256,7 +256,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Müşteri yalnızca açık olanları görür. Tahsilatı kuryen yapar, Doybi ödeme almaz.', style: body(13, color: C.muted)),
-              SwitchRow('Kapıda nakit', sub: 'Müşteri para üstü tutarını yazabilir', value: r.cash, onChanged: (v) {
+              SwitchRow('Kapıda nakit', sub: 'Müşteri kapıda kuryeye nakit öder', value: r.cash, onChanged: (v) {
                 if (!v && !r.card) {
                   setState(() => _payMsg = true);
                   return;

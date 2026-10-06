@@ -184,15 +184,16 @@ List<Restaurant> demoRestaurants() => [
       ),
     ];
 
+/// Kuponları yalnızca Doybi ekler (yönetim paneli). Başlangıçta sadece hoş geldin kuponu var.
 List<Coupon> demoCoupons() => [
       Coupon(code: 'HOSGELDIN', kind: 'tl', amount: 50, min: 250, payer: 'doybi', firstOrder: true, until: '31 Ekim\'e kadar'),
-      Coupon(code: 'USTA15', kind: 'yuzde', amount: 15, maxOff: 60, min: 300, restaurantId: 'UD', payer: 'restoran', until: '15 Ekim\'e kadar'),
-      Coupon(code: 'TESLIMAT0', kind: 'teslimat', amount: 0, min: 0, restaurantId: 'LD', payer: 'restoran', until: 'Bu hafta'),
-      Coupon(code: 'EYLUL25', kind: 'tl', amount: 25, min: 0, payer: 'doybi', until: 'Süresi doldu', expired: true),
     ];
 
+/// Eski deneme sürümlerinde olup artık kullanılmayan kuponlar.
+const retiredDemoCoupons = {'USTA15', 'TESLIMAT0', 'EYLUL25'};
+
 /// Kupon kullanım sayıları (uygulama öncesi, deneme verisi).
-const couponBaseUses = {'HOSGELDIN': 1204, 'USTA15': 86, 'TESLIMAT0': 31};
+const couponBaseUses = {'HOSGELDIN': 1204};
 
 /// Profilde gösterilen "N öğrenciye ısmarladı" (uygulama öncesi, deneme verisi).
 const ikramGivenBase = {'UD': 86, 'LD': 140, 'CK': 12};

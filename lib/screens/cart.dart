@@ -25,7 +25,6 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   String? _payment;
-  String _change = 'tam';
   bool _legal = false;
   final _note = TextEditingController();
 
@@ -46,18 +45,9 @@ class _CartScreenState extends State<CartScreen> {
       snack(context, 'Bu restorana şu an sipariş veremiyorsun.');
       return;
     }
-    final o = s.placeOrder(payment: _payment!, change: _change == 'tam' ? 'Tam para' : _change, note: _note.text);
+    final o = s.placeOrder(payment: _payment!, note: _note.text);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => TrackingScreen(o.id)));
-  }
-
-  List<int> _changeOptions(int total) {
-    final out = <int>[];
-    for (final v in const [100, 200, 500, 1000, 2000]) {
-      if (v > total) out.add(v);
-      if (out.length == 2) break;
-    }
-    return out;
   }
 
   @override
@@ -169,17 +159,7 @@ class _CartScreenState extends State<CartScreen> {
               SelChip(m == 'kart' ? 'Kredi / banka kartı' : 'Nakit', selected: _payment == m, onTap: () => setState(() => _payment = m)),
           ]),
           const SizedBox(height: 10),
-          if (_payment == 'kart')
-            Text('Kurye POS cihazı getirir. Kart bilgin istenmez.', style: body(13, color: C.muted))
-          else ...[
-            Text('Para üstü:', style: body(14, weight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              SelChip('Tam para', selected: _change == 'tam', onTap: () => setState(() => _change = 'tam')),
-              for (final v in _changeOptions(s.total))
-                SelChip(tl(v), selected: _change == tl(v), onTap: () => setState(() => _change = tl(v))),
-            ]),
-          ],
+          Text(_payment == 'kart' ? 'Kurye POS cihazı getirir. Kart bilgin istenmez.' : 'Ödemeyi kapıda kuryeye nakit yaparsın.', style: body(13, color: C.muted)),
           const SizedBox(height: 14),
           if (s.firsatLive) ...[
             FirsatCartBox(sub: s.subtotal, active: s.usingFirsat),

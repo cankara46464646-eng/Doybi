@@ -227,10 +227,7 @@ class PanelOrderCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text('Hazırlamadan önce müşteriyi arayıp siparişi ve adresi teyit et, sonra sorun çıkmasın.', style: body(13, color: C.noteInk)),
                 const SizedBox(height: 4),
-                Text(
-                  'Kapıda nakit · ${tl(o.total)}${o.change != null && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ' · tam para'}',
-                  style: body(13, color: C.noteInk, weight: FontWeight.w800),
-                ),
+                Text('Kapıda nakit · ${tl(o.total)}', style: body(13, color: C.noteInk, weight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 BigButton('Müşteriyi ara · ${maskTr(o.phone)}', outlined: true, height: 44, icon: Icons.call,
                     onPressed: () => callPhone(context, '0${o.phone}', who: 'Müşterinin numarası')),
@@ -240,10 +237,7 @@ class PanelOrderCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: C.note, borderRadius: BorderRadius.circular(14)),
-              child: Text(
-                'Kapıda nakit · ${tl(o.total)}${o.change != null && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ' · tam para'}',
-                style: body(14, color: C.noteInk, weight: FontWeight.w800),
-              ),
+              child: Text('Kapıda nakit · ${tl(o.total)}', style: body(14, color: C.noteInk, weight: FontWeight.w800)),
             ),
           const SizedBox(height: 10),
           Text.rich(TextSpan(children: [
