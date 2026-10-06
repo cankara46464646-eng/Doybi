@@ -105,14 +105,14 @@ class AccountScreen extends StatelessWidget {
         children: [
           // profil
           Container(
-            decoration: const BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
-            padding: EdgeInsets.fromLTRB(16, top + 18, 8, 22),
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
+            padding: EdgeInsets.fromLTRB(16, top + 18, 8, 20),
             child: Row(children: [
               Container(
                 width: 58,
                 height: 58,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: const BoxDecoration(color: C.tint, shape: BoxShape.circle),
                 child: s.name.isEmpty
                     ? const Icon(Icons.person_rounded, color: C.red, size: 32)
                     : Text(trUpper(s.name.substring(0, 1)), style: display(26, color: C.red)),
@@ -120,25 +120,25 @@ class AccountScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22, color: Colors.white)),
+                  Text(s.name.isEmpty ? 'Merhaba!' : s.name, style: display(22)),
                   const SizedBox(height: 2),
                   if (s.phone != null)
                     Row(children: [
-                      Text(s.maskPhone(s.phone), style: body(14, color: Colors.white.withValues(alpha: 0.9))),
+                      Text(s.maskPhone(s.phone), style: body(14, color: C.muted, weight: FontWeight.w600)),
                       const SizedBox(width: 6),
-                      const Icon(Icons.verified_rounded, size: 16, color: C.saffron),
+                      const Icon(Icons.verified_rounded, size: 16, color: C.green),
                     ])
                   else
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VerifyScreen())),
-                      child: Text('Telefonunu doğrula', style: body(14, color: C.saffron, weight: FontWeight.w800)),
+                      child: Text('Telefonunu doğrula', style: body(14, color: C.red, weight: FontWeight.w800)),
                     ),
                 ]),
               ),
               IconButton(
                 tooltip: 'Adını düzenle',
                 onPressed: () => _editName(context, s),
-                icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                icon: const Icon(Icons.edit_outlined, color: C.ink),
               ),
             ]),
           ),
@@ -285,17 +285,18 @@ class FavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final list = s.favRestaurants;
+    final shown = list.where((r) => s.zoneFor(r) != null).toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Favorilerim')),
-      body: list.isEmpty
+      backgroundColor: C.page,
+      appBar: AppBar(backgroundColor: C.page, title: const Text('Favorilerim')),
+      body: shown.isEmpty
           ? const Center(
               child: EmptyState(icon: Icons.favorite_border_rounded, title: 'Henüz favorin yok', text: 'Restoran kartındaki kalbe dokununca burada görürsün.'),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               children: [
-                for (final r in list)
-                  if (s.zoneFor(r) != null) Padding(padding: const EdgeInsets.only(bottom: 10), child: RestaurantCard(r)),
+                for (final (i, r) in shown.indexed) RowDivider(last: i == shown.length - 1, child: RestaurantCard(r)),
               ],
             ),
     );

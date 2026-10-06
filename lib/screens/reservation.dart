@@ -155,7 +155,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
             CheckRow('Öğrenci kimliğimi teslimde göstereceğim', checked: _idOk, color: C.green, onTap: () => setState(() => _idOk = !_idOk)),
             if (_error != null) ...[const SizedBox(height: 6), NoteBox(_error!, icon: Icons.error_outline, color: C.tint, ink: C.redDeep)],
             const SizedBox(height: 10),
-            BigButton('İkramı Ayırt', color: C.green, onPressed: _idOk ? () => _reserve(s, c) : null),
+            BigButton('İkramı ayırt', onPressed: _idOk ? () => _reserve(s, c) : null),
           ],
           if (held) ...[
             if (_asking)
@@ -181,7 +181,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
           ],
           if (ended) ...[
             if (mine.status != 'teslim' && c.status == 'yayinda' && s.ikram.remaining(c.id, t) > 0 && c.end.difference(t) >= lastCall && !t.isBefore(c.start)) ...[
-              BigButton('Yeniden ayırt', color: C.green, onPressed: () => setState(() => _fresh = true)),
+              BigButton('Yeniden ayırt', onPressed: () => setState(() => _fresh = true)),
               const SizedBox(height: 8),
             ],
             BigButton('Diğer ikramlara bak', outlined: true, onPressed: () => Navigator.pop(context)),

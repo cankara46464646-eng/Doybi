@@ -23,20 +23,17 @@ class StudentScreen extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            decoration: const BoxDecoration(color: C.greenInk, borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 18, 20, 22),
-            child: Stack(clipBehavior: Clip.none, children: [
-              Positioned(
-                right: -10,
-                bottom: -30,
-                child: Icon(Icons.volunteer_activism, size: 120, color: Colors.white.withValues(alpha: 0.1)),
-              ),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Öğrenciye ikram', style: display(30, color: Colors.white)),
-                const SizedBox(height: 6),
-                Text('Mahallenin esnafı öğrencilere ücretsiz yemek ısmarlıyor.', style: body(14, color: const Color(0xFFD6EFE0), weight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text('Günde 1 ikram · 30 dk içinde al · kimliğini göster', style: body(13, color: C.saffron, weight: FontWeight.w700)),
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 18, 20, 20),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Öğrenciye ikram', style: display(30)),
+              const SizedBox(height: 6),
+              Text('Mahallenin esnafı öğrencilere ücretsiz yemek ısmarlıyor.', style: body(15, color: C.muted, weight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              const Wrap(spacing: 6, runSpacing: 6, children: [
+                Pill('Günde 1 ikram', bg: C.greenTint, fg: C.greenInk),
+                Pill('30 dk içinde al', bg: C.greenTint, fg: C.greenInk),
+                Pill('Kimliğini göster', bg: C.greenTint, fg: C.greenInk),
               ]),
             ]),
           ),
@@ -166,7 +163,7 @@ class _CampaignCard extends StatelessWidget {
               if (held)
                 BigButton('Ayırttın · kodu göster', color: C.ink, icon: Icons.qr_code_2, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReservationScreen(campaignId: c.id))))
               else if (canReserve)
-                BigButton('İkramı Ayırt', color: C.green, onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReservationScreen(campaignId: c.id))))
+                BigButton('İkramı ayırt', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReservationScreen(campaignId: c.id))))
               else
                 Container(
                   height: 50,

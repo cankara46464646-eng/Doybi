@@ -85,7 +85,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
     final hasCover = s.hasPhoto(r.cover);
 
     return Scaffold(
-      appBar: AppBar(title: Text(r.name, style: display(22)), actions: [
+      backgroundColor: C.page,
+      appBar: AppBar(backgroundColor: C.page, title: Text(r.name, style: display(22)), actions: [
         IconButton(
           tooltip: s.isFav(r.id) ? 'Favorilerden çıkar' : 'Favorilere ekle',
           onPressed: () {
@@ -113,7 +114,8 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
             ]),
             const SizedBox(height: 10),
           ],
-          Box(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 if (!hasCover) ...[Avatar(r, size: 52), const SizedBox(width: 12)],
@@ -151,12 +153,18 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
                 ),
               ]),
               if (z != null) ...[
-                const Divider(color: C.line, height: 22),
-                Row(children: [
-                  _stat('${z.eta} dk', 'Teslimat'),
-                  _stat(tl(z.min), 'Min. sepet'),
-                  _stat(z.fee == 0 ? 'Ücretsiz' : tl(z.fee), 'Teslimat ücreti'),
-                ]),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(color: C.field, borderRadius: BorderRadius.circular(14)),
+                  child: Row(children: [
+                    _stat('${z.eta} dk', 'Teslimat'),
+                    Container(width: 1, height: 28, color: C.border),
+                    _stat(tl(z.min), 'Min. sepet'),
+                    Container(width: 1, height: 28, color: C.border),
+                    _stat(z.fee == 0 ? 'Ücretsiz' : tl(z.fee), 'Teslimat ücreti'),
+                  ]),
+                ),
               ],
             ]),
           ),
@@ -190,13 +198,10 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
             SizedBox(key: _keys['Popüler']),
           for (final cat in r.categories) ...[
             Padding(key: _keys[cat], padding: const EdgeInsets.fromLTRB(4, 16, 4, 8), child: Text(cat, style: display(20))),
-            Box(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Column(
-                children: [
-                  for (final m in r.menu.where((m) => m.category == cat)) _ItemRow(r, m, onTap: () => _tapItem(m), mine: mine),
-                ],
-              ),
+            Column(
+              children: [
+                for (final m in r.menu.where((m) => m.category == cat)) _ItemRow(r, m, onTap: () => _tapItem(m), mine: mine),
+              ],
             ),
           ],
           ..._reviews(s),
@@ -277,6 +282,7 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Box(
+            color: C.field,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 for (var i = 1; i <= 5; i++) Icon(i <= o.rating!.taste ? Icons.star_rounded : Icons.star_outline_rounded, size: 18, color: const Color(0xFFE79A00)),
@@ -387,6 +393,7 @@ class _FeaturedItem extends StatelessWidget {
     return Box(
       onTap: m.available ? onTap : null,
       padding: EdgeInsets.zero,
+      border: C.line,
       clip: true,
       child: Dim(
         dim: !m.available,

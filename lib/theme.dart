@@ -1,30 +1,33 @@
 import 'package:flutter/material.dart';
 
-/// Doybi renkleri (tasarım dosyasıyla aynı).
+/// Doybi renkleri. Tek kırmızı: yalnızca marka alanı, ana buton ve seçili durumlar.
+/// Zemin sakin kalır; rengi yemek fotoğrafları getirir.
 class C {
-  static const red = Color(0xFFD92A10); // buton kırmızısı (beyaz yazı 4.9:1)
-  static const logoRed = Color(0xFFFC361B);
-  static const redDeep = Color(0xFFA8200A);
-  static const tint = Color(0xFFFFE9E4);
+  static const red = Color(0xFFE0301C); // marka kırmızısı (beyaz yazı 4.6:1)
+  static const logoRed = Color(0xFFFC361B); // yalnızca logo, açılış ve Fırsat Saati
+  static const redDeep = Color(0xFFB4210F); // açık zeminde kırmızı yazı
+  static const tint = Color(0xFFFFF1EC);
   static const saffron = Color(0xFFFFC53D);
-  static const saffronTint = Color(0xFFFFF1C9);
+  static const saffronTint = Color(0xFFFFF4D6);
   static const saffronInk = Color(0xFF5A4100);
-  static const note = Color(0xFFFFF4D6);
+  static const note = Color(0xFFFFF6DE);
   static const noteInk = Color(0xFF4A3600);
-  static const ink = Color(0xFF1C1917);
-  static const muted = Color(0xFF6B625E);
-  static const placeholder = Color(0xFF7A716D);
-  static const border = Color(0xFFE2DCD8);
-  static const line = Color(0xFFF1EDEA);
-  static const bg = Color(0xFFF7F4F2);
-  static const green = Color(0xFF1F8A4C);
-  static const greenInk = Color(0xFF16683A);
-  static const greenTint = Color(0xFFE3F3EA);
+  static const ink = Color(0xFF1E1916);
+  static const muted = Color(0xFF6E6661);
+  static const placeholder = Color(0xFF8A827D);
+  static const border = Color(0xFFE5E1DE);
+  static const line = Color(0xFFEEEBE8);
+  static const bg = Color(0xFFF3F2F0); // gruplu ekranların zemini (nötr açık gri)
+  static const page = Colors.white; // gezinme ekranlarının zemini
+  static const field = Color(0xFFF3F2F0); // beyaz zeminde çip ve kutu dolgusu
+  static const green = Color(0xFF1B8A4A);
+  static const greenInk = Color(0xFF15683A);
+  static const greenTint = Color(0xFFE4F3EA);
   static const ring = Color(0xFFC9C1BC);
 }
 
 // Yazı tipleri uygulamanın içinde (assets/fonts); internetten indirilmez.
-TextStyle display(double size, {Color color = C.ink, FontWeight weight = FontWeight.w700, double height = 1.1}) =>
+TextStyle display(double size, {Color color = C.ink, FontWeight weight = FontWeight.w600, double height = 1.1}) =>
     TextStyle(fontFamily: 'Fredoka', fontSize: size, fontWeight: weight, color: color, height: height);
 
 TextStyle body(double size, {Color color = C.ink, FontWeight weight = FontWeight.w500, double height = 1.35}) =>
@@ -45,7 +48,7 @@ ThemeData buildTheme() {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: display(24),
+      titleTextStyle: display(22),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
