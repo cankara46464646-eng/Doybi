@@ -242,7 +242,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         Box(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: Column(children: [
-            SwitchRow('Kapıda nakit', sub: 'Müşteri para üstü tutarını yazabilir', value: _cash, onChanged: (v) => setState(() => _cash = v)),
+            SwitchRow('Kapıda nakit', sub: 'Müşteri kapıda kuryeye nakit öder', value: _cash, onChanged: (v) => setState(() => _cash = v)),
             SwitchRow('Kapıda kredi / banka kartı', sub: 'Kurye POS cihazı götürür', value: _card, onChanged: (v) => setState(() => _card = v)),
           ]),
         ),

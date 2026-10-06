@@ -230,7 +230,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 Text(
                   o.status == OrderStatus.teslim
                       ? (o.collected ? 'Ödendi · ${o.collectedVia == 'pos' ? 'POS ile' : 'nakit'}' : 'Kuryeye ödendi')
-                      : '${o.restaurantName} · ${o.count} ürün · ${tl(o.total)}${o.change != null && o.payment == 'nakit' && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ''}',
+                      : '${o.restaurantName} · ${o.count} ürün · ${tl(o.total)}',
                   style: body(13, color: C.muted),
                 ),
               ],

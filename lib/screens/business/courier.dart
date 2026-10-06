@@ -77,13 +77,6 @@ class _CourierScreenState extends State<CourierScreen> {
     );
   }
 
-  int _changeBack(Order o) {
-    final c = o.change;
-    if (c == null || c == 'Tam para') return 0;
-    final v = int.tryParse(c.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-    return v - o.total;
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
@@ -170,7 +163,6 @@ class _CourierScreenState extends State<CourierScreen> {
 
   Widget _roadCard(BuildContext context, AppState s, Order o) {
     final mode = _mode[o.id] ?? 'road';
-    final back = _changeBack(o);
     final name = o.customerName.isEmpty ? 'Müşteri' : o.customerName;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -207,7 +199,7 @@ class _CourierScreenState extends State<CourierScreen> {
           child: Text(
             o.payment == 'kart'
                 ? 'POS ile ${tl(o.total)} çek · Müşteri kapıda kartla ödeyecek'
-                : 'Kapıda nakit ${tl(o.total)}.${back > 0 ? ' Müşteri ${o.change} verecek, ${tl(back)} para üstü götür.' : ' Tam para.'}',
+                : 'Kapıda nakit ${tl(o.total)} al',
             style: body(14, color: o.payment == 'kart' ? C.saffron : C.noteInk, weight: FontWeight.w800),
           ),
         ),
