@@ -162,7 +162,23 @@ class Box extends StatelessWidget {
   }
 }
 
-/// Bölüm başlığı (küçük, büyük harf).
+/// Altına ince çizgi çeken satır (sonuncusunda çizgi yok). Kart yerine düz liste için.
+class RowDivider extends StatelessWidget {
+  final Widget child;
+  final bool last;
+  const RowDivider({super.key, required this.child, this.last = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (last) return child;
+    return DecoratedBox(
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: C.line))),
+      child: child,
+    );
+  }
+}
+
+/// Bölüm başlığı.
 class SectionLabel extends StatelessWidget {
   final String text;
   final Widget? trailing;
@@ -171,9 +187,9 @@ class SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
       child: Row(children: [
-        Expanded(child: Text(trUpper(text), style: body(12, color: C.muted, weight: FontWeight.w800).copyWith(letterSpacing: 0.6))),
+        Expanded(child: Text(text, style: body(15, weight: FontWeight.w800))),
         if (trailing != null) trailing!,
       ]),
     );
@@ -409,12 +425,12 @@ class QtyControl extends StatelessWidget {
   Widget build(BuildContext context) {
     if (qty == 0) {
       return Material(
-        color: onAdd == null ? C.ring : C.red,
-        shape: const CircleBorder(),
+        color: Colors.white,
+        shape: CircleBorder(side: BorderSide(color: onAdd == null ? C.line : C.border, width: 1.5)),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onAdd,
-          child: const SizedBox(width: 40, height: 40, child: Icon(Icons.add, color: Colors.white, size: 22, semanticLabel: 'Ekle')),
+          child: SizedBox(width: 40, height: 40, child: Icon(Icons.add, color: onAdd == null ? C.ring : C.red, size: 22, semanticLabel: 'Ekle')),
         ),
       );
     }
@@ -707,7 +723,7 @@ class LinkRow extends StatelessWidget {
   final VoidCallback? onTap;
   final Color iconColor;
   final Widget? trailing;
-  const LinkRow(this.icon, this.title, {super.key, this.sub, this.meta, this.onTap, this.iconColor = C.red, this.trailing});
+  const LinkRow(this.icon, this.title, {super.key, this.sub, this.meta, this.onTap, this.iconColor = C.ink, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -765,7 +781,7 @@ class PriceText extends StatelessWidget {
       if (badge)
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(6)),
           child: Text('%${s.dealPct(m)}', style: body(11, color: Colors.white, weight: FontWeight.w800, height: 1.2)),
         ),
     ]);

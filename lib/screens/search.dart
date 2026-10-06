@@ -62,6 +62,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return Scaffold(
+      backgroundColor: C.page,
       body: SafeArea(
         child: Column(children: [
           Padding(
@@ -74,6 +75,8 @@ class _SearchScreenState extends State<SearchScreen> {
           style: body(16, weight: FontWeight.w600),
           decoration: InputDecoration(
             hintText: 'Yemek ya da restoran ara',
+            fillColor: C.field,
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
             prefixIcon: const Icon(Icons.search, color: C.ink),
             suffixIcon: _c.text.isEmpty
                 ? null
@@ -148,15 +151,17 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Text('Bu aramaya uygun sonuç yok. Başka bir yemek dene.', textAlign: TextAlign.center, style: body(15, color: C.muted)),
                   ),
                 if (_tab == 0)
-                  for (final (m, r) in dishes)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Box(
+                  for (final (i, (m, r)) in dishes.indexed)
+                    RowDivider(
+                      last: i == dishes.length - 1,
+                      child: InkWell(
                         onTap: () {
                           s.addRecent(_c.text);
                           Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: m.id)));
                         },
-                        child: Row(children: [
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Row(children: [
                           if (s.hasPhoto(m.photo)) PhotoBox(m.photo, width: 52, height: 52, radius: 12) else Avatar(r, size: 52),
                           const SizedBox(width: 12),
                           Expanded(
@@ -167,14 +172,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                           PriceText(m, badge: false),
                         ]),
+                        ),
                       ),
                     )
                 else
-                  for (final r in rests)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: RestaurantCard(r),
-                    ),
+                  for (final (i, r) in rests.indexed) RowDivider(last: i == rests.length - 1, child: RestaurantCard(r)),
               ],
             )),
         ]),

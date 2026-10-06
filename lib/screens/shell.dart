@@ -33,28 +33,41 @@ class Shell extends StatelessWidget {
       builder: (context, tab, _) => Scaffold(
         // Yalnızca açık sekme çizilir; arkadaki sekmeler boşuna yeniden çizilmez.
         body: const [HomeScreen(), SearchScreen(), StudentScreen(), OrdersScreen(), AccountScreen()][tab],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: tab,
-          onDestinationSelected: (i) => shellTab.value = i,
-          backgroundColor: Colors.white,
-          indicatorColor: C.tint,
-          height: 66,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: [
-            const NavigationDestination(icon: Icon(Icons.explore_outlined), selectedIcon: Icon(Icons.explore, color: C.red), label: 'Keşfet'),
-            const NavigationDestination(icon: Icon(Icons.search), selectedIcon: Icon(Icons.search, color: C.red), label: 'Ara'),
-            NavigationDestination(
-              icon: Badge(isLabelVisible: ikram, smallSize: 8, child: const Icon(Icons.volunteer_activism_outlined)),
-              selectedIcon: const Icon(Icons.volunteer_activism, color: C.red),
-              label: 'İkramlar',
+        bottomNavigationBar: DecoratedBox(
+          decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: C.line))),
+          child: NavigationBarTheme(
+            data: NavigationBarThemeData(
+              labelTextStyle: WidgetStateProperty.resolveWith((st) => body(
+                    11.5,
+                    color: st.contains(WidgetState.selected) ? C.red : C.muted,
+                    weight: st.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
+                  )),
             ),
-            NavigationDestination(
-              icon: Badge(isLabelVisible: active > 0, label: Text('$active'), child: const Icon(Icons.receipt_long_outlined)),
-              selectedIcon: const Icon(Icons.receipt_long, color: C.red),
-              label: 'Siparişlerim',
+            child: NavigationBar(
+              selectedIndex: tab,
+              onDestinationSelected: (i) => shellTab.value = i,
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              indicatorColor: Colors.transparent,
+              height: 62,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: [
+                const NavigationDestination(icon: Icon(Icons.explore_outlined, color: C.muted), selectedIcon: Icon(Icons.explore, color: C.red), label: 'Keşfet'),
+                const NavigationDestination(icon: Icon(Icons.search, color: C.muted), selectedIcon: Icon(Icons.search, color: C.red), label: 'Ara'),
+                NavigationDestination(
+                  icon: Badge(isLabelVisible: ikram, smallSize: 8, backgroundColor: C.red, child: const Icon(Icons.volunteer_activism_outlined, color: C.muted)),
+                  selectedIcon: const Icon(Icons.volunteer_activism, color: C.red),
+                  label: 'İkramlar',
+                ),
+                NavigationDestination(
+                  icon: Badge(isLabelVisible: active > 0, backgroundColor: C.red, label: Text('$active'), child: const Icon(Icons.receipt_long_outlined, color: C.muted)),
+                  selectedIcon: const Icon(Icons.receipt_long, color: C.red),
+                  label: 'Siparişlerim',
+                ),
+                const NavigationDestination(icon: Icon(Icons.person_outline, color: C.muted), selectedIcon: Icon(Icons.person, color: C.red), label: 'Hesabım'),
+              ],
             ),
-            const NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person, color: C.red), label: 'Hesabım'),
-          ],
+          ),
         ),
       ),
     );

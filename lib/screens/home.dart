@@ -31,14 +31,15 @@ class _HomeScreenState extends State<HomeScreen> {
   int _page = 0;
   Timer? _auto;
 
+  // Mutfak kısayolları: yuvarlak yemek fotoğrafı + ad (dokununca aramaya gider).
   static const _cats = [
-    ('Kebap', Icons.kebab_dining_outlined),
-    ('Lahmacun', Icons.local_pizza_outlined),
-    ('Pide', Icons.bakery_dining_outlined),
-    ('Dürüm', Icons.takeout_dining_outlined),
-    ('Çiğ köfte', Icons.ramen_dining_outlined),
-    ('Dondurma', Icons.icecream_outlined),
-    ('Tatlı', Icons.cake_outlined),
+    ('Kebap', 'a:adana'),
+    ('Lahmacun', 'a:lahmacun'),
+    ('Pide', 'a:pide_karisik'),
+    ('Dürüm', 'a:afis_durum'),
+    ('Çiğ köfte', 'a:cig_porsiyon'),
+    ('Dondurma', 'a:dondurma'),
+    ('Tatlı', 'a:helva'),
   ];
 
   @override
@@ -107,14 +108,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: C.bg,
+      backgroundColor: C.page,
       body: Stack(children: [
         CustomScrollView(
           slivers: [
             // ---------------- üst: adres + arama ----------------
             SliverToBoxAdapter(
               child: Container(
-                decoration: const BoxDecoration(color: C.logoRed, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
+                decoration: const BoxDecoration(color: C.red, borderRadius: BorderRadius.vertical(bottom: Radius.circular(26))),
                 padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 12, 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Row(children: [
@@ -199,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             width: i == _page ? 18 : 6,
                             height: 6,
-                            decoration: BoxDecoration(color: i == _page ? C.red : C.ring, borderRadius: BorderRadius.circular(99)),
+                            decoration: BoxDecoration(color: i == _page ? C.red : C.border, borderRadius: BorderRadius.circular(99)),
                           ),
                       ]),
                     ],
@@ -222,28 +223,24 @@ class _HomeScreenState extends State<HomeScreen> {
             // ---------------- mutfaklar ----------------
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 58,
+                height: 106,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   itemCount: _cats.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
                   itemBuilder: (context, i) {
-                    final (label, icon) = _cats[i];
-                    return Material(
-                      color: Colors.white,
-                      shape: const StadiumBorder(side: BorderSide(color: C.border)),
-                      child: InkWell(
-                        customBorder: const StadiumBorder(),
-                        onTap: () => goTab(context, 1, query: label),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Row(children: [
-                            Icon(icon, size: 19, color: C.redDeep),
-                            const SizedBox(width: 6),
-                            Text(label, style: body(14, weight: FontWeight.w700)),
-                          ]),
-                        ),
+                    final (label, photo) = _cats[i];
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => goTab(context, 1, query: label),
+                      child: SizedBox(
+                        width: 66,
+                        child: Column(children: [
+                          PhotoBox(photo, width: 62, height: 62, radius: 31, placeholder: const CircleAvatar(radius: 31, backgroundColor: C.field)),
+                          const SizedBox(height: 6),
+                          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: body(12.5, weight: FontWeight.w700)),
+                        ]),
                       ),
                     );
                   },
@@ -311,12 +308,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             SliverPadding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 4),
               sliver: SliverList.builder(
                 itemCount: list.length,
                 itemBuilder: (context, i) => Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: RestaurantCard(list[i]),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: RowDivider(last: i == list.length - 1, child: RestaurantCard(list[i])),
                 ),
               ),
             ),
@@ -341,8 +338,8 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? C.ink : Colors.transparent,
-      shape: StadiumBorder(side: BorderSide(color: selected ? C.ink : C.border)),
+      color: selected ? C.ink : C.field,
+      shape: const StadiumBorder(),
       child: InkWell(
         customBorder: const StadiumBorder(),
         onTap: onTap,
@@ -358,56 +355,59 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-/// Öğrenciye ikram kısayolu: yeşil, bugün ikram veren restoranların logolarıyla.
+/// Öğrenciye ikram kısayolu: yemek fotoğrafı üstünde, bugün ikram veren restoranların logolarıyla.
 class _IkramTile extends StatelessWidget {
   final List<Restaurant> rests;
   const _IkramTile({required this.rests});
 
   @override
   Widget build(BuildContext context) {
-    const green = Color(0xFF1B7A44);
+    final img = photoImage(context, 'a:tavuk', width: 240);
     return Material(
-      color: green,
+      color: C.ink,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => shellTab.value = 2,
-        child: SizedBox(
-          height: 128,
-          child: Stack(children: [
-            Positioned(
-              right: -18,
-              bottom: -22,
-              child: Icon(Icons.volunteer_activism, size: 104, color: Colors.white.withValues(alpha: 0.12)),
+      child: Ink(
+        decoration: BoxDecoration(
+          image: img == null ? null : DecorationImage(image: img, fit: BoxFit.cover, filterQuality: FilterQuality.low),
+        ),
+        child: InkWell(
+          onTap: () => shellTab.value = 2,
+          child: Container(
+            height: 128,
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xB3000000), Color(0x40000000), Color(0x99000000)],
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 12, 12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Öğrenciye ikram', style: display(18, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
-                    maxLines: 2, style: body(12.5, color: Colors.white.withValues(alpha: 0.9), height: 1.25)),
-                const Spacer(),
-                if (rests.isNotEmpty)
-                  SizedBox(
-                    height: 30,
-                    child: Stack(children: [
-                      for (var i = 0; i < rests.length && i < 4; i++)
-                        Positioned(
-                          left: i * 20.0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: const BoxDecoration(color: green, shape: BoxShape.circle),
-                            child: Avatar(rests[i], size: 26),
-                          ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Öğrenciye ikram', style: display(18, color: Colors.white)),
+              const SizedBox(height: 2),
+              Text(rests.isEmpty ? 'Esnaftan ücretsiz yemek' : 'Bugün ${rests.length} restoranda ücretsiz',
+                  maxLines: 2, style: body(12.5, color: Colors.white, weight: FontWeight.w600, height: 1.25)),
+              const Spacer(),
+              if (rests.isNotEmpty)
+                SizedBox(
+                  height: 30,
+                  child: Stack(children: [
+                    for (var i = 0; i < rests.length && i < 4; i++)
+                      Positioned(
+                        left: i * 20.0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: Avatar(rests[i], size: 26),
                         ),
-                    ]),
-                  )
-                else
-                  Text('Göz at', style: body(13, color: C.saffron, weight: FontWeight.w800)),
-              ]),
-            ),
-          ]),
+                      ),
+                  ]),
+                )
+              else
+                Text('Göz at', style: body(13, color: Colors.white, weight: FontWeight.w800)),
+            ]),
+          ),
         ),
       ),
     );
@@ -425,7 +425,7 @@ class _CouponTile extends StatelessWidget {
     final best = ok.isEmpty ? null : (ok..sort((a, b) => (b.kind == 'tl' ? b.amount : 0).compareTo(a.kind == 'tl' ? a.amount : 0))).first;
     const shape = TicketBorder(radius: 20, notch: 9, at: 0.62);
     return Material(
-      color: C.saffron,
+      color: C.tint,
       shape: shape,
       child: InkWell(
         customBorder: shape,
@@ -433,28 +433,28 @@ class _CouponTile extends StatelessWidget {
         child: SizedBox(
           height: 128,
           child: CustomPaint(
-            painter: const DashLinePainter(at: 0.62, color: Color(0x553D2C00)),
+            painter: const DashLinePainter(at: 0.62, color: Color(0x4DB4210F)),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Kuponlarım', style: display(18)),
                 const SizedBox(height: 2),
-                Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: C.saffronInk)),
+                Text(ok.isEmpty ? 'Kodun varsa ekle' : '${ok.length} kupon hazır', style: body(12.5, color: C.muted, weight: FontWeight.w600)),
                 const Spacer(),
                 if (best != null)
                   Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(best.big, style: display(24, color: C.redDeep, height: 1)),
+                    Text(best.big, style: display(24, color: C.red, height: 1)),
                     const SizedBox(width: 6),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 2),
-                      child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: C.saffronInk, weight: FontWeight.w700)),
+                      child: Text(best.kind == 'teslimat' ? 'teslimat' : 'indirim', style: body(12.5, color: C.redDeep, weight: FontWeight.w700)),
                     ),
                   ])
                 else
                   Row(children: [
-                    const Icon(Icons.add_circle_outline_rounded, size: 20, color: C.saffronInk),
+                    const Icon(Icons.add_circle_outline_rounded, size: 20, color: C.redDeep),
                     const SizedBox(width: 4),
-                    Text('Kupon ekle', style: body(13, color: C.saffronInk, weight: FontWeight.w800)),
+                    Text('Kupon ekle', style: body(13, color: C.redDeep, weight: FontWeight.w800)),
                   ]),
               ]),
             ),
@@ -472,7 +472,7 @@ class _AgainCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: C.field,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -572,7 +572,7 @@ class _BannerCard extends StatelessWidget {
   }
 }
 
-/// Restoran kartı: solda görsel, sağda net bilgi.
+/// Restoran satırı: solda görsel, sağda net bilgi. Kart çerçevesi yok; satırlar ince çizgiyle ayrılır.
 class RestaurantCard extends StatelessWidget {
   final Restaurant r;
   const RestaurantCard(this.r, {super.key});
@@ -585,15 +585,11 @@ class RestaurantCard extends StatelessWidget {
     final month = s.monthRestaurant == r.id;
     return Dim(
       dim: !open,
-      radius: 20,
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+      radius: 0,
+      child: InkWell(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r))),
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _Thumb(r, month: month),
               const SizedBox(width: 12),
@@ -646,7 +642,6 @@ class RestaurantCard extends StatelessWidget {
               ),
             ]),
           ),
-        ),
       ),
     );
   }

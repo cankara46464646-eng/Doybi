@@ -342,7 +342,7 @@ List<ShareReq> demoShares(DateTime now) => [
     ];
 
 List<PromoBanner> demoBanners() => [
-      PromoBanner('a', 'Dükkân fiyatı garantisi', 'Doybi · süresiz', 0xFFA8200A),
+      PromoBanner('a', 'Dükkân fiyatı garantisi', 'Doybi · süresiz', 0xFFA8200A, photo: 'a:eli'),
       PromoBanner('b', '2 dürüme ayran bizden', 'Usta Dürüm Evi · bugün 23:00\'e kadar', 0xFFFFC53D, photo: 'a:afis_durum'),
       PromoBanner('c', '2. porsiyon dondurma %50', 'Kaymaklı Dondurmacı · hafta sonu', 0xFF1C1917, on: true, photo: 'a:afis_dondurma'),
     ];

@@ -12,7 +12,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 7;
+const _dataVersion = 8;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -91,17 +91,12 @@ class AppState extends ChangeNotifier {
       final raw = p.getString(_key);
       if (raw != null) {
         final j = jsonDecode(raw) as Map<String, dynamic>;
-        if (j['v'] == _dataVersion) {
+        final v = j['v'];
+        if (v is int && v >= 4 && v <= _dataVersion) {
+          // 0.3 kayıtları korunur; eksik kalan yenilikler eklenir
           _fromJson(j);
-        } else if (j['v'] == 6) {
-          // ilk 3 ay ücretsiz kuralı: veriler korunur, abonelikler yeni kurala göre düzenlenir
-          _fromJson(j);
-          _migrateFreePeriods();
-        } else if (j['v'] == 4 || j['v'] == 5) {
-          // önceki 0.3: veriler korunur, hazır fotoğraflar, logolar ve fırsat fiyatları eklenir
-          _fromJson(j);
-          _fillDemoPhotos();
-          _migrateFreePeriods();
+          if (v <= 6) _migrateFreePeriods(); // ilk 3 ay ücretsiz kuralı
+          if (v <= 7) _fillDemoPhotos(); // hazır fotoğraflar, logolar, fırsat fiyatları, afiş görselleri
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
