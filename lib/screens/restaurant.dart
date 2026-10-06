@@ -314,6 +314,16 @@ class _RestaurantScreenState extends State<RestaurantScreen> {
   }
 }
 
+/// Restoran sayfasını açar. Restoran kapalıysa (ya da moladaysa) açmaz, ne zaman açılacağını söyler.
+void openRestaurant(BuildContext context, Restaurant r, {String? item}) {
+  final s = AppScope.read(context);
+  if (!s.isOpen(r)) {
+    snack(context, '${r.name} · ${s.closedText(r)}');
+    return;
+  }
+  Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantScreen(r, openItem: item)));
+}
+
 /// Sepete ekler; başka restoranın sepeti varsa sorar.
 Future<bool> addWithCheck(BuildContext context, Restaurant r, bool Function() add) async {
   final s = AppScope.read(context);

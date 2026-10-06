@@ -213,6 +213,29 @@ class PanelOrderCard extends StatelessWidget {
                 ),
               ]),
             )
+          else if (o.status == OrderStatus.bekliyor || o.status == OrderStatus.hazirlaniyor)
+            // Nakit siparişte esnaf hazırlamadan önce müşteriyi arayıp teyit eder.
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: C.note, borderRadius: BorderRadius.circular(14), border: Border.all(color: C.saffron, width: 1.5)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Row(children: [
+                  const Icon(Icons.warning_amber_rounded, color: C.noteInk, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Nakit sipariş · teyit için müşteriyi ara', style: body(14, color: C.noteInk, weight: FontWeight.w800))),
+                ]),
+                const SizedBox(height: 4),
+                Text('Hazırlamadan önce müşteriyi arayıp siparişi ve adresi teyit et, sonra sorun çıkmasın.', style: body(13, color: C.noteInk)),
+                const SizedBox(height: 4),
+                Text(
+                  'Kapıda nakit · ${tl(o.total)}${o.change != null && o.change != 'Tam para' ? ' · ${o.change} bozulacak' : ' · tam para'}',
+                  style: body(13, color: C.noteInk, weight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                BigButton('Müşteriyi ara · ${maskTr(o.phone)}', outlined: true, height: 44, icon: Icons.call,
+                    onPressed: () => callPhone(context, '0${o.phone}', who: 'Müşterinin numarası')),
+              ]),
+            )
           else
             Container(
               padding: const EdgeInsets.all(12),
