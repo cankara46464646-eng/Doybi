@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Doybi hesabını silme · Doybi</title>
+<meta name="description" content="Doybi hesabını ve kişisel bilgilerini nasıl silebileceğini anlatıyoruz.">
+<meta name="theme-color" content="#D92A10">
+<link rel="icon" type="image/png" href="app/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Figtree:wght@400;600;700;800&display=swap">
+<style>
+html,body{margin:0}
+:root{--band:#D92A10;--ink:#1C1917;--muted:#6B625E;--bg:#F7F4F2;--surface:#FFFFFF;--line:#E7E0DC;--tint:#FFE9E4;--red-ink:#B8230C;--saffron:#FFC53D;
+--font-display:'Fredoka','Nunito','Arial Rounded MT Bold',system-ui,sans-serif;--font-body:'Figtree','Segoe UI',system-ui,-apple-system,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#F5EFEB;--muted:#BDB2AC;--bg:#151110;--surface:#211B19;--line:#3A302C;--tint:#3A1E17;--red-ink:#FF8A70;color-scheme:dark}}
+:root[data-theme="dark"]{--ink:#F5EFEB;--muted:#BDB2AC;--bg:#151110;--surface:#211B19;--line:#3A302C;--tint:#3A1E17;--red-ink:#FF8A70;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--red-ink);font-weight:700}
+:focus-visible{outline:3px solid var(--saffron);outline-offset:3px;border-radius:6px}
+.top{background:var(--band);color:#fff}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:64px}
+.top img{height:30px;width:auto;display:block}
+.top a{color:#fff;text-decoration:none;font-weight:700;font-size:15px}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px}
+main{padding:28px 0 40px}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,6vw,40px);line-height:1.1;margin:0 0 6px}
+.lead{color:var(--muted);margin:0 0 22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:6px 20px;margin-bottom:16px}
+section{padding:16px 0;border-bottom:1px solid var(--line)}
+section:last-child{border-bottom:0}
+h2{font-family:var(--font-display);font-weight:600;font-size:20px;margin:0 0 6px;line-height:1.25}
+p{margin:0 0 8px}
+ul,ol{margin:0 0 8px;padding-left:22px}
+li{margin:3px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border-radius:14px;background:var(--band);color:#fff;text-decoration:none;font-weight:800;margin:6px 0 4px}
+.note{background:var(--tint);border-radius:14px;padding:12px 14px;margin:8px 0}
+footer{border-top:1px solid var(--line);padding:22px 0 34px;color:var(--muted);font-size:14px}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a href="index.html" aria-label="Doybi ana sayfa"><img src="app/assets/assets/brand/logo-white.png" alt="doybi" width="77" height="30"></a>
+    <a href="app/">Uygulamayı aç</a>
+  </div>
+</header>
+<main class="wrap">
+  <h1>Doybi hesabını silme</h1>
+  <p class="lead">Doybi hesabını ve kişisel bilgilerini nasıl silebileceğini anlatıyoruz.</p>
+  <div class="card">
+    <section>
+      <h2>Uygulamadan silmek</h2>
+      <ol><li>Doybi’yi aç ve <strong>Hesabım</strong> sekmesine gir.</li><li>Sayfanın en altındaki <strong>Hesabımı sil</strong>’e dokun ve onayla.</li></ol>
+      <p>Yolda olan bir siparişin varsa, hesabını silmeden önce teslim alınması gerekir.</p>
+    </section>
+    <section>
+      <h2>Uygulamaya giremiyorsan</h2>
+      <p>Kayıtlı telefon numaranı yazarak <a href="mailto:doybiyemek@gmail.com">doybiyemek@gmail.com</a> adresine “Hesap silme talebi” konulu bir e-posta gönder. Numaranın sana ait olduğunu doğrulamak için SMS ile kod isteyebiliriz. Talebini en geç 30 gün içinde sonuçlandırırız.</p>
+      <a class="btn" href="mailto:doybiyemek@gmail.com?subject=Hesap%20silme%20talebi&amp;body=Merhaba%2C%20Doybi%20hesab%C4%B1m%C4%B1n%20silinmesini%20istiyorum.%20Kay%C4%B1tl%C4%B1%20telefon%20numaram%3A%20">Silme talebi gönder</a>
+    </section>
+    <section>
+      <h2>Neler silinir?</h2>
+      <ul><li>Ad soyad, telefon numarası ve e-posta adresin</li><li>Adreslerin ve haritada işaretlediğin noktalar</li><li>Favorilerin, kuponların ve profil fotoğrafın</li><li>Kampanya ileti iznin ve bildirim tercihlerin</li></ul>
+    </section>
+    <section>
+      <h2>Neler bir süre saklanır?</h2>
+      <p>Geçmiş sipariş, iade ve sorun bildirimi kayıtları yalnızca yasal zorunluluk süresince saklanır; süre dolunca silinir ya da anonimleştirilir. Yayımlanmış değerlendirmelerin adın olmadan kalabilir.</p>
+    </section>
+  </div>
+  <p class="lead" style="font-size:14px">Son güncelleme: 8 Ekim 2026</p>
+</main>
+<footer>
+  <div class="wrap">
+    <div>© 2026 Doybi · Kahramanmaraş · Gezion Konaklama Seyahat Sanayi ve Ticaret Limited Şirketi</div>
+    <nav aria-label="Alt bağlantılar">
+      <a href="index.html">Ana sayfa</a>
+      <a href="isletme.html">Restoranını ekle</a>
+      <a href="gizlilik.html">Gizlilik ve KVKK</a>
+      <a href="kosullar.html">Kullanım Koşulları</a>
+      <a href="hesap-sil.html">Hesap silme</a>
+      <a href="mailto:doybiyemek@gmail.com">doybiyemek@gmail.com</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

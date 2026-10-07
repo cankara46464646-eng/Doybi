@@ -25,6 +25,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
   final _phone = TextEditingController();
   final _address = TextEditingController();
   final _tax = TextEditingController();
+  final _legal = TextEditingController();
   final Set<String> _cu = {};
   String _district = 'Dulkadiroğlu';
   String? _taxDoc;
@@ -40,7 +41,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
 
   @override
   void dispose() {
-    for (final c in [_name, _owner, _phone, _address, _tax]) {
+    for (final c in [_name, _owner, _phone, _address, _tax, _legal]) {
       c.dispose();
     }
     super.dispose();
@@ -55,6 +56,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
         if (p.length != 10 || !p.startsWith('5')) return 'Cep telefonunu 5XX XXX XX XX biçiminde yaz.';
         if (_cu.isEmpty) return 'Ne sattığını seç.';
         if (_address.text.trim().length < 5) return 'Dükkânının adresini yaz.';
+        if (_legal.text.trim().length < 3) return 'Vergi levhasındaki ticari unvanı yaz.';
+        final t = _tax.text.replaceAll(RegExp(r'\D'), '');
+        if (t.length != 10 && t.length != 11) return 'Vergi numaranı (10 hane) ya da TC kimlik numaranı (11 hane) yaz.';
         return null;
       case 2:
         if (_hoods.isEmpty) return 'En az bir mahalle seç.';
@@ -93,6 +97,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
         cash: _cash,
         card: _card,
         menuWay: _menu,
+        legalName: _legal.text.trim(),
+        taxNo: _tax.text.replaceAll(RegExp(r'\D'), ''),
         at: DateTime.now(),
       ));
     }
@@ -209,8 +215,15 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ]),
         const SizedBox(height: 8),
         TextField(controller: _address, maxLines: 2, decoration: const InputDecoration(hintText: 'Mahalle, cadde, no')),
+        _label('Ticari unvan', 'Vergi levhasında yazdığı gibi. Siparişlerde satıcı olarak bu ad yazar.'),
+        TextField(controller: _legal, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(hintText: 'Örn. Ahmet Yılmaz ya da Maraş Sofrası Gıda Ltd. Şti.')),
         _label('Vergi bilgisi'),
-        TextField(controller: _tax, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Vergi / TC kimlik no')),
+        TextField(
+          controller: _tax,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(11)],
+          decoration: const InputDecoration(hintText: 'Vergi no (10 hane) ya da TC kimlik no (11 hane)'),
+        ),
         const SizedBox(height: 8),
         PhotoField(id: _taxDoc, label: 'Vergi levhasının fotoğrafını ekle', height: 120, icon: Icons.upload_file, onChanged: (id) => setState(() => _taxDoc = id)),
         const SizedBox(height: 4),

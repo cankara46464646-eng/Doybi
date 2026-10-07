@@ -96,6 +96,8 @@ class _ProductScreenState extends State<ProductScreen> {
           if (m.desc.isNotEmpty) ...[const SizedBox(height: 6), Text(m.desc, style: body(15, color: C.muted))],
           const SizedBox(height: 6),
           PriceText(m, size: 18),
+          const SizedBox(height: 10),
+          _Allergens(m),
           if (AppScope.of(context).onDeal(m)) ...[
             const SizedBox(height: 4),
             Text('Fırsat Saati fiyatı · bugün ${hhmm(AppScope.of(context).firsatEndMin)}${dativeTime(AppScope.of(context).firsatEndMin)} kadar', style: body(13, color: C.red, weight: FontWeight.w700)),
@@ -145,5 +147,28 @@ class _ProductScreenState extends State<ProductScreen> {
         ),
       ),
     );
+  }
+}
+
+/// Ürünün alerjen bilgisi (restoran menüde işaretler).
+class _Allergens extends StatelessWidget {
+  final MenuItem m;
+  const _Allergens(this.m);
+
+  @override
+  Widget build(BuildContext context) {
+    final none = m.allergens.isEmpty;
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(Icons.info_outline_rounded, size: 18, color: none ? C.muted : C.saffronInk),
+      const SizedBox(width: 6),
+      Expanded(
+        child: none
+            ? Text('Restoran bu ürün için alerjen belirtmedi. Alerjin varsa sipariş vermeden önce restorana sor.', style: body(13, color: C.muted))
+            : Text.rich(TextSpan(children: [
+                TextSpan(text: 'Alerjenler: ', style: body(13, weight: FontWeight.w800)),
+                TextSpan(text: m.allergens.join(', '), style: body(13)),
+              ])),
+      ),
+    ]);
   }
 }

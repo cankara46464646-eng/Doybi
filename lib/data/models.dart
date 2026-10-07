@@ -52,8 +52,11 @@ class MenuItem {
   List<OptGroup> groups;
   String? photo; // fotoğraf kimliği (PhotoStore)
   int? deal; // Fırsat Saati fiyatı (restoran belirler), null = fırsatta değil
-  MenuItem(this.id, this.name, this.price, this.category, {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups, this.photo, this.deal})
-      : groups = groups ?? [];
+  List<String> allergens; // içerdiği alerjenler (allergenNames içinden)
+  MenuItem(this.id, this.name, this.price, this.category,
+      {this.desc = '', this.available = true, this.featured = false, List<OptGroup>? groups, this.photo, this.deal, List<String>? allergens})
+      : groups = groups ?? [],
+        allergens = allergens ?? [];
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -66,6 +69,7 @@ class MenuItem {
         'g': groups.map((g) => g.toJson()).toList(),
         'ph': photo,
         'deal': deal,
+        'al': allergens,
       };
   factory MenuItem.fromJson(Map<String, dynamic> j) => MenuItem(
         j['id'],
@@ -78,8 +82,27 @@ class MenuItem {
         groups: (j['g'] as List? ?? const []).map((e) => OptGroup.fromJson(_m(e))).toList(),
         photo: j['ph'],
         deal: j['deal'],
+        allergens: List<String>.from(j['al'] ?? const []),
       );
 }
+
+/// Türk Gıda Kodeksi'nde bildirilmesi gereken 14 alerjen (kısa adlarıyla).
+const allergenNames = [
+  'Gluten',
+  'Süt',
+  'Yumurta',
+  'Yer fıstığı',
+  'Sert kabuklu yemiş',
+  'Susam',
+  'Soya',
+  'Balık',
+  'Kabuklu deniz ürünü',
+  'Yumuşakça',
+  'Hardal',
+  'Kereviz',
+  'Sülfit',
+  'Acı bakla',
+];
 
 /// Bir günün çalışma saati (dakika). Kapanış gece yarısını geçebilir (ör. 1470 = 00:30).
 class DayHours {
@@ -144,6 +167,8 @@ class Restaurant {
   double? lng;
   List<SpecialDay> specialDays;
   Map<String, String> courierPins; // kurye -> 4 haneli kod
+  String legalName; // ticari unvan (vergi levhasındaki gibi); ön bilgilendirmede satıcı olarak yazılır
+  String taxNo; // vergi no ya da TC kimlik no
 
   Restaurant({
     required this.id,
@@ -177,6 +202,8 @@ class Restaurant {
     this.lng,
     List<SpecialDay>? specialDays,
     Map<String, String>? courierPins,
+    this.legalName = '',
+    this.taxNo = '',
   })  : blocked = blocked ?? [],
         couriers = couriers ?? [],
         specialDays = specialDays ?? [],
@@ -277,6 +304,8 @@ class Restaurant {
         'lng': lng,
         'special': specialDays.map((d) => d.toJson()).toList(),
         'pins': courierPins,
+        'ln': legalName,
+        'tn': taxNo,
       };
 
   factory Restaurant.fromJson(Map<String, dynamic> j) => Restaurant(
@@ -311,6 +340,8 @@ class Restaurant {
         lng: (j['lng'] as num?)?.toDouble(),
         specialDays: (j['special'] as List? ?? const []).map((e) => SpecialDay.fromJson(_m(e))).toList(),
         courierPins: Map<String, String>.from(j['pins'] ?? const {}),
+        legalName: j['ln'] ?? '',
+        taxNo: j['tn'] ?? '',
       );
 }
 
@@ -657,6 +688,8 @@ class Application {
   final bool demo; // örnek başvuru
   final String? taxDoc; // vergi levhası fotoğrafı
   final String? menuPhoto; // menü fotoğrafı
+  String legalName; // ticari unvan
+  String taxNo; // vergi no ya da TC kimlik no
   String status; // bekliyor | onay | red
   String? reason;
   Set<String> checks;
@@ -680,6 +713,8 @@ class Application {
     this.demo = false,
     this.taxDoc,
     this.menuPhoto,
+    this.legalName = '',
+    this.taxNo = '',
     this.status = 'bekliyor',
     this.reason,
     Set<String>? checks,
@@ -711,6 +746,8 @@ class Application {
         'demo': demo,
         'taxDoc': taxDoc,
         'menuPhoto': menuPhoto,
+        'ln': legalName,
+        'tn': taxNo,
         'st': status,
         'reason': reason,
         'checks': checks.toList(),
@@ -734,6 +771,8 @@ class Application {
         demo: j['demo'] ?? false,
         taxDoc: j['taxDoc'],
         menuPhoto: j['menuPhoto'],
+        legalName: j['ln'] ?? '',
+        taxNo: j['tn'] ?? '',
         status: j['st'] ?? 'bekliyor',
         reason: j['reason'],
         checks: Set<String>.from(j['checks'] ?? const []),
