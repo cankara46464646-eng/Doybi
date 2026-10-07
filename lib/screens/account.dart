@@ -52,6 +52,28 @@ class AccountScreen extends StatelessWidget {
     s.setName(c.text);
   }
 
+  void _legalSheet(BuildContext context) {
+    void open(String title, List<(String, String)> text) {
+      Navigator.pop(context);
+      Navigator.push(context, MaterialPageRoute(builder: (_) => InfoPage(title, text)));
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            LinkRow(Icons.description_outlined, 'Kullanım Koşulları', iconColor: C.ink, onTap: () => open('Kullanım Koşulları', termsText)),
+            const Divider(color: C.line, height: 1),
+            LinkRow(Icons.privacy_tip_outlined, 'KVKK Aydınlatma Metni', iconColor: C.ink, onTap: () => open('Aydınlatma Metni', kvkkText)),
+          ]),
+        ),
+      ),
+    );
+  }
+
   Future<void> _delete(BuildContext context, AppState s) async {
     if (s.activeOrders.isNotEmpty) {
       snack(context, 'Yolda olan bir siparişin var. Teslim aldıktan sonra hesabını silebilirsin.');
@@ -212,7 +234,7 @@ class AccountScreen extends StatelessWidget {
                 LinkRow(Icons.help_outline, 'Yardım ve destek', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Yardım ve destek', helpText)))),
                 LinkRow(Icons.mail_outline_rounded, 'Bize e-posta gönder', sub: supportEmail, iconColor: C.ink,
                     onTap: () => launchUrl(Uri(scheme: 'mailto', path: supportEmail, query: 'subject=Doybi destek'))),
-                LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Sözleşmeler ve KVKK', kvkkText)))),
+                LinkRow(Icons.description_outlined, 'Sözleşmeler ve KVKK', iconColor: C.ink, onTap: () => _legalSheet(context)),
               ]),
               const SizedBox(height: 20),
               if (signedIn) ...[

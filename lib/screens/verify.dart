@@ -35,8 +35,8 @@ class VerifyScreen extends StatefulWidget {
 }
 
 class _VerifyScreenState extends State<VerifyScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _logo = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..forward();
-  late final _tagline = CurvedAnimation(parent: _logo, curve: const Interval(0.55, 1));
+  late final AnimationController _logo = AnimationController(vsync: this, duration: const Duration(milliseconds: LetterDrop.total))..forward();
+  late final _tagline = CurvedAnimation(parent: _logo, curve: const Interval(980 / LetterDrop.total, 1480 / LetterDrop.total, curve: Curves.easeOutCubic));
   final _phone = TextEditingController();
   final _code = TextEditingController();
   final _name = TextEditingController();
@@ -208,8 +208,9 @@ class _VerifyScreenState extends State<VerifyScreen> with SingleTickerProviderSt
     return LayoutBuilder(builder: (context, box) {
       final w = min(230.0, box.maxWidth * 0.58);
       return Stack(clipBehavior: Clip.hardEdge, children: [
-        Positioned(right: -80, top: top - 40, child: _ring(240)),
-        Positioned(left: -60, bottom: -20, child: _ring(150)),
+        // halkalar açılıştaki gibi büyüyerek belirir
+        Positioned(right: -80, top: top - 40, child: AnimatedBuilder(animation: _logo, builder: (context, child) => growRing(ringProgress(_logo.value * LetterDrop.total, 50), child!), child: _ring(240))),
+        Positioned(left: -60, bottom: -20, child: AnimatedBuilder(animation: _logo, builder: (context, child) => growRing(ringProgress(_logo.value * LetterDrop.total, 250), child!), child: _ring(150))),
         if (box.maxHeight - top > 150)
           Positioned.fill(
             top: top + 36,
@@ -221,12 +222,15 @@ class _VerifyScreenState extends State<VerifyScreen> with SingleTickerProviderSt
                   Semantics(
                     label: 'Doybi',
                     image: true,
-                    child: AnimatedBuilder(animation: _logo, builder: (context, _) => LetterDrop(width: w, t: _logo.value)),
+                    child: AnimatedBuilder(animation: _logo, builder: (context, _) => LetterDrop(width: w, ms: _logo.value * LetterDrop.total)),
                   ),
                   const SizedBox(height: 18),
                   FadeTransition(
                     opacity: _tagline,
-                    child: Text('Mahallenin lezzeti, dükkân fiyatına.', style: body(16, color: Colors.white, weight: FontWeight.w700)),
+                    child: SlideTransition(
+                      position: Tween(begin: const Offset(0, 0.4), end: Offset.zero).animate(_tagline),
+                      child: Text('Mahallenin lezzeti, dükkân fiyatına.', style: body(16, color: Colors.white, weight: FontWeight.w700)),
+                    ),
                   ),
                 ]),
               ),

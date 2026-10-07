@@ -123,6 +123,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   late bool _featured = widget.item?.featured ?? false;
   late String? _photo = widget.item?.photo;
   late int? _deal = widget.item?.deal;
+  late final Set<String> _allergens = {...?widget.item?.allergens};
   late final List<OptGroup> _groups = [
     for (final g in widget.item?.groups ?? <OptGroup>[]) OptGroup(g.name, [for (final o in g.opts) Opt(o.label, o.add)], required: g.required),
   ];
@@ -210,6 +211,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
       ..featured = _featured
       ..photo = _photo
       ..deal = _deal != null && _deal! < _price ? _deal : null
+      ..allergens = [for (final a in allergenNames) if (_allergens.contains(a)) a]
       ..groups = List.of(_groups);
     s.saveItem(widget.r, m);
     setState(() {
@@ -288,6 +290,16 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
                     onInc: _deal! + 5 < _price ? () => setState(() { _deal = _deal! + 5; _saved = false; }) : null),
             ]),
           ),
+          const SectionLabel('Alerjenler'),
+          Text('Ürün bunlardan birini içeriyorsa işaretle. Müşteri ürün sayfasında görür.', style: body(13, color: C.muted)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final a in allergenNames)
+              SelChip(a, selected: _allergens.contains(a), onTap: () => setState(() {
+                    _allergens.contains(a) ? _allergens.remove(a) : _allergens.add(a);
+                    _saved = false;
+                  })),
+          ]),
           const SectionLabel('Seçenekler'),
           Text('Müşteri sepete eklerken seçer', style: body(13, color: C.muted)),
           const SizedBox(height: 6),

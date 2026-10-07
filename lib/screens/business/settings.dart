@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/demo.dart';
 import '../../data/models.dart';
@@ -138,6 +139,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Satıcı bilgileri: siparişteki ön bilgilendirme ve mesafeli satış sözleşmesinde satıcı olarak yazılır.
+  Future<void> _legal(AppState s, Restaurant r) async {
+    final name = TextEditingController(text: r.legalName);
+    final tax = TextEditingController(text: r.taxNo);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Satıcı bilgileri', style: display(20)),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Müşteri sipariş verirken ön bilgilendirmede satıcı olarak bunları görür. Vergi levhandaki gibi yaz.', style: body(13, color: C.muted)),
+          const SizedBox(height: 10),
+          TextField(controller: name, textCapitalization: TextCapitalization.words, decoration: const InputDecoration(labelText: 'Ticari unvan')),
+          const SizedBox(height: 10),
+          TextField(
+            controller: tax,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(11)],
+            decoration: const InputDecoration(labelText: 'Vergi no ya da TC kimlik no'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgeç')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: C.red), child: const Text('Kaydet')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final t = tax.text.replaceAll(RegExp(r'\D'), '');
+    if (name.text.trim().length < 3 || (t.length != 10 && t.length != 11)) {
+      if (mounted) snack(context, 'Unvanı ve 10 haneli vergi no ya da 11 haneli TC kimlik no yaz.');
+      return;
+    }
+    r.legalName = name.text.trim();
+    r.taxNo = t;
+    s.touch();
+  }
+
   Future<void> _backup(AppState s, Restaurant r) async {
     final c = TextEditingController(text: r.backupPhone);
     final v = await showDialog<String>(
@@ -204,6 +242,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Divider(color: C.line, height: 22),
               LinkRow(Icons.call_outlined, 'İşletme telefonu', sub: r.phone.isEmpty ? 'Müşteri ve kurye bu numarayı arar' : r.phone, meta: r.phone.isEmpty ? 'Ekle' : 'Değiştir',
                   iconColor: C.ink, trailing: const SizedBox(), onTap: () => _phone(s, r)),
+              const Divider(color: C.line, height: 1),
+              LinkRow(Icons.badge_outlined, 'Satıcı bilgileri',
+                  sub: r.legalName.isEmpty ? 'Ticari unvan ve vergi no; siparişte satıcı olarak yazılır' : '${r.legalName} · ${r.taxNo}',
+                  meta: r.legalName.isEmpty ? 'Ekle' : 'Değiştir',
+                  iconColor: C.ink, trailing: const SizedBox(), onTap: () => _legal(s, r)),
               const Divider(color: C.line, height: 1),
               LinkRow(Icons.place_outlined, 'Dükkân konumu', sub: r.lat == null ? r.address : '${r.address} · haritada işaretli', meta: 'Haritada seç',
                   iconColor: C.ink, trailing: const SizedBox(), onTap: () async {

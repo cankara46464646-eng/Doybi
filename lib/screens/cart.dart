@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -9,12 +10,44 @@ import 'coupons.dart';
 import 'tracking.dart';
 import 'verify.dart';
 
-const legalPreInfo = [
-  ('Satıcı', 'Siparişi hazırlayan ve teslim eden restorandır. Doybi aracı hizmet sağlayıcıdır; yemek bedelini tahsil etmez.'),
-  ('Ödeme', 'Ödeme teslimatta, kapıda restoranın kuryesine nakit ya da POS ile kartla yapılır. Uygulamada kart bilgisi istenmez.'),
-  ('Cayma', 'Çabuk bozulabilen gıdalarda cayma hakkı kullanılamaz. Restoran onaylamadan önce siparişini ücretsiz iptal edebilirsin.'),
-  ('Sorun olursa', 'Eksik, yanlış ya da kötü gelen siparişi "Sorun bildir" ile ilet. İadeyi restoran yapar; 24 saat içinde dönmezse Doybi ekibi devreye girer.'),
-];
+/// Doybi'yi işleten şirket (aracı hizmet sağlayıcı).
+const operatorInfo =
+    'Doybi, Gezion Konaklama Seyahat Sanayi ve Ticaret Limited Şirketi tarafından işletilir. Bahçeli Evler Mah. Hoca Ahmet Yesevi Blv. No: 7/2, İç Kapı No: 31, Dulkadiroğlu / Kahramanmaraş · $supportEmail. Doybi yemek bedelini tahsil etmez.';
+
+/// Sepetteki siparişe özel ön bilgilendirme formu ([contract] ise mesafeli satış sözleşmesi).
+List<(String, String)> orderTerms(AppState s, Restaurant r, {required String payment, bool contract = false}) {
+  final lines = [for (final l in s.cart) '${l.qty} × ${l.name}${l.opts.isEmpty ? '' : ' (${l.opts})'} · ${tl(l.total)}'];
+  final z = s.cartZone;
+  final buyer = s.phone == null
+      ? 'Siparişi verirken doğrulayacağın ad soyad ve telefon numarası'
+      : '${s.name.isEmpty ? 'Doybi üyesi' : s.name} · ${formatPhone(s.phone!)}';
+  return [
+    if (contract)
+      ('Taraflar ve konu', 'Bu sözleşme, aşağıdaki satıcı restoran ile alıcı arasında, Doybi üzerinden verilen sipariş için kurulur. Sipariş, restoran onaylayınca kesinleşir.'),
+    ('Satıcı', [
+      r.legalName.isEmpty ? r.name : r.legalName,
+      '${r.name} · ${r.branch} şubesi',
+      'Adres: ${r.address}',
+      if (r.taxNo.isNotEmpty) 'Vergi / TC no: ${r.taxNo}',
+      if (r.phone.isNotEmpty) 'Telefon: ${r.phone}',
+    ].join('\n')),
+    ('Alıcı', '$buyer\nTeslimat adresi: ${s.fullAddress}'),
+    ('Aracı hizmet sağlayıcı', operatorInfo),
+    ('Ürünler ve fiyat', [
+      ...lines,
+      'Ara toplam: ${tl(s.subtotal)}',
+      if (s.discount > 0) 'İndirim: −${tl(s.discount)}',
+      'Teslimat ücreti: ${s.deliveryFee == 0 ? 'ücretsiz' : tl(s.deliveryFee)}',
+      'Kapıda ödenecek toplam: ${tl(s.total)} (vergiler dahil)',
+    ].join('\n')),
+    ('Ödeme', payment == 'kart'
+        ? 'Teslimatta, kapıda restoranın POS cihazıyla kredi ya da banka kartıyla. Uygulamada kart bilgisi istenmez.'
+        : 'Teslimatta, kapıda nakit olarak restoranın kuryesine.'),
+    ('Teslimat', 'Restoranın kendi kuryesiyle${z == null ? '' : ', tahmini ${z.eta} dakika içinde'}.'),
+    ('Cayma hakkı', 'Hazır yemek çabuk bozulabilen bir üründür; Mesafeli Sözleşmeler Yönetmeliği m.15 uyarınca cayma hakkı kullanılamaz. Restoran onaylamadan önce siparişini uygulamadan ücretsiz iptal edebilirsin.'),
+    ('Sorun olursa', 'Eksik, yanlış ya da kötü gelen siparişi Siparişlerim > Sorun bildir ile ilet. İadeyi restoran yapar; 24 saat içinde dönmezse Doybi ekibi devreye girer. Tüketici hakem heyetine ve tüketici mahkemesine başvurma hakların saklıdır.'),
+  ];
+}
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -103,7 +136,12 @@ class _CartScreenState extends State<CartScreen> {
                 Row(children: [
                   Avatar(r, size: 36),
                   const SizedBox(width: 10),
-                  Expanded(child: Text('${r.name}${z == null ? '' : ' · ${z.eta} dk'}', style: body(15, weight: FontWeight.w800))),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${r.name}${z == null ? '' : ' · ${z.eta} dk'}', style: body(15, weight: FontWeight.w800)),
+                      if (r.legalName.isNotEmpty) Text('Satıcı: ${r.legalName}', maxLines: 1, overflow: TextOverflow.ellipsis, style: body(12, color: C.muted)),
+                    ]),
+                  ),
                 ]),
                 const SizedBox(height: 6),
                 for (final l in List.of(s.cart))
@@ -214,9 +252,9 @@ class _CartScreenState extends State<CartScreen> {
                   child: Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Wrap(children: [
-                      _link('Ön bilgilendirme formunu', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Ön bilgilendirme', legalPreInfo)))),
+                      _link('Ön bilgilendirme formunu', () => Navigator.push(context, MaterialPageRoute(builder: (_) => InfoPage('Ön bilgilendirme formu', orderTerms(s, r, payment: _payment!))))),
                       Text(' ve ', style: body(13)),
-                      _link('mesafeli satış sözleşmesini', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InfoPage('Mesafeli satış sözleşmesi', legalPreInfo)))),
+                      _link('mesafeli satış sözleşmesini', () => Navigator.push(context, MaterialPageRoute(builder: (_) => InfoPage('Mesafeli satış sözleşmesi', orderTerms(s, r, payment: _payment!, contract: true))))),
                       Text(' okudum, onaylıyorum.', style: body(13)),
                     ]),
                   ),

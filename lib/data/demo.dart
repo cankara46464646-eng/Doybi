@@ -18,7 +18,47 @@ OptGroup _portion([int add = 110]) => OptGroup('Porsiyon', [Opt('Normal'), Opt('
 OptGroup _spicy() => OptGroup('Acı tercihi', [Opt('Acılı'), Opt('Acısız')], required: true);
 OptGroup _extras() => OptGroup('Ekstralar', [Opt('Ekstra lavaş', 20), Opt('Közlenmiş biber', 25), Opt('Ayran', 40)]);
 
-List<Restaurant> demoRestaurants() => [
+/// Deneme restoranları; satıcı bilgileri ve ürün alerjenleriyle.
+List<Restaurant> demoRestaurants() {
+  final list = _demoRestaurantList();
+  for (final r in list) {
+    final legal = demoLegal[r.id];
+    if (legal != null) {
+      r.legalName = legal.$1;
+      r.taxNo = legal.$2;
+    }
+    for (final m in r.menu) {
+      m.allergens = guessAllergens(m.name, m.desc);
+    }
+  }
+  return list;
+}
+
+/// Deneme restoranlarının satıcı bilgileri. Gerçek işletmeler değildir.
+const demoLegal = {
+  'UD': ('Usta Dürüm Evi Gıda Ltd. Şti. (deneme)', '0000000001'),
+  'LD': ('Lahmacun Durağı Yemek San. Tic. Ltd. Şti. (deneme)', '0000000002'),
+  'FP': ('Fırın Pide Salonu Gıda Ltd. Şti. (deneme)', '0000000003'),
+  'CK': ('Çiğköfte Köşesi Gıda Ltd. Şti. (deneme)', '0000000004'),
+  'KD': ('Kaymaklı Dondurmacı Gıda Ltd. Şti. (deneme)', '0000000005'),
+};
+
+/// Deneme menüleri için ürün adı ve açıklamasından alerjen tahmini (restoran sonradan düzeltebilir).
+List<String> guessAllergens(String name, String desc) {
+  final t = '$name $desc'.replaceAll('İ', 'i').replaceAll('I', 'ı').toLowerCase();
+  bool has(List<String> words) => words.any(t.contains);
+  return [
+    if (has(['dürüm', 'lavaş', 'lahmacun', 'pide', 'ekmek', 'hamur', 'börek', 'baklava', 'künefe', 'kadayıf', 'bulgur', 'çiğköfte', 'çiğ köfte', 'simit', 'gözleme', 'makarna', 'külah', 'irmik', 'bisküvi', 'tost', 'katmer']))
+      'Gluten',
+    if (has(['süt', 'peynir', 'kaşar', 'yoğurt', 'ayran', 'tereyağ', 'kaymak', 'dondurma', 'künefe', 'krema'])) 'Süt',
+    if (has(['yumurta', 'menemen', 'omlet'])) 'Yumurta',
+    if (has(['fıstık', 'ceviz', 'fındık', 'badem'])) 'Sert kabuklu yemiş',
+    if (has(['susam', 'simit', 'tahin'])) 'Susam',
+    if (has(['balık', 'hamsi', 'levrek', 'çipura', 'somon'])) 'Balık',
+  ];
+}
+
+List<Restaurant> _demoRestaurantList() => [
       Restaurant(
         id: 'UD', logo: 'a:logo_ud', cover: 'a:ud_kapak',
         name: 'Usta Dürüm Evi',
@@ -214,6 +254,8 @@ List<Application> demoApplications(DateTime now) => [
         cash: true,
         card: true,
         menuWay: 'ekip',
+        legalName: 'Hakan Yıldız (deneme)',
+        taxNo: '0000000011',
         at: now.subtract(const Duration(hours: 2)),
         demo: true,
         checks: {'ara', 'vergi'},
@@ -233,6 +275,8 @@ List<Application> demoApplications(DateTime now) => [
         cash: true,
         card: false,
         menuWay: 'foto',
+        legalName: 'Hüseyin Aksoy (deneme)',
+        taxNo: '0000000012',
         at: now.subtract(const Duration(days: 1)),
         demo: true,
       ),

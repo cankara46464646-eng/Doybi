@@ -82,6 +82,8 @@ class _AdminApplicationsState extends State<AdminApplications> {
           const Divider(color: C.line, height: 20),
           for (final (k, v, bad) in [
             ('Yetkili', '${a.owner} · ${a.phone}', false),
+            ('Ticari unvan', a.legalName.isEmpty ? 'Yazılmadı' : a.legalName, a.legalName.isEmpty),
+            ('Vergi / TC no', a.taxNo.isEmpty ? 'Yazılmadı' : a.taxNo, a.taxNo.isEmpty),
             ('Vergi levhası', a.taxUploaded ? 'Yüklendi' : 'Yüklenmedi', !a.taxUploaded),
             ('Kurye', a.courier ? '${a.couriers} kurye' : 'Henüz yok', !a.courier),
             ('Mahalleler', a.hoods.join(', '), false),

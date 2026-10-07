@@ -12,7 +12,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 9;
+const _dataVersion = 10;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -27,7 +27,7 @@ class AppState extends ChangeNotifier {
   String? avatar; // profil fotoğrafı (kayıtlı fotoğraf kimliği)
   String email = '';
   bool marketingOk = false; // kampanya iletisi izni (SMS / e-posta, isteğe bağlı)
-  bool notifPush = true;
+  bool notifPush = false; // kampanya bildirimleri: kullanıcı açarsa
   bool notifSms = false;
   bool ikramNotify = false;
   List<String> recentSearches = ['lahmacun', 'adana dürüm', 'künefe'];
@@ -102,6 +102,7 @@ class AppState extends ChangeNotifier {
           if (v <= 6) _migrateFreePeriods(); // ilk 3 ay ücretsiz kuralı
           if (v <= 7) _fillDemoPhotos(); // hazır fotoğraflar, logolar, fırsat fiyatları, afiş görselleri
           if (v <= 8) _dropRetiredCoupons(); // Doybi'nin eklemediği eski deneme kuponları
+          if (v <= 9) _fillLegalAndAllergens(); // satıcı bilgileri ve ürün alerjenleri
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
@@ -171,6 +172,26 @@ class AppState extends ChangeNotifier {
     ];
     firsatEndMin = 23 * 60 + 59;
     firsatHiddenDay = '';
+  }
+
+  /// Deneme restoranlarına satıcı bilgilerini, ürünlerine alerjenleri ekle (restoranın girdiklerine dokunmaz).
+  void _fillLegalAndAllergens() {
+    for (final r in restaurants) {
+      final legal = demoLegal[r.id];
+      if (legal == null) continue;
+      if (r.legalName.isEmpty) r.legalName = legal.$1;
+      if (r.taxNo.isEmpty) r.taxNo = legal.$2;
+      for (final m in r.menu) {
+        if (m.allergens.isEmpty) m.allergens = guessAllergens(m.name, m.desc);
+      }
+    }
+    final demoApps = {for (final a in demoApplications(now)) a.id: a};
+    for (final a in applications) {
+      final d = demoApps[a.id];
+      if (d == null || !a.demo) continue;
+      if (a.legalName.isEmpty) a.legalName = d.legalName;
+      if (a.taxNo.isEmpty) a.taxNo = d.taxNo;
+    }
   }
 
   /// Eski deneme kuponlarını (restoran kuponları, süresi dolmuş) kupon listesinden ve cüzdandan kaldırır.
@@ -309,7 +330,7 @@ class AppState extends ChangeNotifier {
     avatar = j['avatar'];
     email = j['email'] ?? '';
     marketingOk = j['mkt'] ?? false;
-    notifPush = j['np'] ?? true;
+    notifPush = j['np'] ?? false;
     notifSms = j['ns'] ?? false;
     ikramNotify = j['in'] ?? false;
     recentSearches = List<String>.from(j['recent'] ?? const []);
@@ -1451,6 +1472,8 @@ class AppState extends ChangeNotifier {
         menu: [],
         hours: [for (var i = 0; i < 7; i++) DayHours(660, 1380)],
         phone: a.phone,
+        legalName: a.legalName,
+        taxNo: a.taxNo,
         couriers: a.courier ? ['Kurye 1'] : [],
         courierPins: a.courier ? {'Kurye 1': newPin()} : {},
       ));

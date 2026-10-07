@@ -12,6 +12,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Doybi İşletme">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1260x2736.png" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icons/startup/startup-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <meta property="og:title" content="Doybi">
   <meta property="og:description" content="Mahallenin lezzeti, dükkân fiyatına.">
   <link rel="icon" type="image/png" href="favicon.png">
@@ -21,6 +33,8 @@
   <link rel="preload" as="image" href="assets/assets/brand/letter-y.png">
   <link rel="preload" as="image" href="assets/assets/brand/letter-b.png">
   <link rel="preload" as="image" href="assets/assets/brand/letter-i.png">
+  <link rel="preload" as="image" href="assets/assets/brand/logo-white.png">
+  <link rel="preload" as="font" type="font/ttf" href="assets/assets/fonts/Figtree-Bold.ttf" crossorigin>
   <title>Doybi İşletme</title>
   <script>
     // Yüksek çözünürlüklü telefonlarda (3x) çizim yükünü azalt: 2x yeterince keskin, çok daha akıcı.
@@ -33,47 +47,105 @@
     window.__doybiStart = Date.now();
   </script>
   <style>
+    /* Açılış: zemin, iOS ana ekran açılış görseliyle (icons/startup-*.png) birebir aynı; geçişte beyaz parlama olmaz. */
+    @font-face { font-family: 'Figtree'; font-weight: 700; font-display: swap; src: url('assets/assets/fonts/Figtree-Bold.ttf') format('truetype'); }
     html, body { margin: 0; height: 100%; background: #FC361B; overflow: hidden; }
     #splash {
-      position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: #FC361B; transition: opacity .3s ease;
+      position: fixed; inset: 0; z-index: 10; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(60% 42% at 50% 44%, rgba(255, 140, 60, .55) 0%, rgba(255, 140, 60, 0) 100%),
+        linear-gradient(180deg, #FC361B 0%, #FD5C0F 100%);
+      transition: opacity .38s ease;
     }
+    #splash.out { opacity: 0; }
+    #stage { display: flex; flex-direction: column; align-items: center; transform: translateY(-2vh); transition: transform .38s cubic-bezier(.2, .7, .2, 1); }
+    #splash.out #stage { transform: translateY(-2vh) scale(1.08); }
+
+    /* arkadaki halkalar (giriş ekranındakiyle aynı) */
+    .ring { position: absolute; border-radius: 50%; border: 20px solid rgba(255, 255, 255, .12); opacity: 0;
+      animation: ring 1.4s cubic-bezier(.2, .8, .2, 1) both, float 7s ease-in-out infinite alternate; }
+    .r1 { width: 280px; height: 280px; right: -110px; top: -70px; animation-delay: .05s, 1.45s; }
+    .r2 { width: 170px; height: 170px; left: -70px; bottom: 70px; animation-delay: .25s, 1.65s; }
+    .r3 { width: 64px; height: 64px; right: 36px; bottom: 150px; border-width: 10px; animation-delay: .45s, 1.85s; }
+    @keyframes ring { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
+    @keyframes float { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+
+    /* harfler: yukarıdan düşer, yere değince ezilip zıplar */
     #logo { position: relative; width: 240px; height: 93.6px; }
-    #logo img { position: absolute; opacity: 0; transform: translateY(-160px); animation: drop .7s both; }
-    #logo img:nth-child(1) { animation-delay: .00s; }
-    #logo img:nth-child(2) { animation-delay: .13s; }
-    #logo img:nth-child(3) { animation-delay: .26s; }
-    #logo img:nth-child(4) { animation-delay: .39s; }
-    #logo img:nth-child(5) { animation-delay: .52s; }
+    #logo .l { position: absolute; opacity: 0; animation: drop .82s var(--d) both; }
+    #logo .l img { display: block; width: 100%; height: 100%; transform-origin: 50% var(--o, 100%); animation: squash .82s var(--d) both; }
+    #logo .l::after {
+      content: ''; position: absolute; left: 5%; width: 90%; bottom: calc(var(--pb, 0px) - 7px); height: 12px; border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0));
+      opacity: 0; animation: puff .55s calc(var(--d) + .36s) ease-out both;
+    }
     @keyframes drop {
-      0%   { opacity: 0; transform: translateY(-160px); animation-timing-function: ease-in; }
-      12%  { opacity: 1; }
-      55%  { transform: translateY(0); animation-timing-function: ease-out; }
-      70%  { transform: translateY(-26px); animation-timing-function: ease-in; }
-      84%  { transform: translateY(0); animation-timing-function: ease-out; }
-      92%  { transform: translateY(-7px); animation-timing-function: ease-in; }
+      0%   { opacity: 0; transform: translateY(-190px); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+      8%   { opacity: 1; }
+      44%  { transform: translateY(0); animation-timing-function: cubic-bezier(0, .4, .5, 1); }
+      62%  { transform: translateY(-24px); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+      78%  { transform: translateY(0); animation-timing-function: cubic-bezier(0, .4, .5, 1); }
+      89%  { transform: translateY(-6px); animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    #tag {
-      margin-top: 18px; color: #fff; opacity: 0; animation: fade .5s 1.05s both;
-      font: 600 18px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    @keyframes squash {
+      0%   { transform: scale(.88, 1.16); }
+      42%  { transform: scale(.9, 1.14); }
+      48%  { transform: scale(1.22, .76); }
+      58%  { transform: scale(.94, 1.07); }
+      76%  { transform: scale(1, 1); }
+      80%  { transform: scale(1.09, .9); }
+      88%  { transform: scale(.98, 1.02); }
+      100% { transform: scale(1, 1); }
     }
-    #dots { margin-top: 30px; height: 8px; opacity: 0; animation: fade .4s 2.4s both; }
-    #dots i { display: inline-block; width: 7px; height: 7px; margin: 0 4px; border-radius: 50%; background: rgba(255,255,255,.75); animation: blink 1s infinite; }
-    #dots i:nth-child(2) { animation-delay: .2s; }
-    #dots i:nth-child(3) { animation-delay: .4s; }
+    @keyframes puff { 0% { opacity: 0; transform: scale(.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5); } }
+
+    /* harfler oturunca üstlerinden altın rengi bir parıltı geçer */
+    #shine {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0;
+      -webkit-mask: url('assets/assets/brand/logo-white.png') 0 0 / 100% 100% no-repeat;
+      mask: url('assets/assets/brand/logo-white.png') 0 0 / 100% 100% no-repeat;
+      background: linear-gradient(100deg, rgba(255, 197, 61, 0) 38%, rgba(255, 214, 110, .95) 50%, rgba(255, 197, 61, 0) 62%) no-repeat;
+      background-size: 220% 100%; background-position: 135% 0;
+      animation: shine .9s 1s cubic-bezier(.45, .05, .55, .95) both;
+    }
+    @keyframes shine { 0% { opacity: 1; background-position: 135% 0; } 100% { opacity: 1; background-position: -35% 0; } }
+
+    #tag {
+      margin-top: 20px; color: #fff; opacity: 0; transform: translateY(8px);
+      font: 700 17px/1.2 Figtree, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      animation: rise .5s .98s cubic-bezier(.2, .7, .2, 1) both;
+    }
+    @keyframes rise { to { opacity: .95; transform: translateY(0); } }
+
+    /* uygulama geç açılırsa altta küçük noktalar zıplar */
+    #dots { position: absolute; left: 0; right: 0; bottom: calc(48px + env(safe-area-inset-bottom)); text-align: center; opacity: 0; animation: fade .4s 2.6s both; }
+    #dots i { display: inline-block; width: 7px; height: 7px; margin: 0 4px; border-radius: 50%; background: rgba(255, 255, 255, .85); animation: hop 1s ease-in-out infinite; }
+    #dots i:nth-child(2) { animation-delay: .15s; }
+    #dots i:nth-child(3) { animation-delay: .3s; }
+    @keyframes hop { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-6px); opacity: 1; } }
     @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes blink { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ring, #logo .l, #logo .l img, #tag { animation: none !important; opacity: 1; transform: none; }
+      #logo .l::after, #shine { display: none; }
+    }
   </style>
 </head>
 <body>
   <div id="splash" aria-label="Doybi açılıyor">
-    <div id="logo">
-      <img alt="" src="assets/assets/brand/letter-d.png" style="left:0.73px;top:1.22px;width:58.36px;height:73.92px">
-      <img alt="" src="assets/assets/brand/letter-o.png" style="left:57.87px;top:18.97px;width:56.41px;height:56.41px">
-      <img alt="" src="assets/assets/brand/letter-y.png" style="left:109.67px;top:18.97px;width:53.74px;height:73.92px">
-      <img alt="" src="assets/assets/brand/letter-b.png" style="left:164.13px;top:0.97px;width:55.68px;height:74.16px">
-      <img alt="" src="assets/assets/brand/letter-i.png" style="left:219.33px;top:1.22px;width:19.94px;height:72.95px">
+    <i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i>
+    <div id="stage">
+      <div id="logo">
+        <span class="l" style="--d:0s;left:0.73px;top:1.22px;width:58.36px;height:73.92px"><img alt="" src="assets/assets/brand/letter-d.png"></span>
+        <span class="l" style="--d:.09s;left:57.87px;top:18.97px;width:56.41px;height:56.41px"><img alt="" src="assets/assets/brand/letter-o.png"></span>
+        <span class="l" style="--d:.18s;--o:76%;--pb:17.5px;left:109.67px;top:18.97px;width:53.74px;height:73.92px"><img alt="" src="assets/assets/brand/letter-y.png"></span>
+        <span class="l" style="--d:.27s;left:164.13px;top:0.97px;width:55.68px;height:74.16px"><img alt="" src="assets/assets/brand/letter-b.png"></span>
+        <span class="l" style="--d:.36s;left:219.33px;top:1.22px;width:19.94px;height:72.95px"><img alt="" src="assets/assets/brand/letter-i.png"></span>
+        <div id="shine"></div>
+      </div>
+      <div id="tag">Mahallenin lezzeti, dükkân fiyatına.</div>
     </div>
     <div id="dots"><i></i><i></i><i></i></div>
   </div>
@@ -82,10 +154,11 @@
     window.addEventListener('flutter-first-frame', function () {
       var s = document.getElementById('splash');
       if (!s) return;
-      var wait = Math.max(0, 1400 - (Date.now() - window.__doybiStart));
+      var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var wait = Math.max(0, (calm ? 600 : 1900) - (Date.now() - window.__doybiStart));
       setTimeout(function () {
-        s.style.opacity = '0';
-        setTimeout(function () { s.remove(); }, 320);
+        s.classList.add('out');
+        setTimeout(function () { s.remove(); }, 420);
       }, wait);
     });
   </script>
