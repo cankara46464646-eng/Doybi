@@ -33,6 +33,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     Future.delayed(const Duration(milliseconds: LetterDrop.total + 150), _next);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Giriş ekranındaki harf animasyonu ilk açılışta takılmasın: harfleri şimdiden yükle.
+    for (final n in const ['d', 'o', 'y', 'b', 'i']) {
+      precacheImage(AssetImage('assets/brand/letter-$n.png'), context);
+    }
+  }
+
   void _next() {
     if (!mounted) return;
     final s = AppScope.of(context);
