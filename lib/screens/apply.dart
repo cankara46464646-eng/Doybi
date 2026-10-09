@@ -190,7 +190,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         Row(children: [
           Expanded(child: _fact('%0', 'komisyon')),
           const SizedBox(width: 8),
-          Expanded(child: _fact('İlk 3 ay', 'ücretsiz')),
+          Expanded(child: _fact('İlk 6 ay', 'ücretsiz')),
           const SizedBox(width: 8),
           Expanded(child: _fact('Para', 'direkt sana')),
         ]),
@@ -322,7 +322,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         ],
         const SizedBox(height: 10),
         const NoteBox(
-          'İlk 3 ay ücretsiz: ilk üç dönem (30\'ar gün) ücret alınmaz; ilk dönem giriş paketiyle başlar. 4. dönemden itibaren paketin, bir önceki dönemde teslim ettiğin siparişe göre belirlenir. Yemek parası kapıda doğrudan sana ödenir; Doybi siparişten pay almaz.',
+          'İlk 6 ay ücretsiz: ilk altı dönem (30\'ar gün) ücret alınmaz; ilk dönem giriş paketiyle başlar. 7. dönemden itibaren paketin, bir önceki dönemde teslim ettiğin siparişe göre belirlenir. Yemek parası kapıda doğrudan sana ödenir; Doybi siparişten pay almaz.',
           icon: Icons.celebration_outlined,
           color: C.greenTint,
           ink: C.greenInk,
@@ -348,7 +348,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
         for (final (i, t) in const [
           (1, 'Seni arayıp bilgileri doğrularız'),
           (2, 'Menünü ve fiyatlarını birlikte hazırlarız'),
-          (3, 'Panelin açılır; ücretsiz ilk 3 ayın başlar'),
+          (3, 'Panelin açılır; ücretsiz ilk 6 ayın başlar'),
           (4, 'Keşfet\'te görünür, sipariş almaya başlarsın'),
         ])
           Padding(

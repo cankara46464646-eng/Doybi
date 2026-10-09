@@ -920,7 +920,7 @@ class Subscription {
   /// Kaçıncı dönemde (1'den başlar).
   int get periodNo => history.length + 1;
 
-  /// İlk 3 dönemden biri mi (ücret alınmaz).
+  /// İlk 6 dönemden biri mi (ücret alınmaz).
   bool get freePeriod => isFreePeriod(periodNo);
 
   /// Geçen dönem 1.200'ü aştı ve ücretli dönemde: özel teklif gerekir.

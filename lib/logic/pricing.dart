@@ -35,13 +35,13 @@ const featureFee = 250000;
 const shootFee = 500000;
 const shootItems = 20; // bu ücrete dahil ürün fotoğrafı
 
-/// Yeni işletmenin ilk kaç dönemi ücretsiz (1 dönem = 30 gün, yani ilk 3 ay).
-const freePeriods = 3;
+/// Yeni işletmenin ilk kaç dönemi ücretsiz (1 dönem = 30 gün, yani ilk 6 ay).
+const freePeriods = 6;
 
 /// Dönem numarası ücretsiz döneme düşüyor mu (1'den başlar).
 bool isFreePeriod(int periodNo) => periodNo <= freePeriods;
 
-/// Ücretsiz dönemin fatura başlığı: "2. dönem · Ücretsiz (2/3)".
+/// Ücretsiz dönemin fatura başlığı: "2. dönem · Ücretsiz (2/6)".
 String freePeriodTitle(int periodNo) => '$periodNo. dönem · Ücretsiz ($periodNo/$freePeriods)';
 
 class NextPackage {

@@ -367,7 +367,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return '${money(fromNet(b.net, s.vat).total)} · KDV dahil';
   }
 
-  /// İlk 3 dönemden kaçıncısında: dolu çizgiler geçen ve bu dönem.
+  /// Ücretsiz dönemlerin kaçıncısında: dolu çizgiler geçen ve bu dönem.
   Widget _freeSteps(int n) => Row(children: [
         for (var i = 1; i <= freePeriods; i++) ...[
           if (i > 1) const SizedBox(width: 4),

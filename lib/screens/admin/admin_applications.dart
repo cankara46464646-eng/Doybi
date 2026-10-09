@@ -46,7 +46,7 @@ class _AdminApplicationsState extends State<AdminApplications> {
           if (s.applications.isEmpty) const EmptyState(icon: Icons.how_to_reg_outlined, title: 'Başvuru yok', text: 'Yeni başvurular burada görünür.'),
           for (var i = 0; i < s.applications.length; i++) Padding(padding: const EdgeInsets.only(bottom: 10), child: _card(s, s.applications[i], i)),
           const SizedBox(height: 4),
-          Text('Onaylanan restoranın paneli açılır; ilk dönemi o gün giriş paketiyle başlar; ilk 3 ay ücretsizdir. Menüsü hazır olmadan Keşfet\'te görünmez.',
+          Text('Onaylanan restoranın paneli açılır; ilk dönemi o gün giriş paketiyle başlar; ilk 6 ay ücretsizdir. Menüsü hazır olmadan Keşfet\'te görünmez.',
               style: body(12, color: C.muted)),
         ],
       ),
@@ -142,7 +142,7 @@ class _AdminApplicationsState extends State<AdminApplications> {
             const SizedBox(height: 8),
             NoteBox(
               a.status == 'onay'
-                  ? 'Onaylandı. Paneli açıldı; ilk dönemi giriş paketiyle başladı (ilk 3 ay ücretsiz). Menüsü hazır olunca Keşfet\'te görünecek.'
+                  ? 'Onaylandı. Paneli açıldı; ilk dönemi giriş paketiyle başladı (ilk 6 ay ücretsiz). Menüsü hazır olunca Keşfet\'te görünecek.'
                   : 'Reddedildi · ${a.reason ?? ''}. Restorana SMS ile bildirildi.',
               icon: a.status == 'onay' ? Icons.check_circle : Icons.cancel_outlined,
               color: a.status == 'onay' ? C.greenTint : C.line,

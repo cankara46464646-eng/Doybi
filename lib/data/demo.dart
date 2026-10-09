@@ -309,7 +309,7 @@ Map<String, Subscription> demoSubscriptions(DateTime now) {
   return {
     'UD': Subscription(
       restaurantId: 'UD',
-      history: [130, 410, 588],
+      history: [130, 210, 290, 360, 410, 588],
       baseNow: 612,
       fee: 1000000,
       periodStart: '15 Eylül 2026 · 00:00',
@@ -319,14 +319,14 @@ Map<String, Subscription> demoSubscriptions(DateTime now) {
       social: 'aktif',
       socialStart: '1 Ekim',
       bills: [
-        Bill(id: 'UD-cur', kind: 'abonelik', net: 1000000, gross: false, title: '4. dönem · 451–600 paketi', detail: '15 Eyl – 14 Eki · 850 TL kupon mahsubu', state: 'unpaid'),
-        Bill(id: 'UD-f', kind: 'abonelik', net: 0, gross: false, title: '1–3. dönem · İlk 3 ay ücretsiz', detail: '15 Haz – 14 Eyl · giriş paketiyle başladı', state: 'free'),
+        Bill(id: 'UD-cur', kind: 'abonelik', net: 1000000, gross: false, title: '7. dönem · 451–600 paketi', detail: '15 Eyl – 14 Eki · 850 TL kupon mahsubu', state: 'unpaid'),
+        Bill(id: 'UD-f', kind: 'abonelik', net: 0, gross: false, title: '1–6. dönem · İlk 6 ay ücretsiz', detail: '17 Mar – 14 Eyl · giriş paketiyle başladı', state: 'free'),
         Bill(id: 'UD-s1', kind: 'sosyal', net: 500000, gross: true, title: 'Sosyal Medya Desteği · Ekim', detail: '1 – 30 Ekim', state: 'paid', paidAt: '1 Eki'),
       ],
     ),
     'LD': Subscription(
       restaurantId: 'LD',
-      history: [620, 940, 980, 1214],
+      history: [380, 520, 620, 940, 980, 1214],
       baseNow: 402,
       fee: 2000000,
       periodStart: '1 Ekim 2026 · 00:00',
@@ -336,7 +336,7 @@ Map<String, Subscription> demoSubscriptions(DateTime now) {
     ),
     'FP': Subscription(
       restaurantId: 'FP',
-      history: [150, 260, 388],
+      history: [90, 150, 210, 260, 320, 388],
       baseNow: 61,
       fee: 800000,
       periodStart: '1 Ekim 2026 · 00:00',
@@ -350,7 +350,7 @@ Map<String, Subscription> demoSubscriptions(DateTime now) {
     ),
     'CK': Subscription(
       restaurantId: 'CK',
-      history: [90, 120, 140],
+      history: [60, 75, 90, 105, 120, 140],
       baseNow: 44,
       fee: 400000,
       periodStart: '1 Ekim 2026 · 00:00',
