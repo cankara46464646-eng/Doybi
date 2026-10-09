@@ -64,49 +64,49 @@ void main() {
       expect(p.why, 'giris-ucretsiz');
       expect(p.free, isTrue);
     });
-    test('ilk 3 dönem ücretsiz, 4. dönemden itibaren ücretli', () {
+    test('ilk 6 dönem ücretsiz, 7. dönemden itibaren ücretli', () {
       final p2 = nextPackage([588], 0);
       expect(p2.fee, 0);
       expect(p2.listFee, 1000000);
       expect(p2.why, 'ucretsiz-donem');
-      expect(nextPackage([100, 588], 0).fee, 0);
-      expect(nextPackage([100, 588], 0).listFee, 1000000);
-      final p4 = nextPackage([100, 200, 588], 0);
-      expect(p4.fee, 1000000);
-      expect(p4.free, isFalse);
-      expect(isFreePeriod(3), isTrue);
-      expect(isFreePeriod(4), isFalse);
+      expect(nextPackage([100, 200, 300, 400, 588], 0).fee, 0);
+      expect(nextPackage([100, 200, 300, 400, 588], 0).listFee, 1000000);
+      final p7 = nextPackage([100, 200, 300, 400, 500, 588], 0);
+      expect(p7.fee, 1000000);
+      expect(p7.free, isFalse);
+      expect(isFreePeriod(6), isTrue);
+      expect(isFreePeriod(7), isFalse);
     });
     test('önceki dönem belirler', () {
-      expect(nextPackage([100, 200, 588], 1000000).fee, 1000000);
-      expect(nextPackage([100, 588, 140], 1000000).fee, 400000);
+      expect(nextPackage([100, 200, 300, 400, 500, 588], 1000000).fee, 1000000);
+      expect(nextPackage([100, 200, 300, 400, 588, 140], 1000000).fee, 400000);
     });
     test('20.000 TL için iki dönem üst üste 900 üstü', () {
-      expect(nextPackage([100, 588, 922], 1000000).fee, 1300000);
-      expect(nextPackage([100, 588, 922], 1000000).why, 'iki-donem-kurali');
-      expect(nextPackage([100, 901, 922], 1300000).fee, 2000000);
+      expect(nextPackage([100, 200, 300, 400, 588, 922], 1000000).fee, 1300000);
+      expect(nextPackage([100, 200, 300, 400, 588, 922], 1000000).why, 'iki-donem-kurali');
+      expect(nextPackage([100, 200, 300, 400, 901, 922], 1300000).fee, 2000000);
     });
     test('1.200 üstü: fiyat uydurulmaz, mevcut ücret sürer', () {
-      final p = nextPackage([100, 950, 1214], 2000000);
+      final p = nextPackage([100, 200, 300, 400, 950, 1214], 2000000);
       expect(p.kind, 'hold');
       expect(p.fee, 2000000);
-      expect(nextPackage([100, 950, 1214], 2000000, acceptedOffer: 2400000).fee, 2400000);
+      expect(nextPackage([100, 200, 300, 400, 950, 1214], 2000000, acceptedOffer: 2400000).fee, 2400000);
     });
     test('abonelik dönem bilgisi', () {
       Subscription mk(List<int> h) => Subscription(restaurantId: 'X', history: h, baseNow: 0, fee: 0, periodStart: '', periodEnd: '', daysLeft: 0);
       expect(mk([]).periodNo, 1);
       expect(mk([]).freePeriod, isTrue);
-      expect(mk([100, 200]).freePeriod, isTrue);
-      expect(mk([100, 200, 300]).freePeriod, isFalse);
+      expect(mk([100, 200, 300, 400, 500]).freePeriod, isTrue);
+      expect(mk([100, 200, 300, 400, 500, 600]).freePeriod, isFalse);
       expect(mk([100, 1300]).overLimit, isFalse); // ücretsiz dönemde teklif gerekmez
-      expect(mk([100, 200, 1300]).overLimit, isTrue);
-      expect(freePeriodTitle(2), '2. dönem · Ücretsiz (2/3)');
+      expect(mk([100, 200, 300, 400, 500, 1300]).overLimit, isTrue);
+      expect(freePeriodTitle(2), '2. dönem · Ücretsiz (2/6)');
     });
     test('ücretsiz dönemden 1.200 üstüyle çıkan: ücret 0 kalmaz', () {
-      final a = nextPackage([100, 200, 1300], 0);
+      final a = nextPackage([100, 200, 300, 400, 500, 1300], 0);
       expect(a.kind, 'hold');
       expect(a.fee, 1300000);
-      expect(nextPackage([100, 950, 1300], 0).fee, 2000000);
+      expect(nextPackage([100, 200, 300, 400, 950, 1300], 0).fee, 2000000);
       // ücretsiz dönem içindeyse yine ücretsiz
       expect(nextPackage([100, 1300], 0).fee, 0);
     });

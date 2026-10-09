@@ -81,7 +81,7 @@ class _InviteScreenState extends State<InviteScreen> {
               const SizedBox(height: 16),
               Box(
                 color: C.ink,
-                onTap: () => _share('Restoranını Doybi\'ye ekle: %0 komisyon, ilk 3 ay ücretsiz. ${siteUrl}isletme.html'),
+                onTap: () => _share('Restoranını Doybi\'ye ekle: %0 komisyon, ilk 6 ay ücretsiz. ${siteUrl}isletme.html'),
                 child: Row(children: [
                   const Icon(Icons.storefront, color: C.saffron),
                   const SizedBox(width: 12),

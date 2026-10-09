@@ -12,7 +12,7 @@ import '../logic/ikram.dart';
 import '../logic/location.dart';
 import '../logic/pricing.dart';
 
-const _dataVersion = 10;
+const _dataVersion = 11;
 const _key = 'doybi_state';
 
 /// Uygulamanın tüm durumu. Şimdilik telefonda tutulur; sunucu bağlanınca aynı işlemler oradan yapılacak.
@@ -99,10 +99,11 @@ class AppState extends ChangeNotifier {
         if (v is int && v >= 4 && v <= _dataVersion) {
           // 0.3 kayıtları korunur; eksik kalan yenilikler eklenir
           _fromJson(j);
-          if (v <= 6) _migrateFreePeriods(); // ilk 3 ay ücretsiz kuralı
+          if (v <= 6) _migrateFreePeriods(); // ücretsiz ilk dönemler kuralı
           if (v <= 7) _fillDemoPhotos(); // hazır fotoğraflar, logolar, fırsat fiyatları, afiş görselleri
           if (v <= 8) _dropRetiredCoupons(); // Doybi'nin eklemediği eski deneme kuponları
           if (v <= 9) _fillLegalAndAllergens(); // satıcı bilgileri ve ürün alerjenleri
+          if (v <= 10) _migrateSixMonths(); // ilk 6 ay ücretsiz
         } else {
           // eski sürüm: deneme verisini yeniden kur, adres ve telefonu koru
           _seed();
@@ -201,7 +202,24 @@ class AppState extends ChangeNotifier {
     if (chosenCoupon != null && retiredDemoCoupons.contains(chosenCoupon)) chosenCoupon = null;
   }
 
-  /// İlk 3 dönem ücretsiz kuralına geçiş: deneme aboneliklerinin geçmişi ve ücretsiz dönem faturaları yenilenir,
+  /// İlk 6 ay ücretsiz kuralına geçiş: deneme abonelikleri yeniden kurulur; sonradan onaylanan
+  /// restoranlardan 6. döneme kadar olanlar ücretsiz döneme alınır (ödenmiş faturalara dokunulmaz).
+  void _migrateSixMonths() {
+    final demo = demoSubscriptions(now);
+    demo.forEach((id, d) {
+      if (subs.containsKey(id)) subs[id] = d;
+    });
+    subs.forEach((id, sub) {
+      if (demo.containsKey(id) || !sub.freePeriod) return;
+      sub.fee = 0;
+      sub.bills.removeWhere((b) => b.id == '$id-cur' && b.state != 'paid');
+      if (!sub.bills.any((b) => b.id == '$id-cur')) {
+        sub.bills.insert(0, Bill(id: '$id-cur', kind: 'abonelik', net: 0, gross: false, title: freePeriodTitle(sub.periodNo), detail: sub.firstPeriod ? 'giriş paketi' : '', state: 'free'));
+      }
+    });
+  }
+
+  /// Ücretsiz ilk dönemler kuralına geçiş: deneme aboneliklerinin geçmişi ve ücretsiz dönem faturaları yenilenir,
   /// onaylanmış başvuruların ücretsiz fatura başlıkları güncellenir. Ödeme durumlarına dokunulmaz.
   void _migrateFreePeriods() {
     final demo = demoSubscriptions(now);
@@ -1478,7 +1496,7 @@ class AppState extends ChangeNotifier {
         courierPins: a.courier ? {'Kurye 1': newPin()} : {},
       ));
     }
-    addLog('${a.name} · başvuru onaylandı, ücretsiz ilk 3 ayı giriş paketiyle başladı; menü eklenince müşteriler görür');
+    addLog('${a.name} · başvuru onaylandı, ücretsiz ilk 6 ayı giriş paketiyle başladı; menü eklenince müşteriler görür');
     notifyListeners();
   }
 
